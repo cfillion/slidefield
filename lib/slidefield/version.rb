@@ -1,0 +1,3 @@
+module SlideField
+  VERSION = "0.0.1"
+end
