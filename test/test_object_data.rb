@@ -1,6 +1,6 @@
 require File.expand_path('../helper', __FILE__)
 
-class TestObject < MiniTest::Test
+class TestObjectData < MiniTest::Test
   def test_initialize
     o = SlideField::ObjectData.new :test, 'location'
     assert_equal :test, o.type
