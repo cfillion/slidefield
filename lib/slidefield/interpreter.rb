@@ -28,17 +28,20 @@ class SlideField::Interpreter
   def run_string(input, include_path = '.', context = 'input', parent_obj = nil)
     tree = @parser.parse input, reporter: Parslet::ErrorReporter::Deepest.new
     include_path = File.absolute_path(include_path) + File::SEPARATOR
+
     object = parent_obj || @root
     validate = parent_obj.nil?
 
-    extract_tree tree, object, include_path, nil, validate
+    object.include_path = include_path unless object.include_path
+
+    extract_tree tree, object, nil, validate
   rescue Parslet::ParseFailed => error
     raise SlideField::ParseError, "[#{context}] #{error.cause.ascii_tree}"
   rescue SlideField::Error => error
     raise error.class, "[#{context}] #{error.message}"
   end
 
-  def extract_tree(tree, object, include_path = nil, value_data = nil, close_object = true)
+  def extract_tree(tree, object, value_data = nil, close_object = true)
     rules = SlideField::ObjectRules[object.type]
     unless rules
       raise SlideField::InterpreterError,
@@ -61,7 +64,7 @@ class SlideField::Interpreter
       if stmt_data = stmt[:assignment]
         extract_variable rules, stmt_data, object
       elsif stmt_data = stmt[:object]
-        extract_object rules, stmt_data, object, include_path
+        extract_object rules, stmt_data, object
       else
         raise SlideField::InterpreterError,
           "Unsupported statement '#{stmt.keys.first}'"
@@ -154,7 +157,7 @@ class SlideField::Interpreter
     end
   end
 
-  def extract_object(rules, stmt_data, object, include_path)
+  def extract_object(rules, stmt_data, object)
     type_t = stmt_data[:type]
     type = type_t.to_sym
     body = stmt_data[:body]
@@ -165,13 +168,14 @@ class SlideField::Interpreter
     end
 
     child = SlideField::ObjectData.new type, get_loc(type_t)
+    child.include_path = object.include_path
     child.parent = object # bind variables
-    extract_tree body, child || [], include_path, stmt_data[:value]
+    extract_tree body, child || [], stmt_data[:value]
 
     # process special commands
     if child.type == :include
       begin
-        source = File.expand_path child.get(:source), include_path
+        source = File.expand_path child.get(:source), object.include_path
         run_file source, object
       rescue Errno::ENOENT
         raise SlideField::InterpreterError,

@@ -8,6 +8,8 @@ class TestExamples < MiniTest::Test
 
   def test_minimal
     @interpreter.run_file @path + "/minimal.sfp"
+    assert_equal @path + "/", @interpreter.root.include_path
+    assert_equal @path + "/", @interpreter.root[:layout].first.include_path
   end
 
   def test_complete

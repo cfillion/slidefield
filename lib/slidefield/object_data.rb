@@ -1,6 +1,6 @@
 class SlideField::ObjectData
   attr_reader :type, :loc, :children
-  attr_accessor :parent
+  attr_accessor :include_path, :parent
 
   def initialize(type, loc)
     @type = type
