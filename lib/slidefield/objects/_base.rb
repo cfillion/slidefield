@@ -11,8 +11,10 @@ module SlideField::ObjectRules
       variable :y, :number, 0
       variable :z, :number, 0
 
-      child :text
       child :image
+      child :rect
+      child :text
+
       super
     end
   end
