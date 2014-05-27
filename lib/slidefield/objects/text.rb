@@ -5,7 +5,7 @@ module SlideField::ObjectRules
       variable :color, :color, [255, 255, 255, 255]
       variable :font, :string, "sans"
       variable :height, :number, 20
-      variable :width, :number, -1
+      variable :width, :number, 0
       variable :spacing, :number, 0
       variable :align, :string, "left"
       super
@@ -28,7 +28,7 @@ module SlideField::ObjectManager
       width = @obj.get :width
       align = @obj.get(:align).to_sym
 
-      if width < 0
+      if width < 1
         # automatic width
         temp = Gosu::Image.from_text @window, content, font, height
         width = temp.width
