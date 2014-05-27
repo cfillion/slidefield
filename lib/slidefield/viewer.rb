@@ -5,16 +5,19 @@ class SlideField::Viewer < Gosu::Window
 
     super *size, false
 
-    @artist = SlideField::Artist.new self
-
-    @slides = project[:slide]
+    @slides = []
+    project[:slide].each {|slide_data|
+      manager = SlideField::ObjectManager.new slide_data, self
+      manager.load
+      @slides << manager
+    }
   end
 
   def update
   end
 
   def draw
-    @artist.draw @slides.first
+    @slides.first.draw
   end
 
   def button_down(id)

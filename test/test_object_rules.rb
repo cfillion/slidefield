@@ -20,6 +20,10 @@ class TestObjectRules < MiniTest::Test
     assert_instance_of klass, SlideField::ObjectRules[:rulesTest]
   end
 
+  def test_unknown
+    assert_nil SlideField::ObjectRules[:thisDoesNotExists]
+  end
+
   def test_cache
     klass = SlideField::ObjectRules::RulesTest
     first = klass.get

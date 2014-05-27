@@ -39,9 +39,8 @@ class SlideField::Interpreter
   end
 
   def extract_tree(tree, object, include_path = nil, value_data = nil, close_object = true)
-    begin
-      rules = SlideField::ObjectRules[object.type]
-    rescue NameError
+    rules = SlideField::ObjectRules[object.type]
+    unless rules
       raise SlideField::InterpreterError,
         "Unsupported object '#{object.type}'"
     end

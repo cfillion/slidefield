@@ -4,6 +4,7 @@ module SlideField::ObjectRules
     type[0] = type[0].upcase
 
     SlideField::ObjectRules.const_get(type).get
+  rescue NameError
   end
 
   class Base
@@ -75,6 +76,4 @@ module SlideField::ObjectRules
       @children << {:type=>type, :required=>required}
     end
   end
-
-  require 'slidefield/rules'
 end
