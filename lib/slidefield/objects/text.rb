@@ -2,7 +2,7 @@ module SlideField::ObjectRules
   class Text < GBase
     def rules
       variable :content, :string
-      variable :color, :color
+      variable :color, :color, [255, 255, 255, 255]
       variable :font, :string, "sans"
       variable :height, :number, 20
       super
