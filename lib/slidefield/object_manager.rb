@@ -3,6 +3,7 @@ module SlideField::ObjectManager
     type = obj.type.to_s
     type[0] = type[0].upcase
     const_get(type).new obj, window
+  rescue NameError
   end
 
   class Base
