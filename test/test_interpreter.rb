@@ -150,7 +150,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_set_string
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:string=>slice('hello', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:string=>slice('"hello"', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -273,7 +273,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_add_string
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:string=>slice(' world', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:string=>slice('" world"', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -372,8 +372,8 @@ class TestInterpreter < MiniTest::Test
 
   def test_sub_string
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:string=>slice(' world', 1)}}},
-      {:assignment=>{:variable=>slice(:var, 2), :operator=>slice('-=', 2), :value=>{:string=>slice('test', 2)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:string=>slice('" world"', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 2), :operator=>slice('-=', 2), :value=>{:string=>slice('"test"', 2)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -511,7 +511,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_escape_sequence
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:string=>slice('\\\\ \\"\\n\\s', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:string=>slice('"\\\\ \\"\\n\\s"', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'

@@ -4,7 +4,7 @@ class TestParser < MiniTest::Test
   def test_variable
     input = <<-SFP
 name="value"
-name =\t"value";
+name =\t"";
 name += 1
 \x20\tname-= 1x23
 name = #FFFFFFFF
@@ -14,8 +14,8 @@ name = -3
     SFP
 
     tokens = [
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'value'}}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'value'}}},
+      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'"value"'}}},
+      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'""'}}},
       {:assignment=>{:variable=>'name', :operator=>'+=', :value=>{:number=>'1'}}},
       {:assignment=>{:variable=>'name', :operator=>'-=', :value=>{:size=>'1x23'}}},
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:color=>'#FFFFFFFF'}}},
@@ -56,7 +56,7 @@ var=1
       {:object=>{:type=>'test', :body=>[]}},
       {:object=>{:type=>'test', :value=>{:number=>'42'}}},
       {:object=>{:type=>'test', :value=>{:number=>'42'}, :body=>[]}},
-      {:object=>{:type=>'test', :value=>{:string=>'hello'}, :body=>[]}},
+      {:object=>{:type=>'test', :value=>{:string=>'"hello"'}, :body=>[]}},
       {:object=>{:type=>'test', :value=>{:size=>'12x3'}, :body=>[]}},
       {:object=>{:type=>'test', :value=>{:number=>'1'}, :body=>[
         {:assignment=>{:variable=>'var', :operator=>'=', :value=>{:number=>'1'}}},
@@ -87,7 +87,7 @@ comment
     SFP
 
     tokens = [
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'value'}}},
+      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'"value"'}}},
       {:object=>{:type=>'test'}},
       {:object=>{:type=>'hello', :body=>[]}},
     ]
@@ -101,7 +101,7 @@ name="hello \\"world\\""
     SFP
 
     tokens = [
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'hello \\"world\\"'}}},
+      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'"hello \\"world\\""'}}},
     ]
 
     assert_equal tokens, parse(input)

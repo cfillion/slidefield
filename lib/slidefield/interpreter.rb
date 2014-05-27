@@ -200,7 +200,7 @@ class SlideField::Interpreter
         'n'=>"\n"
       }
 
-      value.to_s.gsub(/\\(.)/) {
+      value.to_s[1..-2].gsub(/\\(.)/) {
         escape_sequences[$1] || $1
       }
     when :color
