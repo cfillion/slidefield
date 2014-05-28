@@ -457,6 +457,135 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
+  def test_mul_undefined
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:number=>slice('42', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Undefined variable 'var' at line 1 char 1", error.message
+  end
+
+  def test_mul_incompatible
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:number=>slice('42', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, 'test', 'loc', :string
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Unexpected 'number', expecting 'string' at line 1 char 3", error.message
+  end
+
+  def test_mul_number
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:number=>slice('4', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, 4, 'loc', :number
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    assert_equal 16, o.get(:var)
+    assert_equal :number, o.var_type(:var)
+    assert_equal 'line 1 char 3', o.var_loc(:var)
+  end
+
+  def test_mul_size
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:size=>slice('4x2', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, [4, 2], 'loc', :size
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    assert_equal [16, 4], o.get(:var)
+    assert_equal :size, o.var_type(:var)
+    assert_equal 'line 1 char 3', o.var_loc(:var)
+  end
+
+  def test_mul_string
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:string=>slice('"3"', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, 'test', 'loc', :string
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    assert_equal 'testtesttest', o.get(:var)
+    assert_equal :string, o.var_type(:var)
+    assert_equal 'line 1 char 3', o.var_loc(:var)
+  end
+
+  def test_mul_string_invalid
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:string=>slice('"aaaa"', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, 'test', 'loc', :string
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Invalid string multiplier 'aaaa', integer required at line 1 char 3", error.message
+  end
+
+  def test_mul_color
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:color=>slice('#02020202', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, [4, 4, 4, 4], 'loc', :color
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    assert_equal [8, 8, 8, 8], o.get(:var)
+    assert_equal :color, o.var_type(:var)
+    assert_equal 'line 1 char 3', o.var_loc(:var)
+  end
+
+  def test_mul_boolean
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:boolean=>slice(':true', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, true, 'loc', :boolean
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Unsupported operator '*=' for type 'boolean' at line 1 char 2", error.message
+  end
+
+  def test_mul_identifier
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:identifier=>slice('test', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, 3, 'loc', :number
+    o.set :test, 2, 'loc', :number
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    assert_equal 6, o.get(:var)
+    assert_equal :number, o.var_type(:var)
+    assert_equal 'line 1 char 3', o.var_loc(:var)
+  end
+
   def test_children
     tokens = [
       {:object=>{:type=>slice('child', 1), :body=>[

@@ -13,9 +13,11 @@ class SlideField::Parser < Parslet::Parser
   rule(:close) { white? >> match('}') >> white? }
 
   rule(:assign) { str('=') }
-  rule(:addition) { str('+=') }
-  rule(:subtraction) { str('-=') }
-  rule(:operator) { spaces? >> (assign | addition | subtraction).as(:operator) >> spaces? }
+  rule(:add) { str('+=') }
+  rule(:subtract) { str('-=') }
+  rule(:multiply) { str('*=') }
+  rule(:divide) { str('/=') }
+  rule(:operator) { spaces? >> (assign | add | subtract | multiply | divide).as(:operator) >> spaces? }
 
   rule(:identifier) { match['a-zA-Z_'] >> match['a-zA-Z0-9_'].repeat }
   rule(:number) { str('-').maybe >> match('\\d').repeat(1) }

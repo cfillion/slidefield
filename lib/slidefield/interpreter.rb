@@ -130,7 +130,7 @@ class SlideField::Interpreter
       end
 
       object.set var_name, var_value, get_loc(var_value_t), var_type
-    when '+=', '-='
+    when '+=', '-=', '*='
       origin_val = object.get var_name
       unless origin_val
         raise SlideField::InterpreterError,
@@ -145,21 +145,31 @@ class SlideField::Interpreter
           "Unexpected '#{var_type}', expecting '#{origin_type}' at #{get_loc var_value_t}"
       end
 
-      new_value =
-      if origin_type == :size || origin_type == :color
-        origin_val.map.with_index {|v, i| v.send method, var_value[i] }
-      elsif origin_type == :string && operator == '-='
-        copy = origin_val.dup
-        copy[var_value] = '' if copy[var_value]
-        copy
-      elsif origin_type == :boolean
+      value = nil
+      case origin_type
+      when :size, :color
+        value = origin_val.map.with_index {|v, i| v.send method, var_value[i] }
+      when :string
+        case operator
+        when '-='
+          copy = origin_val.dup
+          copy[var_value] = '' if copy[var_value]
+          value = copy
+        when '*='
+          conv = var_value.to_i
+          if conv < 1
+            raise SlideField::InterpreterError,
+              "Invalid string multiplier '#{var_value}', integer required at #{get_loc var_value_t}"
+          end
+          var_value = conv
+        end
+      when :boolean
         raise SlideField::InterpreterError,
           "Unsupported operator '#{operator}' for type '#{origin_type}' at #{get_loc operator_t}"
-      else
-        origin_val.send method, var_value
       end
 
-      object.set var_name, new_value, get_loc(var_value_t)
+      value = origin_val.send method, var_value unless value
+      object.set var_name, value, get_loc(var_value_t)
     else
       raise SlideField::InterpreterError,
         "Unsupported operator '#{operator}' at #{get_loc operator_t}"

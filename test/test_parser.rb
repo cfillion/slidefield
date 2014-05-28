@@ -7,7 +7,8 @@ name="value"
 name =\t"";
 name += 1
 \x20\tname-= 1x23
-name = #FFFFFFFF
+name *= "value"
+name /= #FFFFFFFF
 name2 = name\t\x20
 name = 1;\x20\tname = 2
 name = -3
@@ -20,7 +21,8 @@ name = :false
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'""'}}},
       {:assignment=>{:variable=>'name', :operator=>'+=', :value=>{:number=>'1'}}},
       {:assignment=>{:variable=>'name', :operator=>'-=', :value=>{:size=>'1x23'}}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:color=>'#FFFFFFFF'}}},
+      {:assignment=>{:variable=>'name', :operator=>'*=', :value=>{:string=>'"value"'}}},
+      {:assignment=>{:variable=>'name', :operator=>'/=', :value=>{:color=>'#FFFFFFFF'}}},
       {:assignment=>{:variable=>'name2', :operator=>'=', :value=>{:identifier=>'name'}}},
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:number=>'1'}}},
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:number=>'2'}}},
