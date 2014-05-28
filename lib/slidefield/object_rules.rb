@@ -16,21 +16,21 @@ module SlideField::ObjectRules
     end
 
     def known_variables
-      @variables.map {|hash| hash[:name] }
+      @variables.collect {|hash| hash[:name] }
     end
 
     def known_variables_types
-      @variables.map {|hash| hash[:type] }.uniq
+      @variables.collect {|hash| hash[:type] }.uniq
     end
 
     def required_variables
       required = @variables.select {|hash| hash[:default].nil? }
-      required.map {|hash| hash[:name] }
+      required.collect {|hash| hash[:name] }
     end
 
     def optional_variables
       required = @variables.select {|hash| !hash[:default].nil? }
-      required.map {|hash| hash[:name] }
+      required.collect {|hash| hash[:name] }
     end
 
     def type_of(name)
@@ -40,7 +40,7 @@ module SlideField::ObjectRules
 
     def matching_variables(type)
       matches = @variables.select {|hash| hash[:type] == type }
-      matches.map {|hash| hash[:name] }
+      matches.collect {|hash| hash[:name] }
     end
 
     def default_value(name)
@@ -49,12 +49,12 @@ module SlideField::ObjectRules
     end
 
     def accepted_children
-      @children.map {|hash| hash[:type] }
+      @children.collect {|hash| hash[:type] }
     end
 
     def required_children
       required = @children.select {|hash| hash[:required] }
-      required.map {|hash| hash[:type] }
+      required.collect {|hash| hash[:type] }
     end
 
     def self.get

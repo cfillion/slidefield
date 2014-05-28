@@ -133,7 +133,7 @@ name="hello \\"world\\""
   def clean_tokens(tokens)
     case tokens
     when Array
-      tokens.map {|e|
+      tokens.collect {|e|
         clean_tokens e
       }
     when Hash

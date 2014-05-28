@@ -249,7 +249,7 @@ class SlideField::Interpreter
     when :integer
       value.to_i
     when :size
-      value.to_s.split('x').map(&:to_i)
+      value.to_s.split('x').collect &:to_i
     when :string
       escape_sequences = {
         'n'=>"\n"
