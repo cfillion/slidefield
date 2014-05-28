@@ -134,7 +134,7 @@ class SlideField::Interpreter
       end
 
       object.set var_name, var_value, get_loc(var_value_t), var_type
-    when '+=', '-=', '*='
+    when '+=', '-=', '*=', '/='
       origin_val = object.get var_name
       unless origin_val
         raise SlideField::InterpreterError,
@@ -151,37 +151,44 @@ class SlideField::Interpreter
 
       value = nil
 
-      # specific behaviour
       case origin_type
+      when :integer
+        value = origin_val.send method, var_value
       when :size, :color
-        value = origin_val.map.with_index {|v, i| v.send method, var_value[i] }
+        if origin_type != :color || ['+=', '-='].include?(operator)
+          value = origin_val.map.with_index {|v, i| v.send method, var_value[i] }
+        end
       when :string
         case operator
+        when '+='
+          value = origin_val + var_value
         when '-='
           copy = origin_val.dup
           copy[var_value] = '' if copy[var_value]
           value = copy
         when '*='
-          conv = var_value.to_i
-          if conv < 1
+          multiplier = var_value.to_i
+          if multiplier < 1
             raise SlideField::InterpreterError,
               "Invalid string multiplier '#{var_value}', integer > 0 required at #{get_loc var_value_t}"
           end
-          var_value = conv
+          value = origin_val * multiplier
         end
-      when :boolean
+      end
+
+      unless value
         raise SlideField::InterpreterError,
           "Unsupported operator '#{operator}' for type '#{origin_type}' at #{get_loc operator_t}"
       end
-
-      # general behaviour
-      value = origin_val.send method, var_value unless value
 
       object.set var_name, value, get_loc(var_value_t)
     else
       raise SlideField::InterpreterError,
         "Unsupported operator '#{operator}' at #{get_loc operator_t}"
     end
+  rescue ZeroDivisionError
+    raise SlideField::InterpreterError,
+      "divided by zero at #{get_loc var_value_t}"
   end
 
   def extract_object(rules, stmt_data, object, include_path, context)

@@ -550,10 +550,11 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, [4, 4, 4, 4], 'loc', :color
 
-    SlideField::Interpreter.new.extract_tree tokens, o
-    assert_equal [8, 8, 8, 8], o.get(:var)
-    assert_equal :color, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Unsupported operator '*=' for type 'color' at line 1 char 2", error.message
   end
 
   def test_mul_boolean
@@ -582,6 +583,152 @@ class TestInterpreter < MiniTest::Test
 
     SlideField::Interpreter.new.extract_tree tokens, o
     assert_equal 6, o.get(:var)
+    assert_equal :integer, o.var_type(:var)
+    assert_equal 'line 1 char 3', o.var_loc(:var)
+  end
+
+  def test_div_undefined
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:integer=>slice('42', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Undefined variable 'var' at line 1 char 1", error.message
+  end
+
+  def test_div_incompatible
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:integer=>slice('42', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, 'test', 'loc', :string
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Unexpected 'integer', expecting 'string' at line 1 char 3", error.message
+  end
+
+  def test_div_integer
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:integer=>slice('2', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, 7, 'loc', :integer
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    assert_equal 3, o.get(:var)
+    assert_equal :integer, o.var_type(:var)
+    assert_equal 'line 1 char 3', o.var_loc(:var)
+  end
+
+  def test_div_integer_by_zero
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:integer=>slice('0', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, 42, 'loc', :integer
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "divided by zero at line 1 char 3", error.message
+  end
+
+  def test_div_size
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:size=>slice('2x3', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, [7, 42], 'loc', :size
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    assert_equal [3, 14], o.get(:var)
+    assert_equal :size, o.var_type(:var)
+    assert_equal 'line 1 char 3', o.var_loc(:var)
+  end
+
+  def test_div_size_by_zero
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:size=>slice('2x0', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, [42, 42], 'loc', :size
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "divided by zero at line 1 char 3", error.message
+  end
+
+  def test_div_string
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:string=>slice('" world"', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, 'hello world', 'loc', :string
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Unsupported operator '/=' for type 'string' at line 1 char 2", error.message
+  end
+
+  def test_div_color
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:color=>slice('#02020202', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, [4, 4, 4, 4], 'loc', :color
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Unsupported operator '/=' for type 'color' at line 1 char 2", error.message
+  end
+
+  def test_div_boolean
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:boolean=>slice(':true', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, true, 'loc', :boolean
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Unsupported operator '/=' for type 'boolean' at line 1 char 2", error.message
+  end
+
+  def test_div_identifier
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:identifier=>slice('test', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, 6, 'loc', :integer
+    o.set :test, 2, 'loc', :integer
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    assert_equal 3, o.get(:var)
     assert_equal :integer, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
