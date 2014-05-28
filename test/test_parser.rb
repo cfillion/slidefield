@@ -11,6 +11,8 @@ name = #FFFFFFFF
 name2 = name\t\x20
 name = 1;\x20\tname = 2
 name = -3
+name = :true
+name = :false
     SFP
 
     tokens = [
@@ -23,6 +25,8 @@ name = -3
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:number=>'1'}}},
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:number=>'2'}}},
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:number=>'-3'}}},
+      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:boolean=>':true'}}},
+      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:boolean=>':false'}}},
     ]
 
     assert_equal tokens, parse(input)

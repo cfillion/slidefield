@@ -21,6 +21,7 @@ class SlideField::Parser < Parslet::Parser
   rule(:number) { str('-').maybe >> match('\\d').repeat(1) }
   rule(:size) { number >> str('x') >> number }
   rule(:color) { str('#') >> match['a-fA-F0-9'].repeat(8, 8) }
+  rule(:boolean) { str(':') >> (str('true') | str('false')) }
   rule(:string) {
     str('"') >> (
       (str('\\') >> any) |
@@ -36,7 +37,8 @@ class SlideField::Parser < Parslet::Parser
       string.as(:string) |
       size.as(:size) |
       number.as(:number) |
-      color.as(:color)
+      color.as(:color) |
+      boolean.as(:boolean)
     ) >> spaces?
   }
 

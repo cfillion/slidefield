@@ -174,6 +174,19 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
+  def test_set_boolean
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:boolean=>slice(':true', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    SlideField::Interpreter.new.extract_tree tokens, o
+
+    assert_equal true, o.get(:var)
+    assert_equal :boolean, o.var_type(:var)
+    assert_equal 'line 1 char 3', o.var_loc(:var)
+  end
+
   def test_set_identifier
     tokens = [
       {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:identifier=>slice('test', 1)}}},
@@ -299,6 +312,21 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
+  def test_add_boolean
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:boolean=>slice(':true', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, true, 'loc', :boolean
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Unsupported operator '+=' for type 'boolean' at line 1 char 2", error.message
+  end
+
   def test_add_identifier
     tokens = [
       {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:identifier=>slice('test', 1)}}},
@@ -397,6 +425,21 @@ class TestInterpreter < MiniTest::Test
     assert_equal [0, 0, 0, 0], o.get(:var)
     assert_equal :color, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
+  end
+
+  def test_sub_boolean
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:boolean=>slice(':true', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, true, 'loc', :boolean
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Unsupported operator '-=' for type 'boolean' at line 1 char 2", error.message
   end
 
   def test_sub_identifier

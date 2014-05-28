@@ -146,6 +146,9 @@ class SlideField::Interpreter
         copy = origin_val.dup
         copy[var_value] = '' if copy[var_value]
         copy
+      elsif origin_type == :boolean
+        raise SlideField::InterpreterError,
+          "Unsupported operator '#{operator}' for type '#{origin_type}' at #{get_loc operator_t}"
       else
         origin_val.send method, var_value
       end
@@ -208,15 +211,15 @@ class SlideField::Interpreter
         escape_sequences[$1] || $1
       }
     when :color
-      string = value.to_s
-      string[0] = ''
-      int = string.hex
+      int = value.to_s[1..-1].hex
 
       r = (int >> 24) & 255
       g = (int >> 16) & 255
       b = (int >> 8) & 255
       a = (int) & 255
       [r, g, b, a]
+    when :boolean
+      value == ':true'
     else
       raise SlideField::InterpreterError, "Unsupported type '#{type}'"
     end
