@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+require 'slidefield'
+
+if ARGV.length != 1
+  puts "Usage:\n\tslidefield path/to/file.sfp"
+  exit
+end
+
+entry_file = File.absolute_path ARGV[0]
+
+begin
+  interpreter = SlideField::Interpreter.new
+  interpreter.run_file entry_file
+
+  viewer = SlideField::Viewer.new interpreter.root
+  viewer.caption = File.basename(entry_file)
+  viewer.show
+rescue SlideField::Error => e
+  puts "#{e.class}: #{e}"
+end
