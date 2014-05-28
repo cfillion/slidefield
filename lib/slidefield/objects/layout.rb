@@ -3,7 +3,7 @@ module SlideField::ObjectRules
     def rules
       variable :output, :size
       variable :size, :size, [0, 0]
-      variable :fullscren, :boolean, true
+      variable :fullscreen, :boolean, true
       super
     end
   end
