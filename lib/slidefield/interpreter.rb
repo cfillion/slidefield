@@ -42,7 +42,15 @@ class SlideField::Interpreter
     tree = @parser.parse input, reporter: Parslet::ErrorReporter::Deepest.new
     extract_tree tree, object, nil, include_path, context, close
   rescue Parslet::ParseFailed => error
-    raise SlideField::ParseError, "[#{context}] #{error.cause.ascii_tree}"
+    cause = error.cause
+    reason = nil
+
+    while cause
+      reason = cause.to_s
+      cause = cause.children.last
+    end
+
+    raise SlideField::ParseError, "[#{context}] #{reason}"
   rescue SlideField::Error => error
     raise error.class, "[#{context}] #{error.message}"
   end
