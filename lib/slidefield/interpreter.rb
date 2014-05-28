@@ -37,7 +37,8 @@ class SlideField::Interpreter
     object = parent_obj || @root
     validate = parent_obj.nil?
 
-    object.include_path = include_path unless object.include_path
+    object.include_path = include_path
+    object.context = context
 
     extract_tree tree, object, nil, validate
   rescue Parslet::ParseFailed => error
@@ -177,6 +178,8 @@ class SlideField::Interpreter
 
     child = SlideField::ObjectData.new type, get_loc(type_t)
     child.include_path = object.include_path
+    child.context = object.context
+
     child.parent = object # bind variables
     extract_tree body, child || [], stmt_data[:value]
 

@@ -1,13 +1,12 @@
 class SlideField::ObjectData
   attr_reader :type, :loc, :children
-  attr_accessor :include_path, :parent
+  attr_accessor :context, :include_path, :parent
 
   def initialize(type, loc)
     @type = type
     @loc = loc
     @variables = {}
     @children = []
-    @parent = nil
   end
 
   def has?(var)
