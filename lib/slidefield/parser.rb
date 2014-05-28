@@ -1,6 +1,6 @@
 class SlideField::Parser < Parslet::Parser
   rule(:spaces?) { match["\x20\t"].repeat }
-  rule(:white?) { match('\s').repeat >> comment.maybe }
+  rule(:white?) { match('\s').repeat >> comment.maybe >> match('\s').repeat }
 
   rule(:eof) { any.absent? }
   rule(:crlf) { match['\r\n'].repeat(1) }

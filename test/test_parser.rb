@@ -85,15 +85,15 @@ name="value" % comment
 %{
 multi line
 comment
-%}\\hello %test
-{}
+%}\\test %test
+\t{}
 % bye bye
     SFP
 
     tokens = [
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'"value"'}}},
       {:object=>{:type=>'test'}},
-      {:object=>{:type=>'hello', :body=>[]}},
+      {:object=>{:type=>'test', :body=>[]}},
     ]
 
     assert_equal tokens, parse(input)
