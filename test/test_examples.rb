@@ -22,6 +22,9 @@ class TestExamples < MiniTest::Test
     assert_equal @path + '/slides/', @interpreter.root[:slide].first.children.first.include_path
     assert_equal 'slides/mountains.sfi', @interpreter.root[:slide].first.context
     assert_equal 'slides/mountains.sfi', @interpreter.root[:slide].first.children.first.context
+
+    assert_equal @path + '/', @interpreter.root.include_path
+    assert_equal 'complete.sfp', @interpreter.root.context
   end
 
   def test_parse_error

@@ -35,19 +35,19 @@ class SlideField::Interpreter
     include_path = File.absolute_path(include_path) + File::SEPARATOR
 
     object = parent_obj || @root
-    validate = parent_obj.nil?
+    close = parent_obj.nil?
 
-    object.include_path = include_path
-    object.context = context
+    object.include_path = include_path unless object.include_path
+    object.context = context unless object.context
 
-    extract_tree tree, object, nil, validate
+    extract_tree tree, object, nil, include_path, context, close
   rescue Parslet::ParseFailed => error
     raise SlideField::ParseError, "[#{context}] #{error.cause.ascii_tree}"
   rescue SlideField::Error => error
     raise error.class, "[#{context}] #{error.message}"
   end
 
-  def extract_tree(tree, object, value_data = nil, close_object = true)
+  def extract_tree(tree, object, value_data = nil, child_path = nil, child_context = nil, close_object = true)
     rules = SlideField::ObjectRules[object.type]
     unless rules
       raise SlideField::InterpreterError,
@@ -70,7 +70,7 @@ class SlideField::Interpreter
       if stmt_data = stmt[:assignment]
         extract_variable rules, stmt_data, object
       elsif stmt_data = stmt[:object]
-        extract_object rules, stmt_data, object
+        extract_object rules, stmt_data, object, child_path, child_context
       else
         raise SlideField::InterpreterError,
           "Unsupported statement '#{stmt.keys.first}'"
@@ -166,7 +166,7 @@ class SlideField::Interpreter
     end
   end
 
-  def extract_object(rules, stmt_data, object)
+  def extract_object(rules, stmt_data, object, include_path, context)
     type_t = stmt_data[:type]
     type = type_t.to_sym
     body = stmt_data[:body]
@@ -177,11 +177,11 @@ class SlideField::Interpreter
     end
 
     child = SlideField::ObjectData.new type, get_loc(type_t)
-    child.include_path = object.include_path
-    child.context = object.context
+    child.include_path = include_path
+    child.context = context
 
     child.parent = object # bind variables
-    extract_tree body, child || [], stmt_data[:value]
+    extract_tree body, child || [], stmt_data[:value], include_path, context
 
     # process special commands
     if child.type == :include
