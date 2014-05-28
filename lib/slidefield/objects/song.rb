@@ -4,6 +4,7 @@ module SlideField::ObjectRules
       variable :source, :string
       variable :volume, :number, 100
       variable :loop, :boolean, true
+
       super
     end
   end

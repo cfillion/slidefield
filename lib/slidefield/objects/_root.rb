@@ -3,6 +3,7 @@ module SlideField::ObjectRules
     def rules
       child :layout, true
       child :slide, true
+
       super
     end
   end

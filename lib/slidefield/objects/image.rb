@@ -3,6 +3,7 @@ module SlideField::ObjectRules
     def rules
       variable :source, :string
       variable :size, :size, [0, 0]
+
       super
     end
   end

@@ -3,6 +3,7 @@ module SlideField::ObjectRules
     def rules
       variable :size, :size
       variable :fill, :color, [255, 255, 255, 255]
+
       super
     end
   end

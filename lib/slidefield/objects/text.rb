@@ -8,6 +8,7 @@ module SlideField::ObjectRules
       variable :width, :number, 0
       variable :spacing, :number, 0
       variable :align, :string, "left"
+
       super
     end
   end
