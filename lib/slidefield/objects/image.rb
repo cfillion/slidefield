@@ -22,12 +22,12 @@ module SlideField::ObjectManager
       width = @image.width if 0 == width
       height = @image.height if 0 == height
 
-      @w_scale = width / @image.width.to_f
-      @h_scale = height / @image.height.to_f
+      @x_scale = width / @image.width.to_f
+      @y_scale = height / @image.height.to_f
     end
 
     def draw
-      @window.scale @w_scale, @h_scale do
+      @window.scale @x_scale, @y_scale do
         @image.draw @x, @y, @z
       end
     end
