@@ -159,7 +159,7 @@ class SlideField::Interpreter
           conv = var_value.to_i
           if conv < 1
             raise SlideField::InterpreterError,
-              "Invalid string multiplier '#{var_value}', integer required at #{get_loc var_value_t}"
+              "Invalid string multiplier '#{var_value}', integer > 0 required at #{get_loc var_value_t}"
           end
           var_value = conv
         end

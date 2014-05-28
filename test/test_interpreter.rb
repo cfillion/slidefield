@@ -539,7 +539,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Invalid string multiplier 'aaaa', integer required at line 1 char 3", error.message
+    assert_equal "Invalid string multiplier 'aaaa', integer > 0 required at line 1 char 3", error.message
   end
 
   def test_mul_color
