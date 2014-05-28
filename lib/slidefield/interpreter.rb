@@ -185,7 +185,7 @@ class SlideField::Interpreter
 
     # process special commands
     if child.type == :include
-      source = File.expand_path child.get(:source), object.include_path
+      source = File.expand_path child.get(:source), include_path
       run_file source, object
     else
       object << child

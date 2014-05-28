@@ -69,7 +69,7 @@ class TestExamples < MiniTest::Test
     assert_equal "[recursive_include.sfp] File already interpreted: '#{@path}/test/recursive_include.sfp'", error.message
   end
 
-  def test_include_subfolder
+  def test_include_parent_folder
     error = assert_raises SlideField::InterpreterError do
       @interpreter.run_file @path + '/test/sub/include_parent.sfp'
     end
@@ -81,5 +81,13 @@ class TestExamples < MiniTest::Test
     end
 
     assert_match /^\[parse_error.sfp\] /, error.message
+  end
+
+  def test_include_subfolder
+    error = assert_raises SlideField::InterpreterError do
+      @interpreter.run_file @path + '/test/include_sub.sfp'
+    end
+
+    assert_match /^\[include_sub.sfp\] \[sub\/include_parent.sfp\] \[unknown_command.sfp\] /, error.message
   end
 end
