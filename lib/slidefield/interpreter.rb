@@ -17,7 +17,12 @@ class SlideField::Interpreter
 
     file = Pathname.new path
 
-    input = file.read
+    begin
+      input = file.read
+    rescue => e
+      raise SlideField::InterpreterError, e.message
+    end
+
     include_path = file.dirname.to_s
     @rootpath = Pathname.new(include_path) if parent_obj.nil? || @rootpath.nil?
     context = file.relative_path_from(@rootpath).to_s
@@ -177,13 +182,8 @@ class SlideField::Interpreter
 
     # process special commands
     if child.type == :include
-      begin
-        source = File.expand_path child.get(:source), object.include_path
-        run_file source, object
-      rescue Errno::ENOENT
-        raise SlideField::InterpreterError,
-          "No such file or directory: '#{source}'"
-      end
+      source = File.expand_path child.get(:source), object.include_path
+      run_file source, object
     else
       object << child
     end

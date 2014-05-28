@@ -543,13 +543,22 @@ class TestInterpreter < MiniTest::Test
     assert_equal "Object 'superchild' not found in 'picky' at location", error.message
   end
 
+  def test_file_not_found
+    i = SlideField::Interpreter.new
+    error = assert_raises SlideField::InterpreterError do
+      i.run_file 'no.entry'
+    end
+
+    assert_equal "No such file or directory @ rb_sysopen - no.entry", error.message
+  end
+
   def test_include_not_found
     i = SlideField::Interpreter.new
     error = assert_raises SlideField::InterpreterError do
       i.run_string '\\include "/hello"'
     end
 
-    assert_equal "[input] No such file or directory: '/hello'", error.message
+    assert_equal "[input] No such file or directory @ rb_sysopen - /hello", error.message
   end
 
   def test_escape_sequence
