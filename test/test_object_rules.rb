@@ -4,7 +4,7 @@ module SlideField::ObjectRules
   class RulesTest < Base
     def rules
       variable :var1, :string, "default"
-      variable :var2, :number, nil
+      variable :var2, :integer, nil
       variable :var3, :string, "value"
 
       child :obj1
@@ -39,7 +39,7 @@ class TestObjectRules < MiniTest::Test
 
   def test_known_variables_types
     rules = SlideField::ObjectRules::RulesTest.get
-    assert_equal [:string, :number], rules.known_variables_types
+    assert_equal [:string, :integer], rules.known_variables_types
   end
 
 

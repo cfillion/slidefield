@@ -4,9 +4,9 @@ module SlideField::ObjectRules
       variable :content, :string
       variable :color, :color, [255, 255, 255, 255]
       variable :font, :string, "sans"
-      variable :height, :number, 20
-      variable :width, :number, 0
-      variable :spacing, :number, 0
+      variable :height, :integer, 20
+      variable :width, :integer, 0
+      variable :spacing, :integer, 0
       variable :align, :string, "left"
 
       super

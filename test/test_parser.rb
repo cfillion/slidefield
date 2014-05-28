@@ -19,14 +19,14 @@ name = :false
     tokens = [
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'"value"'}}},
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'""'}}},
-      {:assignment=>{:variable=>'name', :operator=>'+=', :value=>{:number=>'1'}}},
+      {:assignment=>{:variable=>'name', :operator=>'+=', :value=>{:integer=>'1'}}},
       {:assignment=>{:variable=>'name', :operator=>'-=', :value=>{:size=>'1x23'}}},
       {:assignment=>{:variable=>'name', :operator=>'*=', :value=>{:string=>'"value"'}}},
       {:assignment=>{:variable=>'name', :operator=>'/=', :value=>{:color=>'#FFFFFFFF'}}},
       {:assignment=>{:variable=>'name2', :operator=>'=', :value=>{:identifier=>'name'}}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:number=>'1'}}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:number=>'2'}}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:number=>'-3'}}},
+      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:integer=>'1'}}},
+      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:integer=>'2'}}},
+      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:integer=>'-3'}}},
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:boolean=>':true'}}},
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:boolean=>':false'}}},
     ]
@@ -60,20 +60,20 @@ var=1
       {:object=>{:type=>'test'}},
       {:object=>{:type=>'test', :body=>[]}},
       {:object=>{:type=>'test', :body=>[]}},
-      {:object=>{:type=>'test', :value=>{:number=>'42'}}},
-      {:object=>{:type=>'test', :value=>{:number=>'42'}, :body=>[]}},
+      {:object=>{:type=>'test', :value=>{:integer=>'42'}}},
+      {:object=>{:type=>'test', :value=>{:integer=>'42'}, :body=>[]}},
       {:object=>{:type=>'test', :value=>{:string=>'"hello"'}, :body=>[]}},
       {:object=>{:type=>'test', :value=>{:size=>'12x3'}, :body=>[]}},
-      {:object=>{:type=>'test', :value=>{:number=>'1'}, :body=>[
-        {:assignment=>{:variable=>'var', :operator=>'=', :value=>{:number=>'1'}}},
-        {:assignment=>{:variable=>'var', :operator=>'=', :value=>{:number=>'2'}}},
+      {:object=>{:type=>'test', :value=>{:integer=>'1'}, :body=>[
+        {:assignment=>{:variable=>'var', :operator=>'=', :value=>{:integer=>'1'}}},
+        {:assignment=>{:variable=>'var', :operator=>'=', :value=>{:integer=>'2'}}},
       ]}},
       {:object=>{:type=>'test', :body=>[
         {:object=>{:type=>'test'}},
       ]}},
       {:object=>{:type=>'test1'}},
       {:object=>{:type=>'test2'}},
-      {:object=>{:type=>'test3', :value=>{:number=>'-3'}}},
+      {:object=>{:type=>'test3', :value=>{:integer=>'-3'}}},
     ]
 
     assert_equal tokens, parse(input)

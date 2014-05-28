@@ -19,8 +19,8 @@ module SlideField::ObjectRules
 
   class Value < Base
     def rules
-      variable :num, :number, 0
-      variable :num2, :number, 0
+      variable :num, :integer, 0
+      variable :num2, :integer, 0
       variable :str, :string, ""
     end
   end
@@ -96,7 +96,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_unsupported_operator
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('baconize', 1), :value=>{:number=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('baconize', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -109,7 +109,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_set_already_defined
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:number=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -122,16 +122,16 @@ class TestInterpreter < MiniTest::Test
     assert_equal "Variable 'var' is already defined at line 1 char 1", error.message
   end
 
-  def test_set_number
+  def test_set_integer
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:number=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
     SlideField::Interpreter.new.extract_tree tokens, o
 
     assert_equal 42, o.get(:var)
-    assert_equal :number, o.var_type(:var)
+    assert_equal :integer, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
@@ -217,7 +217,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_set_wrong_type
     tokens = [
-      {:assignment=>{:variable=>slice('test', 1), :operator=>slice('=', 1), :value=>{:number=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice('test', 1), :operator=>slice('=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :type, 'loc'
@@ -225,12 +225,12 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unexpected 'number', expecting 'size' at line 1 char 3", error.message
+    assert_equal "Unexpected 'integer', expecting 'size' at line 1 char 3", error.message
   end
 
   def test_add_undefined
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:number=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -243,7 +243,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_add_incompatible
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:number=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -253,20 +253,20 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unexpected 'number', expecting 'string' at line 1 char 3", error.message
+    assert_equal "Unexpected 'integer', expecting 'string' at line 1 char 3", error.message
   end
 
-  def test_add_number
+  def test_add_integer
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:number=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 42, 'loc', :number
+    o.set :var, 42, 'loc', :integer
 
     SlideField::Interpreter.new.extract_tree tokens, o
     assert_equal 84, o.get(:var)
-    assert_equal :number, o.var_type(:var)
+    assert_equal :integer, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
@@ -344,7 +344,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_sub_undefined
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:number=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -357,7 +357,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_sub_incompatible
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:number=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -367,20 +367,20 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unexpected 'number', expecting 'string' at line 1 char 3", error.message
+    assert_equal "Unexpected 'integer', expecting 'string' at line 1 char 3", error.message
   end
 
-  def test_sub_number
+  def test_sub_integer
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:number=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 44, 'loc', :number
+    o.set :var, 44, 'loc', :integer
 
     SlideField::Interpreter.new.extract_tree tokens, o
     assert_equal 2, o.get(:var)
-    assert_equal :number, o.var_type(:var)
+    assert_equal :integer, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
@@ -448,18 +448,18 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 3, 'loc', :number
-    o.set :test, 2, 'loc', :number
+    o.set :var, 3, 'loc', :integer
+    o.set :test, 2, 'loc', :integer
 
     SlideField::Interpreter.new.extract_tree tokens, o
     assert_equal 1, o.get(:var)
-    assert_equal :number, o.var_type(:var)
+    assert_equal :integer, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
   def test_mul_undefined
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:number=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -472,7 +472,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_mul_incompatible
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:number=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -482,20 +482,20 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unexpected 'number', expecting 'string' at line 1 char 3", error.message
+    assert_equal "Unexpected 'integer', expecting 'string' at line 1 char 3", error.message
   end
 
-  def test_mul_number
+  def test_mul_integer
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:number=>slice('4', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:integer=>slice('4', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 4, 'loc', :number
+    o.set :var, 4, 'loc', :integer
 
     SlideField::Interpreter.new.extract_tree tokens, o
     assert_equal 16, o.get(:var)
-    assert_equal :number, o.var_type(:var)
+    assert_equal :integer, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
@@ -577,12 +577,12 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 3, 'loc', :number
-    o.set :test, 2, 'loc', :number
+    o.set :var, 3, 'loc', :integer
+    o.set :test, 2, 'loc', :integer
 
     SlideField::Interpreter.new.extract_tree tokens, o
     assert_equal 6, o.get(:var)
-    assert_equal :number, o.var_type(:var)
+    assert_equal :integer, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
@@ -603,7 +603,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_object_value
     tokens = [
-      {:object=>{:type=>slice('value', 1), :value=>{:number=>slice('42', 1)}}},
+      {:object=>{:type=>slice('value', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :parent, 'loc'
@@ -619,7 +619,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :test, 42, 'loc', :number
+    o.set :test, 42, 'loc', :integer
 
     SlideField::Interpreter.new.extract_tree tokens, o
     assert_equal 1, o.children.count
@@ -636,7 +636,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unexpected 'size', expecting one of [:number, :string] at line 1 char 2", error.message
+    assert_equal "Unexpected 'size', expecting one of [:integer, :string] at line 1 char 2", error.message
   end
 
   def test_unknown_object

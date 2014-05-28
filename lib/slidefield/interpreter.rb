@@ -211,7 +211,7 @@ class SlideField::Interpreter
     case type
     when :identifier
       value.to_s
-    when :number
+    when :integer
       value.to_i
     when :size
       value.to_s.split('x').map(&:to_i)

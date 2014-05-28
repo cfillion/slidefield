@@ -12,7 +12,7 @@ hello -= " World"
 world -= "Hello "
 % world contains just "World"
 
-% ---- NUMBERS ---- %
+% ---- INTEGERS ---- %
 life = 42
 % life contains 42
 
