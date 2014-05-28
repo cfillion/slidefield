@@ -1,9 +1,16 @@
 class SlideField::Viewer < Gosu::Window
   def initialize(project)
-    layout = project[:layout]
-    size = layout.first.get :output
+    layout = project[:layout].first
 
-    super *size, false
+    fullscreen = layout.get :fullscreen
+    layout_size = layout.get :size
+    output_size = layout.get :output
+    layout_size = output_size if layout_size == [0, 0]
+
+    @x_scale = output_size[0] / layout_size[0].to_f
+    @y_scale = output_size[1] / layout_size[1].to_f
+
+    super *output_size, fullscreen
 
     @slides = []
     project[:slide].each {|slide_data|
