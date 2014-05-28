@@ -12,9 +12,8 @@ end
 module SlideField::ObjectManager
   class Image < Base
     def load
-      @x = @obj.get :x
-      @y = @obj.get :y
-      @z = @obj.get :z
+      @x, @y = @obj.get :position
+      @z = @obj.get :z_order
 
       source = File.expand_path @obj.get(:source), @obj.include_path
       width, height = @obj.get :size

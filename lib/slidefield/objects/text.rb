@@ -17,9 +17,8 @@ end
 module SlideField::ObjectManager
   class Text < Base
     def load
-      @x = @obj.get :x
-      @y = @obj.get :y
-      @z = @obj.get :z
+      @x, @y = @obj.get :position
+      @z = @obj.get :z_order
 
       content = @obj.get :content
       @color = Gosu::Color.rgba *@obj.get(:color)

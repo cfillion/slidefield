@@ -12,9 +12,8 @@ end
 module SlideField::ObjectManager
   class Rect < Base
     def load
-      @x = @obj.get :x
-      @y = @obj.get :y
-      @z = @obj.get :z
+      @x, @y = @obj.get :position
+      @z = @obj.get :z_order
 
       @width, @height = @obj.get :size
       @fill = Gosu::Color.rgba *@obj.get(:fill)

@@ -18,9 +18,8 @@ module SlideField::ObjectRules
 
   class GBase < SBase
     def rules
-      variable :x, :number, 0
-      variable :y, :number, 0
-      variable :z, :number, 0
+      variable :position, :size, [0,0]
+      variable :z_order, :number, 0
 
       super
     end
