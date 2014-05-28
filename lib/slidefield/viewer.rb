@@ -9,6 +9,7 @@ class SlideField::Viewer < Gosu::Window
     project[:slide].each {|slide_data|
       manager = SlideField::ObjectManager.new slide_data, self
       manager.load
+      manager.activate
       @slides << manager
     }
   end

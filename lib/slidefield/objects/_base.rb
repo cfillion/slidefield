@@ -5,15 +5,22 @@ module SlideField::ObjectRules
     end
   end
 
-  class GBase < Base
+  class SBase < Base
+    def rules
+      child :image
+      child :rect
+      child :song
+      child :text
+
+      super
+    end
+  end
+
+  class GBase < SBase
     def rules
       variable :x, :number, 0
       variable :y, :number, 0
       variable :z, :number, 0
-
-      child :image
-      child :rect
-      child :text
 
       super
     end
