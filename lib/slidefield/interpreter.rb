@@ -200,6 +200,7 @@ class SlideField::Interpreter
 
       object.set var_name, value, get_loc(var_value_t)
     else
+      # the parser gave us strange data?!
       raise SlideField::InterpreterError,
         "Unsupported operator '#{operator}' at #{get_loc operator_t}"
     end
@@ -241,10 +242,10 @@ class SlideField::Interpreter
     "line #{pos.first} char #{pos.last}"
   end
 
-  def convert(value, type)
+  def convert_val(type, value)
     case type
     when :identifier
-      value.to_s
+      value
     when :integer
       value.to_i
     when :size
@@ -268,15 +269,20 @@ class SlideField::Interpreter
     when :boolean
       value == ':true'
     else
-      raise SlideField::InterpreterError, "Unsupported type '#{type}'"
+      # the parser gave us strange data?!
+      raise SlideField::InterpreterError, "Unsupported type '#{type}' at #{get_loc value}"
     end
   end
 
+  def cast_val(cast, type, value)
+  end
+
   def extract_value(data, object)
+    cast = data.delete :cast
     value_data = data.first
     type = value_data[0]
     token = value_data[1]
-    value = convert token, type
+    value = convert_val type, token
 
     if type == :identifier
       if id_value = object.get(value.to_sym)
@@ -286,6 +292,10 @@ class SlideField::Interpreter
         raise SlideField::InterpreterError,
           "Undefined variable '#{value}' at #{get_loc token}"
       end
+    end
+
+    if cast
+      value = cast_val cast, value, type
     end
 
     return type, token, value

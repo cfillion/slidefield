@@ -91,7 +91,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unsupported type 'dog_food'", error.message
+    assert_equal "Unsupported type 'dog_food' at line 1 char 3", error.message
   end
 
   def test_unsupported_operator

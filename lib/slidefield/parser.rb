@@ -32,9 +32,11 @@ class SlideField::Parser < Parslet::Parser
     str('"')
   }
 
-  rule(:obj_type) { spaces? >> str('\\') >> identifier.as(:type) }
+  rule(:obj_type) { str('\\') >> identifier.as(:type) >> spaces? }
+  rule(:cast) { str('(') >> identifier.as(:cast) >> str(')') >> spaces? }
   rule(:value) {
-    spaces? >> (
+    cast.maybe >>
+    (
       identifier.as(:identifier) |
       string.as(:string) |
       size.as(:size) |
@@ -44,10 +46,10 @@ class SlideField::Parser < Parslet::Parser
     ) >> spaces?
   }
 
-  rule(:assignment) { spaces? >> identifier.as(:variable) >> operator >> value.as(:value) >> (separator | eof) }
+  rule(:assignment) { identifier.as(:variable) >> operator >> value.as(:value) >> (separator | eof) }
   rule(:object) { obj_type >> value.as(:value).maybe >> (open >> statement.repeat.as(:body) >> close | separator | eof) }
 
-  rule(:statement) { object.as(:object) | assignment.as(:assignment) | comment | separator }
+  rule(:statement) { spaces? >> (object.as(:object) | assignment.as(:assignment) | comment | separator) }
   rule(:statements) { statement.repeat }
 
   root(:statements)

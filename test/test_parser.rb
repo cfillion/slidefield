@@ -1,7 +1,7 @@
 require File.expand_path('../helper', __FILE__)
 
 class TestParser < MiniTest::Test
-  def test_variable
+  def test_variables
     input = <<-SFP
 name="value"
 name =\t"";
@@ -14,6 +14,8 @@ name = 1;\x20\tname = 2
 name = -3
 name = :true
 name = :false
+name = (cast)"value"
+name = (auto) 42
     SFP
 
     tokens = [
@@ -29,6 +31,8 @@ name = :false
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:integer=>'-3'}}},
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:boolean=>':true'}}},
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:boolean=>':false'}}},
+      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:cast=>'cast', :string=>'"value"'}}},
+      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:cast=>'auto', :integer=>'42'}}},
     ]
 
     assert_equal tokens, parse(input)
