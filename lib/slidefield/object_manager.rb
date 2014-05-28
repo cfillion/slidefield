@@ -12,6 +12,14 @@ module SlideField::ObjectManager
       @window = window
     end
 
+    def execute(event)
+      send event
+    rescue => e
+      raise SlideField::RuntimeError,
+        "#{@obj.context_string} An error occured while executing the '#{event}' event on the object '#{@obj.type}' at #{@obj.loc}:\n" +
+        "\t(#{e.class}) #{e.message}"
+    end
+
     def load; end
     def activate; end
     def draw; end

@@ -30,14 +30,14 @@ module SlideField::ObjectManager
     private
     def add_children_of(obj)
       obj.children.each {|c|
-        manager =  SlideField::ObjectManager.new(c, @window)
+        manager = SlideField::ObjectManager.new c, @window
         @children << manager if manager
         add_children_of c
       }
     end
 
-    def forward(method)
-      @children.each {|c| c.send method }
+    def forward(event)
+      @children.each {|c| c.execute event }
     end
   end
 end
