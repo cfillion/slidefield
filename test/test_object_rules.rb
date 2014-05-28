@@ -21,7 +21,7 @@ class TestObjectRules < MiniTest::Test
   end
 
   def test_unknown
-    assert_nil SlideField::ObjectRules[:thisDoesNotExists]
+    assert_nil SlideField::ObjectRules[:thisDoesNotExist]
   end
 
   def test_cache

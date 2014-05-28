@@ -31,15 +31,15 @@ class SlideField::Interpreter
   end
 
   def run_string(input, include_path = '.', context = 'input', parent_obj = nil)
-    tree = @parser.parse input, reporter: Parslet::ErrorReporter::Deepest.new
     include_path = File.absolute_path(include_path) + File::SEPARATOR
 
     object = parent_obj || @root
-    close = parent_obj.nil?
-
     object.include_path = include_path unless object.include_path
     object.context = context unless object.context
 
+    close = parent_obj.nil?
+
+    tree = @parser.parse input, reporter: Parslet::ErrorReporter::Deepest.new
     extract_tree tree, object, nil, include_path, context, close
   rescue Parslet::ParseFailed => error
     raise SlideField::ParseError, "[#{context}] #{error.cause.ascii_tree}"
@@ -50,11 +50,13 @@ class SlideField::Interpreter
   def extract_tree(tree, object, value_data = nil, child_path = nil, child_context = nil, close_object = true)
     rules = SlideField::ObjectRules[object.type]
     unless rules
+      # the object was allowed but we don't know anything about it?!
       raise SlideField::InterpreterError,
         "Unsupported object '#{object.type}'"
     end
 
     if value_data
+      # anonymous value
       val_type, value_t, value = extract_value value_data, object
       val_name = rules.matching_variables(val_type).first # guess variable name
 
@@ -72,12 +74,14 @@ class SlideField::Interpreter
       elsif stmt_data = stmt[:object]
         extract_object rules, stmt_data, object, child_path, child_context
       else
+        # we got strange data from the parser?!
         raise SlideField::InterpreterError,
           "Unsupported statement '#{stmt.keys.first}'"
       end
     }
 
     if close_object
+      # finalize the object once all its content has been processed
       rules.required_variables.each {|name|
         unless object.get name
           raise SlideField::InterpreterError,
@@ -146,6 +150,8 @@ class SlideField::Interpreter
       end
 
       value = nil
+
+      # specific behaviour
       case origin_type
       when :size, :color
         value = origin_val.map.with_index {|v, i| v.send method, var_value[i] }
@@ -168,7 +174,9 @@ class SlideField::Interpreter
           "Unsupported operator '#{operator}' for type '#{origin_type}' at #{get_loc operator_t}"
       end
 
+      # general behaviour
       value = origin_val.send method, var_value unless value
+
       object.set var_name, value, get_loc(var_value_t)
     else
       raise SlideField::InterpreterError,
@@ -190,10 +198,12 @@ class SlideField::Interpreter
     child.include_path = include_path
     child.context = context
 
-    child.parent = object # bind variables
+    # enable inheritance
+    child.parent = object
+
     extract_tree body, child || [], stmt_data[:value], include_path, context
 
-    # process special commands
+    # process special objects
     if child.type == :include
       source = File.expand_path child.get(:source), include_path
       run_file source, object
