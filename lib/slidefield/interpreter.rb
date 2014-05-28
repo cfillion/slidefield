@@ -156,7 +156,16 @@ class SlideField::Interpreter
         value = origin_val.send method, var_value
       when :size, :color
         if origin_type != :color || ['+=', '-='].include?(operator)
-          value = origin_val.map.with_index {|v, i| v.send method, var_value[i] }
+          value = origin_val.collect.with_index {|v, i| v.send method, var_value[i] }
+
+          if origin_type == :color
+            # normalize
+            value.collect! {|v|
+              v = 0 if v < 0
+              v = 255 if v > 255
+              v
+            }
+          end
         end
       when :string
         case operator

@@ -312,6 +312,20 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
+  def test_add_color_overflow
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:color=>slice('#01010101', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, [255, 255, 255, 255], 'loc', :color
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    assert_equal [255, 255, 255, 255], o.get(:var)
+    assert_equal :color, o.var_type(:var)
+    assert_equal 'line 1 char 3', o.var_loc(:var)
+  end
+
   def test_add_boolean
     tokens = [
       {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:boolean=>slice(':true', 1)}}},
@@ -420,6 +434,20 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, [1, 1, 1, 1], 'loc', :color
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    assert_equal [0, 0, 0, 0], o.get(:var)
+    assert_equal :color, o.var_type(:var)
+    assert_equal 'line 1 char 3', o.var_loc(:var)
+  end
+
+  def test_sub_color_underflow
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:color=>slice('#01010101', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :var, [0, 0, 0, 0], 'loc', :color
 
     SlideField::Interpreter.new.extract_tree tokens, o
     assert_equal [0, 0, 0, 0], o.get(:var)
