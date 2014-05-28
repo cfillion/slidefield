@@ -52,4 +52,14 @@ class SlideField::ObjectData
   def [](selector)
     @children.select {|o| o.type == selector }
   end
+
+  def context_string
+    array = [@context]
+    parent = @parent
+    while parent
+      array.unshift parent.context unless array.first == parent.context
+      parent = parent.parent
+    end
+    "[#{array.join '] ['}]"
+  end
 end

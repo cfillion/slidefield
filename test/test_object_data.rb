@@ -60,4 +60,26 @@ class TestObjectData < MiniTest::Test
     assert_equal :type, child.var_type('variable')
     assert_equal 'loc', child.var_loc('variable')
   end
+
+  def test_context_string
+    o1 = SlideField::ObjectData.new :test, 'loc'
+    o1.context = 'context1'
+
+    o2 = SlideField::ObjectData.new :test, 'loc'
+    o2.context = 'context2'
+    o1 << o2
+
+    o3 = SlideField::ObjectData.new :test, 'loc'
+    o3.context = 'context2'
+    o2 << o3
+
+    o4 = SlideField::ObjectData.new :test, 'loc'
+    o4.context = 'context1'
+    o3 << o4
+
+    assert_equal "[context1]", o1.context_string
+    assert_equal "[context1] [context2]", o2.context_string
+    assert_equal "[context1] [context2]", o3.context_string
+    assert_equal "[context1] [context2] [context1]", o4.context_string
+  end
 end
