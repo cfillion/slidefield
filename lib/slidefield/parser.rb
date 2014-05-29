@@ -18,7 +18,16 @@ class SlideField::Parser < Parslet::Parser
   rule(:subtract) { str('-=') }
   rule(:multiply) { str('*=') }
   rule(:divide) { str('/=') }
-  rule(:operator) { inline_spaces? >> (assign | add | subtract | multiply | divide).as(:operator) >> inline_spaces? }
+  rule(:operator) {
+    inline_spaces? >> (
+      assign |
+      add |
+      subtract |
+      multiply |
+      divide
+    ).as(:operator) >>
+    inline_spaces?
+  }
 
   rule(:identifier) { match['a-zA-Z_'] >> match['a-zA-Z0-9_'].repeat }
   rule(:integer) { str('-').maybe >> match('\\d').repeat(1) }
@@ -48,9 +57,25 @@ class SlideField::Parser < Parslet::Parser
   }
 
   rule(:assignment) { identifier.as(:variable) >> operator >> value.as(:value) }
-  rule(:object) { obj_type >> value.as(:value).maybe >> (open >> statement.repeat.as(:body) >> close).maybe }
+  rule(:object) {
+    obj_type >>
+    value.as(:value).maybe >>
+    (
+      open >>
+      statement.repeat.as(:body) >>
+      close
+    ).maybe
+  }
 
-  rule(:statement) { spaces? >> (object.as(:object) | assignment.as(:assignment) | separator) >> inline_spaces? }
+  rule(:statement) {
+    spaces? >>
+    (
+      object.as(:object) |
+      assignment.as(:assignment) |
+      separator
+    ) >>
+    inline_spaces?
+  }
   rule(:statements) { statement.repeat }
 
   root(:statements)
