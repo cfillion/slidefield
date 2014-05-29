@@ -113,6 +113,12 @@ name%{%}=%{%}(cast)%{%}"value"
     assert_equal tokens, parse(input)
   end
 
+  def test_unclosed_comment
+    assert_raises Parslet::ParseFailed do
+      parse "%{"
+    end
+  end
+
   def test_escaped_quote
     input = <<-SFP
 name="hello \\"world\\""

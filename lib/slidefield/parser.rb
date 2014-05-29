@@ -6,7 +6,7 @@ class SlideField::Parser < Parslet::Parser
 
   rule(:crlf) { match['\r\n'] }
   rule(:separator) { str(';') | any_comment | crlf }
-  rule(:line_comment) { str('%') >> (crlf.absent? >> any).repeat }
+  rule(:line_comment) { str('%') >> (str('{').absent? >> crlf.absent? >> any).repeat }
   rule(:multi_comment) { str('%{') >> (str('%}').absent? >> any).repeat >> str('%}') }
   rule(:any_comment) { multi_comment | line_comment }
 
