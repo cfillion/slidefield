@@ -1,17 +1,18 @@
 class SlideField::Parser < Parslet::Parser
   rule(:space) { match["\x20\t"] }
   rule(:spaces?) { space.repeat }
-  rule(:inline_spaces?) { (space | multi_comment).repeat }
+  rule(:inline_spaces?) { (space | any_comment).repeat }
   rule(:multi_spaces?) { (match('\s') | any_comment).repeat }
 
-  rule(:crlf) { match['\r\n'] }
-  rule(:separator) { str(';') | any_comment | crlf }
+  rule(:eof) { any.absent? }
+  rule(:crlf) { match['\r\n'].repeat(1) }
+  rule(:separator) { str(';') | crlf | eof }
   rule(:line_comment) { str('%') >> (str('{').absent? >> crlf.absent? >> any).repeat }
   rule(:multi_comment) { str('%{') >> (str('%}').absent? >> any).repeat >> str('%}') }
   rule(:any_comment) { multi_comment | line_comment }
 
   rule(:open) { multi_spaces? >> str('{') >> multi_spaces? }
-  rule(:close) { multi_spaces? >> str('}') >> multi_spaces? }
+  rule(:close) { multi_spaces? >> str('}') }
 
   rule(:assign) { str('=') }
   rule(:add) { str('+=') }
@@ -62,19 +63,26 @@ class SlideField::Parser < Parslet::Parser
     value.as(:value).maybe >>
     (
       open >>
-      statement.repeat.as(:body) >>
+      statements.as(:body) >>
       close
     ).maybe
   }
 
+  rule(:expression) {
+    (
+      object.as(:object) |
+      assignment.as(:assignment)
+    ) >>
+    inline_spaces? >>
+    separator
+  }
   rule(:statement) {
     spaces? >>
     (
-      object.as(:object) |
-      assignment.as(:assignment) |
-      separator
-    ) >>
-    inline_spaces?
+      expression |
+      any_comment |
+      crlf
+    )
   }
   rule(:statements) { statement.repeat }
 

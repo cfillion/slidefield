@@ -53,7 +53,7 @@ var=1
   var = 2
 }
 \\test {
-\\test
+  \\test
 }
 \\test1; \\test2
 \\test3-3
@@ -95,7 +95,11 @@ comment
 %}\\test %test
 \t{}
 \\test %{test%} %{test%} 42 %{test%}%{test%}%test
-{}
+{
+  va=r
+  % test
+  va=r
+}
 name%{%}=%{%}"value"
 name%{%}=%{%}(cast)%{%}"value"
 % bye bye
@@ -105,7 +109,10 @@ name%{%}=%{%}(cast)%{%}"value"
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'"value"'}}},
       {:object=>{:type=>'test'}},
       {:object=>{:type=>'test', :body=>[]}},
-      {:object=>{:type=>'test', :value=>{:integer=>"42"}, :body=>[]}},
+      {:object=>{:type=>'test', :value=>{:integer=>"42"}, :body=>[
+        {:assignment=>{:variable=>'va', :operator=>'=', :value=>{:identifier=>'r'}}},
+        {:assignment=>{:variable=>'va', :operator=>'=', :value=>{:identifier=>'r'}}},
+      ]}},
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'"value"'}}},
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:cast=>'cast', :string=>'"value"'}}},
     ]
@@ -138,6 +145,20 @@ name="hello \\"world\\""
     parse "var = 1"
     parse "% nothing"
     parse "%{ nothing %}"
+  end
+
+  def test_separator
+    assert_raises Parslet::ParseFailed do
+      parse "\\test \\test"
+    end
+
+    assert_raises Parslet::ParseFailed do
+      parse "life = 42 life = 42"
+    end
+
+    parse "\\test; \\test"
+    parse "\\test; life = 42"
+    parse "life = 42; \\test"
   end
 
   def parse(input)
