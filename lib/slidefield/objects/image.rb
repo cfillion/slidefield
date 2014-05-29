@@ -2,7 +2,7 @@ module SlideField::ObjectRules
   class Image < GBase
     def rules
       variable :source, :string
-      variable :size, :size, [0, 0]
+      variable :size, :point, [0,0]
 
       super
     end

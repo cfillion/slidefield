@@ -22,7 +22,7 @@ name = (auto) 42
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'"value"'}}},
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'""'}}},
       {:assignment=>{:variable=>'name', :operator=>'+=', :value=>{:integer=>'1'}}},
-      {:assignment=>{:variable=>'name', :operator=>'-=', :value=>{:size=>'1x23'}}},
+      {:assignment=>{:variable=>'name', :operator=>'-=', :value=>{:point=>'1x23'}}},
       {:assignment=>{:variable=>'name', :operator=>'*=', :value=>{:string=>'"value"'}}},
       {:assignment=>{:variable=>'name', :operator=>'/=', :value=>{:color=>'#FFFFFFFF'}}},
       {:assignment=>{:variable=>'name2', :operator=>'=', :value=>{:identifier=>'name'}}},
@@ -67,7 +67,7 @@ var=1
       {:object=>{:type=>'test', :value=>{:integer=>'42'}}},
       {:object=>{:type=>'test', :value=>{:integer=>'42'}, :body=>[]}},
       {:object=>{:type=>'test', :value=>{:string=>'"hello"'}, :body=>[]}},
-      {:object=>{:type=>'test', :value=>{:size=>'12x3'}, :body=>[]}},
+      {:object=>{:type=>'test', :value=>{:point=>'12x3'}, :body=>[]}},
       {:object=>{:type=>'test', :value=>{:integer=>'1'}, :body=>[
         {:assignment=>{:variable=>'var', :operator=>'=', :value=>{:integer=>'1'}}},
         {:assignment=>{:variable=>'var', :operator=>'=', :value=>{:integer=>'2'}}},

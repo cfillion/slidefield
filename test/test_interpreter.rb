@@ -13,7 +13,7 @@ module SlideField::ObjectRules
 
   class Type < Base
     def rules
-      variable :test, :size, [0,0]
+      variable :test, :point, [0,0]
     end
   end
 
@@ -148,22 +148,22 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
-  def test_set_size
+  def test_set_point
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:size=>slice('12x34', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:point=>slice('12x34', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
     SlideField::Interpreter.new.extract_tree tokens, o
 
-    assert_equal [12, 34], o.get(:var)
-    assert_equal :size, o.var_type(:var)
+    assert_equal [12,34], o.get(:var)
+    assert_equal :point, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
-  def test_set_size_x_cast
+  def test_set_point_x_cast
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :size=>slice('12x34', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :point=>slice('12x34', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -174,9 +174,9 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 4', o.var_loc(:var)
   end
 
-  def test_set_size_y_cast
+  def test_set_point_y_cast
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:cast=>slice('y', 1), :size=>slice('12x34', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:cast=>slice('y', 1), :point=>slice('12x34', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -246,7 +246,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    o.set :test, [12, 21], 'loc', :size
+    o.set :test, [12,21], 'loc', :point
 
     SlideField::Interpreter.new.extract_tree tokens, o
     assert_equal 12, o.get(:var)
@@ -278,7 +278,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unexpected 'integer', expecting 'size' at line 1 char 3", error.message
+    assert_equal "Unexpected 'integer', expecting 'point' at line 1 char 3", error.message
   end
 
   def test_add_undefined
@@ -323,17 +323,17 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
-  def test_add_size
+  def test_add_point
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:size=>slice('42x42', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:point=>slice('42x42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [42, 42], 'loc', :size
+    o.set :var, [42,42], 'loc', :point
 
     SlideField::Interpreter.new.extract_tree tokens, o
-    assert_equal [84, 84], o.get(:var)
-    assert_equal :size, o.var_type(:var)
+    assert_equal [84,84], o.get(:var)
+    assert_equal :point, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
@@ -451,17 +451,17 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
-  def test_sub_size
+  def test_sub_point
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:size=>slice('42x42', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:point=>slice('42x42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [46, 44], 'loc', :size
+    o.set :var, [46,44], 'loc', :point
 
     SlideField::Interpreter.new.extract_tree tokens, o
-    assert_equal [4, 2], o.get(:var)
-    assert_equal :size, o.var_type(:var)
+    assert_equal [4,2], o.get(:var)
+    assert_equal :point, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
@@ -580,17 +580,17 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
-  def test_mul_size
+  def test_mul_point
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:size=>slice('4x2', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:point=>slice('4x2', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [4, 2], 'loc', :size
+    o.set :var, [4,2], 'loc', :point
 
     SlideField::Interpreter.new.extract_tree tokens, o
-    assert_equal [16, 4], o.get(:var)
-    assert_equal :size, o.var_type(:var)
+    assert_equal [16,4], o.get(:var)
+    assert_equal :point, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
@@ -725,27 +725,27 @@ class TestInterpreter < MiniTest::Test
     assert_equal "divided by zero at line 1 char 3", error.message
   end
 
-  def test_div_size
+  def test_div_point
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:size=>slice('2x3', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:point=>slice('2x3', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [7, 42], 'loc', :size
+    o.set :var, [7,42], 'loc', :point
 
     SlideField::Interpreter.new.extract_tree tokens, o
-    assert_equal [3, 14], o.get(:var)
-    assert_equal :size, o.var_type(:var)
+    assert_equal [3,14], o.get(:var)
+    assert_equal :point, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
-  def test_div_size_by_zero
+  def test_div_point_by_zero
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:size=>slice('2x0', 1)}}},
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:point=>slice('2x0', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [42, 42], 'loc', :size
+    o.set :var, [42,42], 'loc', :point
 
     error = assert_raises SlideField::InterpreterError do
       SlideField::Interpreter.new.extract_tree tokens, o
@@ -856,7 +856,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_object_invalid_value
     tokens = [
-      {:object=>{:type=>slice('value', 1), :value=>{:size=>slice('12x3', 1)}}},
+      {:object=>{:type=>slice('value', 1), :value=>{:point=>slice('12x3', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :parent, 'loc'
@@ -864,7 +864,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unexpected 'size', expecting one of [:integer, :string] at line 1 char 2", error.message
+    assert_equal "Unexpected 'point', expecting one of [:integer, :string] at line 1 char 2", error.message
   end
 
   def test_unknown_object
@@ -936,13 +936,13 @@ class TestInterpreter < MiniTest::Test
     SlideField::Interpreter.new.extract_tree [], o
 
     assert_equal [0,0], o.get(:test)
-    assert_equal :size, o.var_type(:test)
+    assert_equal :point, o.var_type(:test)
     assert_equal 'default', o.var_loc(:test)
   end
 
   def test_default_value_parent
     p = SlideField::ObjectData.new :type, 'loc'
-    p.set :test, [1,1], 'loc', :size
+    p.set :test, [1,1], 'loc', :point
 
     o = SlideField::ObjectData.new :type, 'loc'
     o.parent = p
@@ -950,7 +950,7 @@ class TestInterpreter < MiniTest::Test
     SlideField::Interpreter.new.extract_tree [], o
 
     assert_equal [1,1], o.get(:test)
-    assert_equal :size, o.var_type(:test)
+    assert_equal :point, o.var_type(:test)
     assert_equal 'loc', o.var_loc(:test)
   end
 

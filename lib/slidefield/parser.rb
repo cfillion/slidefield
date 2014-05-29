@@ -21,7 +21,7 @@ class SlideField::Parser < Parslet::Parser
 
   rule(:identifier) { match['a-zA-Z_'] >> match['a-zA-Z0-9_'].repeat }
   rule(:integer) { str('-').maybe >> match('\\d').repeat(1) }
-  rule(:size) { integer >> str('x') >> integer }
+  rule(:point) { integer >> str('x') >> integer }
   rule(:color) { str('#') >> match['a-fA-F0-9'].repeat(8, 8) }
   rule(:boolean) { str(':') >> (str('true') | str('false')) }
   rule(:string) {
@@ -39,7 +39,7 @@ class SlideField::Parser < Parslet::Parser
     (
       identifier.as(:identifier) |
       string.as(:string) |
-      size.as(:size) |
+      point.as(:point) |
       integer.as(:integer) |
       color.as(:color) |
       boolean.as(:boolean)

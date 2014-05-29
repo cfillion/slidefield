@@ -162,7 +162,7 @@ class SlideField::Interpreter
       case origin_type
       when :integer
         value = origin_val.send method, var_value
-      when :size, :color
+      when :point, :color
         if origin_type != :color || ['+=', '-='].include?(operator)
           value = origin_val.collect.with_index {|v, i| v.send method, var_value[i] }
 
@@ -248,7 +248,7 @@ class SlideField::Interpreter
       value
     when :integer
       value.to_i
-    when :size
+    when :point
       value.to_s.split('x').collect &:to_i
     when :string
       escape_sequences = {
@@ -277,10 +277,10 @@ class SlideField::Interpreter
   def cast(token, type, value)
     id = token.to_sym
     case [type, id]
-    when [:size, :x]
+    when [:point, :x]
       type = :integer
       value = value[0]
-    when [:size, :y]
+    when [:point, :y]
       type = :integer
       value = value[1]
     else
