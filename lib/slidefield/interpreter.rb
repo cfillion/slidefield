@@ -258,24 +258,24 @@ class SlideField::Interpreter
     "line #{pos.first} char #{pos.last}"
   end
 
-  def convert(type, value)
+  def convert(type, token)
     case type
-    when :identifier
-      value
+    when :identifier, :object
+      token
     when :integer
-      value.to_i
+      token.to_i
     when :point
-      value.to_s.split('x').collect &:to_i
+      token.to_s.split('x').collect &:to_i
     when :string
       escape_sequences = {
         'n'=>"\n"
       }
 
-      value.to_s[1..-2].gsub(/\\(.)/) {
+      token.to_s[1..-2].gsub(/\\(.)/) {
         escape_sequences[$1] || $1
       }
     when :color
-      int = value.to_s[1..-1].hex
+      int = token.to_s[1..-1].hex
 
       r = (int >> 24) & 255
       g = (int >> 16) & 255
@@ -283,10 +283,10 @@ class SlideField::Interpreter
       a = (int) & 255
       [r, g, b, a]
     when :boolean
-      value == ':true'
+      token == ':true'
     else
       # the parser gave us strange data?!
-      raise SlideField::InterpreterError, "Unsupported type '#{type}' at #{get_loc value}"
+      raise SlideField::InterpreterError, "Unsupported type '#{type}' at #{get_loc token}"
     end
   end
 
@@ -322,6 +322,8 @@ class SlideField::Interpreter
         raise SlideField::InterpreterError,
           "Undefined variable '#{value}' at #{get_loc token}"
       end
+    elsif type == :object
+      token = token[:type]
     end
 
     if cast_token

@@ -238,6 +238,32 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 3', o.var_loc(:var)
   end
 
+  def test_set_object
+    object = {
+      :type=>slice('type', 2),
+      :value=>{:point=>slice('42x42', 2)}
+    }
+
+    tokens = [{
+      :assignment=>{
+        :variable=>slice(:var, 1),
+        :operator=>slice('=', 1),
+        :value=>{:object=>object}
+      }
+    }]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.include_path = 'include/path/'
+    o.context = 'the/file.sfp'
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    val = o.get(:var)
+
+    assert_equal object, o.get(:var)
+    assert_equal :object, o.var_type(:var)
+    assert_equal 'line 2 char 1', o.var_loc(:var)
+  end
+
   def test_set_identifier
     tokens = [
       {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:identifier=>slice('test', 1)}}},
@@ -974,6 +1000,6 @@ class TestInterpreter < MiniTest::Test
     line_cache.expect :line_and_column, [line, col], [Object]
 
     pos = Parslet::Position.new val, 0
-    Parslet::Slice.new(pos, val, line_cache)
+    Parslet::Slice.new pos, val, line_cache
   end
 end
