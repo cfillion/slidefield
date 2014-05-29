@@ -1,23 +1,24 @@
 class SlideField::Parser < Parslet::Parser
-  rule(:spaces?) { match["\x20\t"].repeat }
-  rule(:white?) { match('\s').repeat >> comment.maybe >> match('\s').repeat }
+  rule(:space) { match["\x20\t"] }
+  rule(:spaces?) { space.repeat }
+  rule(:inline_spaces?) { (space | multi_comment).repeat }
+  rule(:multi_spaces?) { (match('\s') | any_comment).repeat }
 
-  rule(:eof) { any.absent? }
-  rule(:crlf) { match['\r\n'].repeat(1) }
-  rule(:separator) { spaces? >> (str(';') | crlf | comment) }
-  rule(:line_comment) { str('%') >> (crlf.absent? >> any).repeat >> (crlf | eof) }
-  rule(:multi_comment) { str('%{') >> (str('%}').absent? >> any).repeat >> str('%}') >> crlf.maybe }
-  rule(:comment) { multi_comment | line_comment }
+  rule(:crlf) { match['\r\n'] }
+  rule(:separator) { str(';') | any_comment | crlf }
+  rule(:line_comment) { str('%') >> (crlf.absent? >> any).repeat }
+  rule(:multi_comment) { str('%{') >> (str('%}').absent? >> any).repeat >> str('%}') }
+  rule(:any_comment) { multi_comment | line_comment }
 
-  rule(:open) { white? >> match('{') >> white? }
-  rule(:close) { white? >> match('}') >> white? }
+  rule(:open) { multi_spaces? >> str('{') >> multi_spaces? }
+  rule(:close) { multi_spaces? >> str('}') >> multi_spaces? }
 
   rule(:assign) { str('=') }
   rule(:add) { str('+=') }
   rule(:subtract) { str('-=') }
   rule(:multiply) { str('*=') }
   rule(:divide) { str('/=') }
-  rule(:operator) { spaces? >> (assign | add | subtract | multiply | divide).as(:operator) >> spaces? }
+  rule(:operator) { inline_spaces? >> (assign | add | subtract | multiply | divide).as(:operator) >> inline_spaces? }
 
   rule(:identifier) { match['a-zA-Z_'] >> match['a-zA-Z0-9_'].repeat }
   rule(:integer) { str('-').maybe >> match('\\d').repeat(1) }
@@ -32,8 +33,8 @@ class SlideField::Parser < Parslet::Parser
     str('"')
   }
 
-  rule(:obj_type) { str('\\') >> identifier.as(:type) >> spaces? }
-  rule(:cast) { str('(') >> identifier.as(:cast) >> str(')') >> spaces? }
+  rule(:obj_type) { str('\\') >> identifier.as(:type) >> inline_spaces? }
+  rule(:cast) { str('(') >> identifier.as(:cast) >> str(')') >> inline_spaces? }
   rule(:value) {
     cast.maybe >>
     (
@@ -43,13 +44,13 @@ class SlideField::Parser < Parslet::Parser
       integer.as(:integer) |
       color.as(:color) |
       boolean.as(:boolean)
-    ) >> spaces?
+    )
   }
 
-  rule(:assignment) { identifier.as(:variable) >> operator >> value.as(:value) >> (separator | eof) }
-  rule(:object) { obj_type >> value.as(:value).maybe >> (open >> statement.repeat.as(:body) >> close | separator | eof) }
+  rule(:assignment) { identifier.as(:variable) >> operator >> value.as(:value) }
+  rule(:object) { obj_type >> value.as(:value).maybe >> (open >> statement.repeat.as(:body) >> close).maybe }
 
-  rule(:statement) { spaces? >> (object.as(:object) | assignment.as(:assignment) | comment | separator) }
+  rule(:statement) { spaces? >> (object.as(:object) | assignment.as(:assignment) | separator) >> inline_spaces? }
   rule(:statements) { statement.repeat }
 
   root(:statements)

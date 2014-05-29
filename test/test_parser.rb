@@ -11,10 +11,10 @@ name *= "value"
 name /= #FFFFFFFF
 name2 = name\t\x20
 name = 1;\x20\tname = 2
-name = -3
-name = :true
+name\t\t= -3
+name =    :true
 name = :false
-name = (cast)"value"
+name =\t(cast)"value"
 name = (auto) 42
     SFP
 
@@ -86,6 +86,7 @@ var=1
   def test_comments
     input = <<-SFP
 % hello world
+%{%}
 name="value" % comment
 \\test %comment \\test
 %{
@@ -93,6 +94,10 @@ multi line
 comment
 %}\\test %test
 \t{}
+\\test %{test%} %{test%} 42 %{test%}%{test%}%test
+{}
+name%{%}=%{%}"value"
+name%{%}=%{%}(cast)%{%}"value"
 % bye bye
     SFP
 
@@ -100,6 +105,9 @@ comment
       {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'"value"'}}},
       {:object=>{:type=>'test'}},
       {:object=>{:type=>'test', :body=>[]}},
+      {:object=>{:type=>'test', :value=>{:integer=>"42"}, :body=>[]}},
+      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'"value"'}}},
+      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:cast=>'cast', :string=>'"value"'}}},
     ]
 
     assert_equal tokens, parse(input)
