@@ -195,7 +195,7 @@ class SlideField::Interpreter
 
       unless value
         raise SlideField::InterpreterError,
-          "Unsupported operator '#{operator}' for type '#{origin_type}' at #{get_loc operator_t}"
+          "Invalid operator '#{operator}' for type '#{origin_type}' at #{get_loc operator_t}"
       end
 
       object.set var_name, value, get_loc(var_value_t)
@@ -242,7 +242,7 @@ class SlideField::Interpreter
     "line #{pos.first} char #{pos.last}"
   end
 
-  def convert_val(type, value)
+  def convert(type, value)
     case type
     when :identifier
       value
@@ -274,15 +274,29 @@ class SlideField::Interpreter
     end
   end
 
-  def cast_val(cast, type, value)
+  def cast(token, type, value)
+    id = token.to_sym
+    case [type, id]
+    when [:size, :x]
+      type = :integer
+      value = value[0]
+    when [:size, :y]
+      type = :integer
+      value = value[1]
+    else
+      raise SlideField::InterpreterError,
+        "Invalid cast '#{id}' for type '#{type}' at #{get_loc token}"
+    end
+
+    return type, value
   end
 
   def extract_value(data, object)
-    cast = data.delete :cast
+    cast_token = data.delete :cast
     value_data = data.first
     type = value_data[0]
     token = value_data[1]
-    value = convert_val type, token
+    value = convert type, token
 
     if type == :identifier
       if id_value = object.get(value.to_sym)
@@ -294,8 +308,8 @@ class SlideField::Interpreter
       end
     end
 
-    if cast
-      value = cast_val cast, value, type
+    if cast_token
+      type, value = cast cast_token, type, value
     end
 
     return type, token, value

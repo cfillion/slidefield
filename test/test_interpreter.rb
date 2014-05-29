@@ -107,6 +107,19 @@ class TestInterpreter < MiniTest::Test
     assert_equal "Unsupported operator 'baconize' at line 1 char 2", error.message
   end
 
+  def test_unsupported_cast
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:cast=>slice('aaaa', 1), :integer=>slice('1', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Invalid cast 'aaaa' for type 'integer' at line 1 char 3", error.message
+  end
+
   def test_set_already_defined
     tokens = [
       {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:integer=>slice('42', 1)}}},
@@ -146,6 +159,32 @@ class TestInterpreter < MiniTest::Test
     assert_equal [12, 34], o.get(:var)
     assert_equal :size, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
+  end
+
+  def test_set_size_x_cast
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :size=>slice('12x34', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    SlideField::Interpreter.new.extract_tree tokens, o
+
+    assert_equal 12, o.get(:var)
+    assert_equal :integer, o.var_type(:var)
+    assert_equal 'line 1 char 4', o.var_loc(:var)
+  end
+
+  def test_set_size_y_cast
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:cast=>slice('y', 1), :size=>slice('12x34', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    SlideField::Interpreter.new.extract_tree tokens, o
+
+    assert_equal 34, o.get(:var)
+    assert_equal :integer, o.var_type(:var)
+    assert_equal 'line 1 char 4', o.var_loc(:var)
   end
 
   def test_set_string
@@ -199,6 +238,20 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'hello', o.get(:var)
     assert_equal :string, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
+  end
+
+  def test_set_identifier_cast
+    tokens = [
+      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :identifier=>slice('test', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :test, [12, 21], 'loc', :size
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    assert_equal 12, o.get(:var)
+    assert_equal :integer, o.var_type(:var)
+    assert_equal 'line 1 char 4', o.var_loc(:var)
   end
 
   def test_set_unset_identifier
@@ -338,7 +391,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unsupported operator '+=' for type 'boolean' at line 1 char 2", error.message
+    assert_equal "Invalid operator '+=' for type 'boolean' at line 1 char 2", error.message
   end
 
   def test_add_identifier
@@ -467,7 +520,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unsupported operator '-=' for type 'boolean' at line 1 char 2", error.message
+    assert_equal "Invalid operator '-=' for type 'boolean' at line 1 char 2", error.message
   end
 
   def test_sub_identifier
@@ -582,7 +635,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unsupported operator '*=' for type 'color' at line 1 char 2", error.message
+    assert_equal "Invalid operator '*=' for type 'color' at line 1 char 2", error.message
   end
 
   def test_mul_boolean
@@ -597,7 +650,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unsupported operator '*=' for type 'boolean' at line 1 char 2", error.message
+    assert_equal "Invalid operator '*=' for type 'boolean' at line 1 char 2", error.message
   end
 
   def test_mul_identifier
@@ -713,7 +766,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unsupported operator '/=' for type 'string' at line 1 char 2", error.message
+    assert_equal "Invalid operator '/=' for type 'string' at line 1 char 2", error.message
   end
 
   def test_div_color
@@ -728,7 +781,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unsupported operator '/=' for type 'color' at line 1 char 2", error.message
+    assert_equal "Invalid operator '/=' for type 'color' at line 1 char 2", error.message
   end
 
   def test_div_boolean
@@ -743,7 +796,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Unsupported operator '/=' for type 'boolean' at line 1 char 2", error.message
+    assert_equal "Invalid operator '/=' for type 'boolean' at line 1 char 2", error.message
   end
 
   def test_div_identifier
