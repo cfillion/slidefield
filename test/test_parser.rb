@@ -1,150 +1,212 @@
 require File.expand_path('../helper', __FILE__)
 
 class TestParser < MiniTest::Test
-  def test_variables
-    input = <<-SFP
-name="value"
-name =\t"";
-name += 1
-\x20\tname-= 1x23
-name *= "value"
-name /= #FFFFFFFF
-name2 = name\t\x20
-name = 1;\x20\tname = 2
-name\t\t= -3
-name =    :true
-name = :false
-name =\t(cast)"value"
-name = (auto) 42
-    SFP
-
+  def test_identifier
     tokens = [
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'"value"'}}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'""'}}},
-      {:assignment=>{:variable=>'name', :operator=>'+=', :value=>{:integer=>'1'}}},
-      {:assignment=>{:variable=>'name', :operator=>'-=', :value=>{:point=>'1x23'}}},
-      {:assignment=>{:variable=>'name', :operator=>'*=', :value=>{:string=>'"value"'}}},
-      {:assignment=>{:variable=>'name', :operator=>'/=', :value=>{:color=>'#FFFFFFFF'}}},
-      {:assignment=>{:variable=>'name2', :operator=>'=', :value=>{:identifier=>'name'}}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:integer=>'1'}}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:integer=>'2'}}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:integer=>'-3'}}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:boolean=>':true'}}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:boolean=>':false'}}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:cast=>'cast', :string=>'"value"'}}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:cast=>'auto', :integer=>'42'}}},
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:identifier=>'val'}}
     ]
 
-    assert_equal tokens, parse(input)
+    expect 'var=val', tokens
+    expect 'var = val', tokens
+    expect 'var = val  ', tokens
+    expect "var\t=\tval", tokens
+    expect "var\t=\tval % comment", tokens
+    expect "var\t%{%}=%{%}val", tokens
+    expect "  var=val", tokens
+    expect "\t\tvar=val", tokens
+    expect "var=val;", tokens
+    expect "var=val;%comment", tokens
+
+    expect 'var+=val', [
+      :assignment=>{:variable=>'var', :operator=>'+=', :value=>{:identifier=>'val'}}
+    ]
+    expect 'var-=val', [
+      :assignment=>{:variable=>'var', :operator=>'-=', :value=>{:identifier=>'val'}}
+    ]
+    expect 'var*=val', [
+      :assignment=>{:variable=>'var', :operator=>'*=', :value=>{:identifier=>'val'}}
+    ]
+    expect 'var/=val', [
+      :assignment=>{:variable=>'var', :operator=>'/=', :value=>{:identifier=>'val'}}
+    ]
   end
 
-  def test_objects
-    input = <<-SFP
-\\test
-\x20\t\\test;
-\\test{}
-\\test {\t}\x20\t
-\\test 42
-\\test 42{}
-\\test "hello"{}
-\\test 12x3{}
-\\test 1 {
-var=1
-  var = 2
-}
-\\test {
-  \\test
-}
-\\test1; \\test2
-\\test3-3
-    SFP
-
-    tokens = [
-      {:object=>{:type=>'test'}},
-      {:object=>{:type=>'test'}},
-      {:object=>{:type=>'test', :body=>[]}},
-      {:object=>{:type=>'test', :body=>[]}},
-      {:object=>{:type=>'test', :value=>{:integer=>'42'}}},
-      {:object=>{:type=>'test', :value=>{:integer=>'42'}, :body=>[]}},
-      {:object=>{:type=>'test', :value=>{:string=>'"hello"'}, :body=>[]}},
-      {:object=>{:type=>'test', :value=>{:point=>'12x3'}, :body=>[]}},
-      {:object=>{:type=>'test', :value=>{:integer=>'1'}, :body=>[
-        {:assignment=>{:variable=>'var', :operator=>'=', :value=>{:integer=>'1'}}},
-        {:assignment=>{:variable=>'var', :operator=>'=', :value=>{:integer=>'2'}}},
-      ]}},
-      {:object=>{:type=>'test', :body=>[
-        {:object=>{:type=>'test'}},
-      ]}},
-      {:object=>{:type=>'test1'}},
-      {:object=>{:type=>'test2'}},
-      {:object=>{:type=>'test3', :value=>{:integer=>'-3'}}},
+  def test_integer
+    expect 'var=42', [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:integer=>'42'}}
     ]
 
-    assert_equal tokens, parse(input)
+    expect 'var=-42', [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:integer=>'-42'}}
+    ]
   end
 
-  def test_comments
-    input = <<-SFP
-% hello world
-%{%}
-name="value" % comment
-\\test %comment \\test
-%{
-multi line
-comment
-%}\\test %test
-\t{}
-\\test %{test%} %{test%} 42 %{test%}%{test%}%test
-{
-  va=r
-  % test
-  va=r
-}
-name%{%}=%{%}"value"
-name%{%}=%{%}(cast)%{%}"value"
-% bye bye
-    SFP
-
-    tokens = [
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'"value"'}}},
-      {:object=>{:type=>'test'}},
-      {:object=>{:type=>'test', :body=>[]}},
-      {:object=>{:type=>'test', :value=>{:integer=>"42"}, :body=>[
-        {:assignment=>{:variable=>'va', :operator=>'=', :value=>{:identifier=>'r'}}},
-        {:assignment=>{:variable=>'va', :operator=>'=', :value=>{:identifier=>'r'}}},
-      ]}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'"value"'}}},
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:cast=>'cast', :string=>'"value"'}}},
+  def test_string
+    expect 'var="value"', [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:string=>'"value"'}}
     ]
 
-    assert_equal tokens, parse(input)
+    expect 'var="say \"hello\""', [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:string=>'"say \\"hello\\""'}}
+    ]
   end
 
-  def test_unclosed_comment
+  def test_point
+    expect 'var=42x24', [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:point=>'42x24'}}
+    ]
+
+    expect 'var=-42x24', [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:point=>'-42x24'}}
+    ]
+
+    expect 'var=42x-24', [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:point=>'42x-24'}}
+    ]
+  end
+
+  def test_color
+    expect 'var=#C0FF33FF', [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:color=>'#C0FF33FF'}}
+    ]
+
+    expect 'var=#c0ff33ff', [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:color=>'#c0ff33ff'}}
+    ]
+  end
+
+  def test_boolean
+    expect 'var=:true', [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:boolean=>':true'}}
+    ]
+
+    expect 'var=:false', [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:boolean=>':false'}}
+    ]
+  end
+
+  def test_converter
+    tokens = [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:cast=>'converter_name', :identifier=>'val'}}
+    ]
+
+    expect 'var=(converter_name)val', tokens
+    expect 'var=(converter_name)  val', tokens
+    expect 'var= (converter_name)  val', tokens
+    expect "var= (converter_name)\t\tval", tokens
+    expect "var= (converter_name)%{%}val", tokens
+    expect "var= ( converter_name )val", tokens
+  end
+
+  def test_object
+    expect '\\test', [
+      {:object=>{:type=>'test'}}
+    ]
+
+    expect '\\TEST', [
+      {:object=>{:type=>'TEST'}}
+    ]
+
+    expect '\\te_st', [
+      {:object=>{:type=>'te_st'}}
+    ]
+
+    expect '\\t3s7', [
+      {:object=>{:type=>'t3s7'}}
+    ]
+
+    tokens = [
+      {:object=>{:type=>'test', :body=>[]}}
+    ]
+
+    expect '\\test{}', tokens
+    expect '\\test { } ', tokens
+    expect "\\test\t{\t}\t", tokens
+    expect "\\test\n{\n}", tokens
+    expect '\\test%{%}{%{%}}', tokens
+  end
+
+  def test_object_value
+    tokens = [
+      {:object=>{:type=>'test', :value=>{:identifier=>'val'}}}
+    ]
+
+    expect '\\test val', tokens
+    expect "\\test\tval", tokens
+    expect "\\test%{%}val", tokens
     assert_raises Parslet::ParseFailed do
-      parse "%{"
+      parse "\\test\nval"
+    end
+
+    expect '\\test 42', [
+      {:object=>{:type=>'test', :value=>{:integer=>'42'}}}
+    ]
+
+    expect '\\test4-2', [
+      {:object=>{:type=>'test4', :value=>{:integer=>'-2'}}}
+    ]
+
+    expect '\\test "string"', [
+      {:object=>{:type=>'test', :value=>{:string=>'"string"'}}}
+    ]
+
+    expect '\\test 24x42', [
+      {:object=>{:type=>'test', :value=>{:point=>'24x42'}}}
+    ]
+
+    expect '\\test #FFFFFFFF', [
+      {:object=>{:type=>'test', :value=>{:color=>'#FFFFFFFF'}}}
+    ]
+
+    expect '\\test :true', [
+      {:object=>{:type=>'test', :value=>{:boolean=>':true'}}}
+    ]
+
+    expect '\\test (converter)val', [
+      {:object=>{:type=>'test', :value=>{:cast=>'converter', :identifier=>'val'}}}
+    ]
+  end
+
+  def test_object_body
+    expect '\\test{\\child;}', [
+      {:object=>{:type=>'test', :body=>[
+        {:object=>{:type=>'child'}}
+      ]}}
+    ]
+
+    assert_raises Parslet::ParseFailed do
+      parse '\\test{\\child}'
+    end
+
+    expect "\\test{\n\t\\child\n}", [
+      {:object=>{:type=>'test', :body=>[
+        {:object=>{:type=>'child'}}
+      ]}}
+    ]
+
+    expect "\\test{\n\t\\child { \\subchild; }\n}", [
+      {:object=>{:type=>'test', :body=>[
+        {:object=>{:type=>'child', :body=>[
+          {:object=>{:type=>'subchild'}}
+        ]}}
+      ]}}
+    ]
+
+    expect "\\test{var=val;}", [
+      {:object=>{:type=>'test', :body=>[
+        {:assignment=>{:variable=>'var', :operator=>'=', :value=>{:identifier=>'val'}}}
+      ]}}
+    ]
+
+    assert_raises Parslet::ParseFailed do
+      parse '\\test{var=val}'
     end
   end
 
-  def test_escaped_quote
-    input = <<-SFP
-name="hello \\"world\\""
-    SFP
-
-    tokens = [
-      {:assignment=>{:variable=>'name', :operator=>'=', :value=>{:string=>'"hello \\"world\\""'}}},
-    ]
-
-    assert_equal tokens, parse(input)
-  end
-
-  def test_no_trailing_newline
-    parse "\\test"
-    parse "\\test{}"
-    parse "\\test 1"
-    parse "var = 1"
-    parse "% nothing"
-    parse "%{ nothing %}"
+  def test_comments
+    assert_raises Parslet::ParseFailed do
+      parse "%{"
+    end
   end
 
   def test_separator
@@ -159,6 +221,10 @@ name="hello \\"world\\""
     parse "\\test; \\test"
     parse "\\test; life = 42"
     parse "life = 42; \\test"
+  end
+
+  def expect(input, tokens)
+    assert_equal tokens, parse(input)
   end
 
   def parse(input)
