@@ -285,7 +285,7 @@ class SlideField::Interpreter
       value = value[1]
     else
       raise SlideField::InterpreterError,
-        "Invalid cast '#{id}' for type '#{type}' at #{get_loc token}"
+        "Invalid converter '#{id}' for type '#{type}' at #{get_loc token}"
     end
 
     return type, value

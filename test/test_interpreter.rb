@@ -117,7 +117,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.extract_tree tokens, o
     end
 
-    assert_equal "Invalid cast 'aaaa' for type 'integer' at line 1 char 3", error.message
+    assert_equal "Invalid converter 'aaaa' for type 'integer' at line 1 char 3", error.message
   end
 
   def test_set_already_defined
