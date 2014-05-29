@@ -39,20 +39,36 @@ class SlideField::Interpreter
 
     close = parent_obj.nil?
 
-    tree = @parser.parse input, reporter: Parslet::ErrorReporter::Deepest.new
-    extract_tree tree, object, nil, include_path, context, close
-  rescue Parslet::ParseFailed => error
-    cause = error.cause
-    reason = nil
+    begin
+      tree = @parser.parse input, reporter: Parslet::ErrorReporter::Deepest.new
+    rescue Parslet::ParseFailed => error
+      cause = error.cause
+      reason = nil
 
-    while cause
-      reason = cause.to_s
-      cause = cause.children.last
+      while cause
+        reason = cause.to_s
+        cause = cause.children.last
+      end
+
+      raise SlideField::ParseError, "[#{context}] #{reason}"
     end
 
-    raise SlideField::ParseError, "[#{context}] #{reason}"
+    extract_tree tree, object, nil, include_path, context, close
   rescue SlideField::Error => error
-    raise error.class, "[#{context}] #{error.message}"
+    message = error.message
+
+    if message =~ /line (\d+) char (\d+)/
+      line = $1.to_i - 1
+      column = $2.to_i - 1
+
+      if line > -1
+        source = input.lines[line].chomp
+        arrow = "#{"\x20" * column}^"
+        message += "\n\t#{source}\n\t#{arrow}"
+      end
+    end
+
+    raise error.class, "[#{context}] #{message}"
   end
 
   def extract_tree(tree, object, value_data = nil, child_path = nil, child_context = nil, close_object = true)

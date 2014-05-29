@@ -43,15 +43,26 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.run_string '"'
     end
 
-    assert_match /^\[input\] /, error.message
+    assert_match /\A\[input\] /, error.message
+    assert_match /\n\t"\n\t\^\Z/, error.message
   end
 
   def test_run_interpreter_error
     error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.run_string "\\object\n"
+    end
+
+    assert_match /\A\[input\] /, error.message
+    assert_match /\n\t\\object\n\t \^\Z/, error.message
+  end
+
+  def test_run_interpreter_validation
+    error = assert_raises SlideField::InterpreterError do
       SlideField::Interpreter.new.run_string "% nothing\n"
     end
 
-    assert_match /^\[input\] /, error.message
+    assert_match /\A\[input\] /, error.message
+    assert_match /line 0 char 0\Z/, error.message
   end
 
   def test_empty_tree
