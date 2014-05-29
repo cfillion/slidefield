@@ -59,7 +59,8 @@ class SlideField::Parser < Parslet::Parser
       point.as(:point) |
       integer.as(:integer) |
       color.as(:color) |
-      boolean.as(:boolean)
+      boolean.as(:boolean) |
+      object.as(:object)
     )
   }
 

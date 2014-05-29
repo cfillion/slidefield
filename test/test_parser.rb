@@ -1,7 +1,7 @@
 require File.expand_path('../helper', __FILE__)
 
 class TestParser < MiniTest::Test
-  def test_identifier
+  def test_var_identifier
     tokens = [
       :assignment=>{:variable=>'var', :operator=>'=', :value=>{:identifier=>'val'}}
     ]
@@ -31,7 +31,7 @@ class TestParser < MiniTest::Test
     ]
   end
 
-  def test_integer
+  def test_var_integer
     expect 'var=42', [
       :assignment=>{:variable=>'var', :operator=>'=', :value=>{:integer=>'42'}}
     ]
@@ -41,7 +41,7 @@ class TestParser < MiniTest::Test
     ]
   end
 
-  def test_string
+  def test_var_string
     expect 'var="value"', [
       :assignment=>{:variable=>'var', :operator=>'=', :value=>{:string=>'"value"'}}
     ]
@@ -51,7 +51,7 @@ class TestParser < MiniTest::Test
     ]
   end
 
-  def test_point
+  def test_var_point
     expect 'var=42x24', [
       :assignment=>{:variable=>'var', :operator=>'=', :value=>{:point=>'42x24'}}
     ]
@@ -65,7 +65,7 @@ class TestParser < MiniTest::Test
     ]
   end
 
-  def test_color
+  def test_var_color
     expect 'var=#C0FF33FF', [
       :assignment=>{:variable=>'var', :operator=>'=', :value=>{:color=>'#C0FF33FF'}}
     ]
@@ -75,13 +75,35 @@ class TestParser < MiniTest::Test
     ]
   end
 
-  def test_boolean
+  def test_var_boolean
     expect 'var=:true', [
       :assignment=>{:variable=>'var', :operator=>'=', :value=>{:boolean=>':true'}}
     ]
 
     expect 'var=:false', [
       :assignment=>{:variable=>'var', :operator=>'=', :value=>{:boolean=>':false'}}
+    ]
+  end
+
+  def test_var_object
+    expect 'var=\\test', [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{
+        :object=>{:type=>'test'}
+      }}
+    ]
+
+    expect 'var=\\test {}', [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{
+        :object=>{:type=>'test', :body=>[]}
+      }}
+    ]
+
+    expect "var=\\test {\n\tvar=val\n}", [
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{
+        :object=>{:type=>'test', :body=>[
+          {:assignment=>{:variable=>'var', :operator=>'=', :value=>{:identifier=>'val'}}}
+        ]}
+      }}
     ]
   end
 
@@ -100,6 +122,10 @@ class TestParser < MiniTest::Test
 
   def test_object
     expect '\\test', [
+      {:object=>{:type=>'test'}}
+    ]
+
+    expect '\\test % comment', [
       {:object=>{:type=>'test'}}
     ]
 
@@ -211,14 +237,14 @@ class TestParser < MiniTest::Test
 
   def test_separator
     assert_raises Parslet::ParseFailed do
-      parse "\\test \\test"
-    end
-
-    assert_raises Parslet::ParseFailed do
       parse "life = 42 life = 42"
     end
 
-    parse "\\test; \\test"
+    expect "\\test; \\test", [
+      {:object=>{:type=>'test'}},
+      {:object=>{:type=>'test'}}
+    ]
+
     parse "\\test; life = 42"
     parse "life = 42; \\test"
   end
