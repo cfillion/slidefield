@@ -22,6 +22,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'minitest', '~> 5.3'
   spec.add_development_dependency 'rake'
 
-  spec.add_runtime_dependency 'gosu', '~> 0.8.pre'
+  spec.add_runtime_dependency 'gosu', '~> 0.7'
   spec.add_runtime_dependency 'parslet', '~> 1.6'
 end
