@@ -44,6 +44,7 @@ class TestInterpreter < MiniTest::Test
     end
 
     assert_match /\A\[input\] /, error.message
+    refute_match /\A\[input\] \[input\]/, error.message
     assert_match /\n\t"\n\t\^\Z/, error.message
   end
 

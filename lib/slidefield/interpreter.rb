@@ -50,7 +50,7 @@ class SlideField::Interpreter
         cause = cause.children.last
       end
 
-      raise SlideField::ParseError, "[#{context}] #{reason}"
+      raise SlideField::ParseError, reason
     end
 
     extract_tree tree, object, nil, include_path, context, close
