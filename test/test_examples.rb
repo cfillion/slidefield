@@ -32,7 +32,7 @@ class TestExamples < MiniTest::Test
       @interpreter.run_file @path + '/test/parse_error.sfp'
     end
 
-    assert_match /^\[parse_error.sfp\] /, error.message
+    assert_match /\A\[parse_error.sfp\] /, error.message
   end
 
   def test_include_relative
@@ -48,7 +48,7 @@ class TestExamples < MiniTest::Test
       @interpreter.run_string '\\include "test/parse_error.sfp"', @path
     end
 
-    assert_match /^\[input\] \[parse_error.sfp\] /, error.message
+    assert_match /\A\[input\] \[parse_error.sfp\] /, error.message
   end
 
   def test_reparse
@@ -74,13 +74,13 @@ class TestExamples < MiniTest::Test
       @interpreter.run_file @path + '/test/sub/include_parent.sfp'
     end
 
-    assert_match /^\[include_parent.sfp\] \[..\/unknown_object.sfp\] /, error.message
+    assert_match /\A\[include_parent.sfp\] \[..\/unknown_object.sfp\] /, error.message
 
     error = assert_raises SlideField::ParseError do
       @interpreter.run_file @path + '/test/parse_error.sfp'
     end
 
-    assert_match /^\[parse_error.sfp\] /, error.message
+    assert_match /\A\[parse_error.sfp\] /, error.message
   end
 
   def test_include_subfolder
@@ -88,6 +88,6 @@ class TestExamples < MiniTest::Test
       @interpreter.run_file @path + '/test/include_sub.sfp'
     end
 
-    assert_match /^\[include_sub.sfp\] \[sub\/include_parent.sfp\] \[unknown_object.sfp\] /, error.message
+    assert_match /\A\[include_sub.sfp\] \[sub\/include_parent.sfp\] \[unknown_object.sfp\] /, error.message
   end
 end
