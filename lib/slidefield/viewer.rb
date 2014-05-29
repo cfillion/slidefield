@@ -1,16 +1,10 @@
 class SlideField::Viewer < Gosu::Window
   def initialize(project)
     layout = project[:layout].first
-
-    fullscreen = layout.get :fullscreen
     layout_size = layout.get :size
-    output_size = layout.get :output
-    layout_size = output_size if layout_size == [0, 0]
+    fullscreen = layout.get :fullscreen
 
-    @x_scale = output_size[0] / layout_size[0].to_f
-    @y_scale = output_size[1] / layout_size[1].to_f
-
-    super *output_size, fullscreen
+    super *layout_size, fullscreen
 
     @slides = []
     project[:slide].each {|slide_data|
@@ -26,9 +20,7 @@ class SlideField::Viewer < Gosu::Window
   end
 
   def draw
-    scale @x_scale, @y_scale do
-      @current.draw
-    end
+    @current.draw
   end
 
   def button_down(id)
