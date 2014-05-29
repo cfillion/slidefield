@@ -49,6 +49,7 @@ class TestExamples < MiniTest::Test
     end
 
     assert_match /\A\[input\] \[parse_error.sfp\] /, error.message
+    refute_match /\\include/, error.message
   end
 
   def test_reparse

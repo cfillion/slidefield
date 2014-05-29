@@ -57,7 +57,7 @@ class SlideField::Interpreter
   rescue SlideField::Error => error
     message = error.message
 
-    if message =~ /line (\d+) char (\d+)/
+    if !message.start_with?('[') && message =~ /line (\d+) char (\d+)/
       line = $1.to_i - 1
       column = $2.to_i - 1
 
