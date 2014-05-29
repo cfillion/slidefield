@@ -47,7 +47,7 @@ class SlideField::Viewer < Gosu::Window
       Gosu::KbNumpadSubtract
 
       change_slide @index-1
-    when Gosu::KbEscape, 86, Gosu::KbQ
+    when Gosu::KbEscape, Gosu::KbQ
       close
     end
   end
