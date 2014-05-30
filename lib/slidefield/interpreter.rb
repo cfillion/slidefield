@@ -53,7 +53,7 @@ class SlideField::Interpreter
       raise SlideField::ParseError, reason
     end
 
-    extract_tree tree, object, include_path, context, close
+    interpret_tree tree, object, include_path, context, close
   rescue SlideField::Error => error
     message = error.message
 
@@ -71,7 +71,7 @@ class SlideField::Interpreter
     raise error.class, "[#{context}] #{message}"
   end
 
-  def extract_tree(tree, object, child_path = nil, child_context = nil, close_object = true)
+  def interpret_tree(tree, object, child_path = nil, child_context = nil, close_object = true)
     unless rules = object.rules
       # the object was allowed but we don't know anything about it?!
       raise SlideField::InterpreterError,
@@ -80,9 +80,9 @@ class SlideField::Interpreter
 
     tree.respond_to? :each and tree.each {|stmt|
       if stmt_data = stmt[:assignment]
-        extract_variable stmt_data, object
+        interpret_assignment stmt_data, object
       elsif stmt_data = stmt[:object]
-        extract_object stmt_data, object, child_path, child_context
+        interpret_object stmt_data, object, child_path, child_context
       else
         # we got strange data from the parser?!
         raise SlideField::InterpreterError,
@@ -120,7 +120,7 @@ class SlideField::Interpreter
   end
 
   private
-  def extract_variable(stmt_data, object)
+  def interpret_assignment(stmt_data, object)
     var_name_t = stmt_data[:variable]
     var_name = var_name_t.to_sym
 
@@ -211,7 +211,7 @@ class SlideField::Interpreter
       "divided by zero at #{get_loc var_value_t}"
   end
 
-  def extract_object(stmt_data, object, include_path, context)
+  def interpret_object(stmt_data, object, include_path, context)
     type_t = stmt_data[:type]
     type = type_t.to_sym
     value_data = stmt_data[:value]
@@ -252,9 +252,9 @@ class SlideField::Interpreter
     child.context = context
     child.parent = object # enable variable inheritance
 
-    extract_anon_value tpl_value_data, child if tpl_value_data
-    extract_anon_value value_data, child if value_data
-    extract_tree body, child || [], include_path, context
+    interpret_anon_value tpl_value_data, child if tpl_value_data
+    interpret_anon_value value_data, child if value_data
+    interpret_tree body, child || [], include_path, context
 
     # process special objects
     if child.type == :include
@@ -265,7 +265,7 @@ class SlideField::Interpreter
     end
   end
 
-  def extract_anon_value(value_data, object)
+  def interpret_anon_value(value_data, object)
     val_type, value_t, value = extract_value value_data, object
     var_name = object.rules.matching_variables(val_type).first # guess variable name
 
@@ -285,6 +285,32 @@ class SlideField::Interpreter
   def get_loc(token)
     pos = token.line_and_column
     "line #{pos.first} char #{pos.last}"
+  end
+
+  def extract_value(data, object)
+    cast_token = data.delete :cast
+    value_data = data.first
+    type = value_data[0]
+    token = value_data[1]
+    value = convert type, token
+
+    if type == :identifier
+      if id_value = object.get(value.to_sym)
+        type = object.var_type(value.to_sym)
+        value = id_value
+      else
+        raise SlideField::InterpreterError,
+          "Undefined variable '#{value}' at #{get_loc token}"
+      end
+    elsif type == :object
+      token = token[:type]
+    end
+
+    if cast_token
+      type, value = cast cast_token, type, value
+    end
+
+    return type, token, value
   end
 
   def convert(type, token)
@@ -334,32 +360,6 @@ class SlideField::Interpreter
     end
 
     return type, value
-  end
-
-  def extract_value(data, object)
-    cast_token = data.delete :cast
-    value_data = data.first
-    type = value_data[0]
-    token = value_data[1]
-    value = convert type, token
-
-    if type == :identifier
-      if id_value = object.get(value.to_sym)
-        type = object.var_type(value.to_sym)
-        value = id_value
-      else
-        raise SlideField::InterpreterError,
-          "Undefined variable '#{value}' at #{get_loc token}"
-      end
-    elsif type == :object
-      token = token[:type]
-    end
-
-    if cast_token
-      type, value = cast cast_token, type, value
-    end
-
-    return type, token, value
   end
 
   def rebind_tokens(tree, dest)
