@@ -1062,7 +1062,7 @@ class TestInterpreter < MiniTest::Test
     template = {
       :type=>slice('child', 1),
       :body=>[
-        {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:integer=>slice('2', 1)}}},
+        {:assignment=>{:variable=>slice('var', 1), :operator=>slice('+=', 1), :value=>{:integer=>slice('2', 1)}}},
       ]
     }
 
@@ -1071,7 +1071,7 @@ class TestInterpreter < MiniTest::Test
         :template=>slice('&', 2),
         :type=>slice('var_name', 2),
         :body=>[
-          {:assignment=>{:variable=>slice('var', 3), :operator=>slice('+=', 3), :value=>{:integer=>slice('42', 3)}}},
+          {:assignment=>{:variable=>slice('var', 3), :operator=>slice('=', 3), :value=>{:integer=>slice('42', 3)}}},
         ]
       }
     }]
@@ -1084,7 +1084,7 @@ class TestInterpreter < MiniTest::Test
 
     assert_equal 44, copy.get(:var)
     assert_equal :integer, copy.var_type(:var)
-    assert_equal 'line 3 char 3', copy.var_loc(:var)
+    assert_equal 'line 2 char 1', copy.var_loc(:var)
   end
 
   def test_template_upstream_value

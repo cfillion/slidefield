@@ -238,7 +238,7 @@ class SlideField::Interpreter
 
       if template[:body]
         tpl_body = rebind_tokens template[:body], stmt_data[:template]
-        body = tpl_body + body
+        body += tpl_body
       end
     end
 
