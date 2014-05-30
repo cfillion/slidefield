@@ -1,5 +1,6 @@
 require 'slidefield/version'
 
+require 'ap'
 require 'gosu'
 require 'parslet'
 require 'pathname'
@@ -14,6 +15,7 @@ require 'slidefield/viewer'
 
 require 'slidefield/objects/_base.rb'
 require 'slidefield/objects/_root.rb'
+require 'slidefield/objects/debug.rb'
 require 'slidefield/objects/image.rb'
 require 'slidefield/objects/include.rb'
 require 'slidefield/objects/layout.rb'

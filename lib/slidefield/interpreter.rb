@@ -72,12 +72,6 @@ class SlideField::Interpreter
   end
 
   def interpret_tree(tree, object, child_path = nil, child_context = nil, close_object = true)
-    unless rules = object.rules
-      # the object was allowed but we don't know anything about it?!
-      raise SlideField::InterpreterError,
-        "Unsupported object '#{object.type}'"
-    end
-
     tree.respond_to? :each and tree.each {|stmt|
       if stmt_data = stmt[:assignment]
         interpret_assignment stmt_data, object
@@ -92,6 +86,8 @@ class SlideField::Interpreter
 
     if close_object
       # finalize the object once all its content has been processed
+
+      rules = object.rules
       rules.required_variables.each {|name|
         unless object.get name
           raise SlideField::InterpreterError,
@@ -252,14 +248,30 @@ class SlideField::Interpreter
     child.context = context
     child.parent = object # enable variable inheritance
 
+    unless child.rules
+      # the object was allowed but we don't know anything about it?!
+      raise SlideField::InterpreterError,
+        "Unsupported object '#{child.type}'"
+    end
+
     interpret_anon_value tpl_value_data, child if tpl_value_data
     interpret_anon_value value_data, child if value_data
     interpret_tree body, child || [], include_path, context
 
     # process special objects
-    if child.type == :include
+    case child.type
+    when :include
       source = File.expand_path child.get(:source), include_path
       run_file source, object
+    when :debug
+      thing_type = child.var_type :thing
+      thing_val = child.get :thing
+      thing_val = nil if thing_type == :object
+
+      puts "DEBUG OUTPUT | type = %s | location = %s | value = %s" %
+        [thing_type, child.var_loc(:thing), thing_val]
+      ap child.get :thing unless thing_val
+      puts
     else
       object << child
     end

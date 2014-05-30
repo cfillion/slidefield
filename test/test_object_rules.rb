@@ -73,7 +73,7 @@ class TestObjectRules < MiniTest::Test
 
   def test_accepted_children
     rules = SlideField::ObjectRules::RulesTest.get
-    assert_equal [:obj1, :obj2, :include], rules.accepted_children
+    assert_equal [:obj1, :obj2, :include, :debug], rules.accepted_children
   end
 
   def test_required_children

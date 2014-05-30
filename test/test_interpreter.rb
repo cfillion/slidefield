@@ -5,6 +5,7 @@ module SlideField::ObjectRules
     def rules
       child :child
       child :value
+      child :aaaa
     end
   end
 
@@ -72,12 +73,16 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_unsupported_object
-    o = SlideField::ObjectData.new :qwfpgjluy, 'loc'
+    tokens = [
+      {:object=>{:type=>slice('aaaa', 1)}},
+    ]
+
+    o = SlideField::ObjectData.new :parent, 'loc'
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree({}, o)
+      SlideField::Interpreter.new.interpret_tree tokens, o
     end
 
-    assert_equal "Unsupported object 'qwfpgjluy'", error.message
+    assert_equal "Unsupported object 'aaaa'", error.message
   end
 
   def test_unsupported_statement
@@ -862,7 +867,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.interpret_tree tokens, o
     end
 
-    assert_equal "Unexpected object 'qwfpgjluy', expecting one of [:child, :value] at line 1 char 1", error.message
+    assert_equal "Unexpected object 'qwfpgjluy', expecting one of [:child, :value, :aaaa] at line 1 char 1", error.message
   end
 
   def test_missing_variable
@@ -1227,6 +1232,35 @@ class TestInterpreter < MiniTest::Test
     assert_equal "Invalid filter 'aaaa' for type 'integer' at line 1 char 3", error.message
   end
 
+  def test_debug
+    tokens = [
+      {:object=>{:type=>slice('debug', 1), :value=>{:string=>slice('"i haz bugs"', 1)}}}
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    assert_output "DEBUG OUTPUT | type = string | location = line 1 char 2 | value = i haz bugs\n\n" do
+      SlideField::Interpreter.new.interpret_tree tokens, o
+    end
+
+    assert_empty o[:debug]
+  end
+
+  def test_debug_object
+    object = {:type=>slice('test', 1)}
+
+    tokens = [
+      {:object=>{:type=>slice('debug', 2), :value=>{:object=>object}}}
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    pretty, err = capture_io do
+      ap object
+    end
+
+    assert_output "DEBUG OUTPUT | type = object | location = line 1 char 1 | value = \n#{pretty}\n" do
+      SlideField::Interpreter.new.interpret_tree tokens, o
+    end
+  end
 
   def slice(val, line)
     @col_cache[line] = 0 unless @col_cache[line]

@@ -2,6 +2,7 @@ module SlideField::ObjectRules
   class Base
     def rules
       child :include
+      child :debug
     end
   end
 
