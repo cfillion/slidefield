@@ -1,4 +1,42 @@
-layout_size = 123x321
+layout_size = 1366x768
 
 \layout layout_size
-\slide
+
+\slide {
+  \text "Hello World!" { height = 50; }
+  \text "Press <b>Enter</b> to display the next slide" {
+    position = 0x50
+  }
+}
+
+\slide {
+  \text "Second Slide"
+  \text "Press <b>Backspace</b> to return to the previous\nslide" {
+    position = 0x20
+  }
+
+  \text "This example contains 3 slides.\n(Press <b>Enter</b> again)" {
+    position = 0x70
+    width = (x)layout_size
+    align = "right"
+  }
+}
+
+\slide {
+  \rect {
+    fill = #FFFFFFFF % RRGGBBAA
+    size = layout_size
+  }
+
+  \image "ruby-logo.png" {
+    position = layout_size
+    position -= 62x62
+    position /= 2x2
+  }
+
+  \text {
+    content = "Last Slide\nPress <b>Escape</b> to quit"
+    color = #000000FF
+    font = "monospace"
+  }
+}

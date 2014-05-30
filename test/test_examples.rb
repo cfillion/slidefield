@@ -7,24 +7,24 @@ class TestExamples < MiniTest::Test
   end
 
   def test_minimal
-    @interpreter.run_file @path + '/minimal.sfp'
+    @interpreter.run_file @path + '/minimal/main.sfp'
 
-    assert_equal @path + '/', @interpreter.root.include_path
-    assert_equal 'minimal.sfp', @interpreter.root.context
-    assert_equal @path + '/', @interpreter.root[:layout].first.include_path
-    assert_equal 'minimal.sfp', @interpreter.root[:layout].first.context
+    assert_equal @path + '/minimal/', @interpreter.root.include_path
+    assert_equal 'main.sfp', @interpreter.root.context
+    assert_equal @path + '/minimal/', @interpreter.root[:layout].first.include_path
+    assert_equal 'main.sfp', @interpreter.root[:layout].first.context
   end
 
   def test_complete
-    @interpreter.run_file @path + '/complete.sfp'
+    @interpreter.run_file @path + '/complete/main.sfp'
 
-    assert_equal @path + '/slides/', @interpreter.root[:slide].first.include_path
-    assert_equal @path + '/slides/', @interpreter.root[:slide].first.children.first.include_path
+    assert_equal @path + '/complete/slides/', @interpreter.root[:slide].first.include_path
+    assert_equal @path + '/complete/slides/', @interpreter.root[:slide].first.children.first.include_path
     assert_equal 'slides/mountains.sfi', @interpreter.root[:slide].first.context
     assert_equal 'slides/mountains.sfi', @interpreter.root[:slide].first.children.first.context
 
-    assert_equal @path + '/', @interpreter.root.include_path
-    assert_equal 'complete.sfp', @interpreter.root.context
+    assert_equal @path + '/complete/', @interpreter.root.include_path
+    assert_equal 'main.sfp', @interpreter.root.context
   end
 
   def test_parse_error
@@ -36,11 +36,11 @@ class TestExamples < MiniTest::Test
   end
 
   def test_include_relative
-    @interpreter.run_string '\\include "minimal.sfp"', @path
+    @interpreter.run_string '\\include "minimal/main.sfp"', @path
   end
 
   def test_include_absolute
-    @interpreter.run_string '\\include "' + @path + '/minimal.sfp"'
+    @interpreter.run_string '\\include "' + @path + '/minimal/main.sfp"'
   end
 
   def test_include_parse_error
@@ -53,13 +53,13 @@ class TestExamples < MiniTest::Test
   end
 
   def test_reparse
-    @interpreter.run_file @path + '/minimal.sfp'
+    @interpreter.run_file @path + '/minimal/main.sfp'
 
     error = assert_raises SlideField::InterpreterError do
-      @interpreter.run_file @path + '/minimal.sfp'
+      @interpreter.run_file @path + '/minimal/main.sfp'
     end
 
-    assert_equal "File already interpreted: '#{@path}/minimal.sfp'", error.message
+    assert_equal "File already interpreted: '#{@path}/minimal/main.sfp'", error.message
   end
 
   def test_recursive_include
