@@ -1232,6 +1232,44 @@ class TestInterpreter < MiniTest::Test
     assert_equal "Invalid filter 'aaaa' for type 'integer' at line 1 char 3", error.message
   end
 
+  def test_filter_lost_in_template
+    template = {
+      :type=>slice('child', 1),
+      :body=>[
+        {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:filter=>slice('x', 1), :point=>slice('1x1', 1)}}},
+      ]
+    }
+
+    tokens = [
+      {:object=>{
+        :template=>slice('&', 2),
+        :type=>slice('var_name', 2),
+      }},
+      {:object=>{
+        :template=>slice('&', 3),
+        :type=>slice('var_name', 3),
+      }}
+    ]
+
+    o = SlideField::ObjectData.new :parent, 'loc'
+    o.set :var_name, template, 'loc', :object
+
+    SlideField::Interpreter.new.interpret_tree tokens, o
+
+    assert_equal 2, o[:child].count
+
+    first = o[:child][0]
+    second = o[:child][1]
+
+    assert_equal :integer, first.var_type(:var)
+    assert_equal 1, first.get(:var)
+    assert_equal 'line 2 char 1', first.var_loc(:var)
+
+    assert_equal :integer, second.var_type(:var)
+    assert_equal 1, second.get(:var)
+    assert_equal 'line 3 char 1', second.var_loc(:var)
+  end
+
   def test_debug
     tokens = [
       {:object=>{:type=>slice('debug', 1), :value=>{:string=>slice('"i haz bugs"', 1)}}}

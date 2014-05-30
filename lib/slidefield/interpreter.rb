@@ -388,6 +388,7 @@ class SlideField::Interpreter
     when Array
       tree.collect {|h| rebind_tokens h, dest }
     when Hash
+      tree = tree.dup
       tree.each {|k, v| tree[k] = rebind_tokens v, dest }
     when Parslet::Slice
       Parslet::Slice.new dest.position, tree.str, dest.line_cache
