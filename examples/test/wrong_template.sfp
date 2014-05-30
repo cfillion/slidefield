@@ -1,0 +1,4 @@
+wrong_template = \slide {
+  % error does not exist
+  trigger = error
+}

@@ -235,6 +235,7 @@ class SlideField::Interpreter
       type = template[:type].to_sym
 
       if template[:body]
+        template[:body] = rebind_tokens template[:body], stmt_data[:template]
         body = template[:body] + body
       end
     end
@@ -340,5 +341,16 @@ class SlideField::Interpreter
     end
 
     return type, token, value
+  end
+
+  def rebind_tokens(tree, dest)
+    case tree
+    when Array
+      tree.collect {|h| rebind_tokens h, dest }
+    when Hash
+      tree.each {|k, v| tree[k] = rebind_tokens v, dest }
+    when Parslet::Slice
+      Parslet::Slice.new dest.position, tree.str, dest.line_cache
+    end
   end
 end

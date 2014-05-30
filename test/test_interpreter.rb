@@ -1029,7 +1029,7 @@ class TestInterpreter < MiniTest::Test
 
     assert_equal 42, copy.get(:var)
     assert_equal :integer, copy.var_type(:var)
-    assert_equal 'line 1 char 4', copy.var_loc(:var)
+    assert_equal 'line 2 char 1', copy.var_loc(:var)
   end
 
   def test_template_merge_body

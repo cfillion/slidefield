@@ -91,4 +91,12 @@ class TestExamples < MiniTest::Test
 
     assert_match /\A\[include_sub.sfp\] \[sub\/include_parent.sfp\] \[unknown_object.sfp\] /, error.message
   end
+
+  def test_include_wrong_template
+    error = assert_raises SlideField::InterpreterError do
+      @interpreter.run_string '\\include "test/wrong_template.sfp"; \\&wrong_template', @path
+    end
+
+    assert_match /&wrong_template/, error.message
+  end
 end
