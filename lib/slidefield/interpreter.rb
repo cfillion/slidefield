@@ -215,6 +215,7 @@ class SlideField::Interpreter
     type_t = stmt_data[:type]
     type = type_t.to_sym
     value_data = stmt_data[:value]
+    tpl_value_data = nil
     body = stmt_data[:body] || []
 
     if stmt_data[:template]
@@ -232,7 +233,7 @@ class SlideField::Interpreter
       type = template[:type].to_sym
 
       if template[:value]
-        value_data = rebind_tokens template[:value], stmt_data[:template]
+        tpl_value_data = rebind_tokens template[:value], stmt_data[:template]
       end
 
       if template[:body]
@@ -249,24 +250,10 @@ class SlideField::Interpreter
     child = SlideField::ObjectData.new type, get_loc(type_t)
     child.include_path = include_path
     child.context = context
+    child.parent = object # enable variable inheritance
 
-    # enable inheritance
-    child.parent = object
-
-    if value_data
-      # anonymous value
-      val_type, value_t, value = extract_value value_data, child
-      val_name = child.rules.matching_variables(val_type).first # guess variable name
-
-      unless val_name
-        raise SlideField::InterpreterError,
-          "Unexpected '#{val_type}', expecting one of #{child.rules.known_variables_types} at #{get_loc value_t}"
-      end
-
-      child.set val_name, value, get_loc(value_t), val_type
-    end
-
-
+    extract_anon_value tpl_value_data, child if tpl_value_data
+    extract_anon_value value_data, child if value_data
     extract_tree body, child || [], include_path, context
 
     # process special objects
@@ -276,6 +263,23 @@ class SlideField::Interpreter
     else
       object << child
     end
+  end
+
+  def extract_anon_value(value_data, object)
+    val_type, value_t, value = extract_value value_data, object
+    var_name = object.rules.matching_variables(val_type).first # guess variable name
+
+    unless var_name
+      raise SlideField::InterpreterError,
+        "Unexpected '#{val_type}', expecting one of #{object.rules.known_variables_types} at #{get_loc value_t}"
+    end
+
+    if object.has? var_name
+      raise SlideField::InterpreterError,
+        "Variable '#{var_name}' is already defined at #{get_loc value_t}"
+    end
+
+    object.set var_name, value, get_loc(value_t), val_type
   end
 
   def get_loc(token)

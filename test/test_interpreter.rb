@@ -1006,7 +1006,7 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 2', o[:child].first.loc
   end
 
-  def test_template_copy_body
+  def test_template_upstream_body
     template = {
       :type=>slice('child', 1),
       :body=>[
@@ -1061,7 +1061,7 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 3 char 3', copy.var_loc(:var)
   end
 
-  def test_template_copy_value
+  def test_template_upstream_value
     template = {
       :type=>slice('value', 1),
       :value=>{:integer=>slice('42', 1)}
@@ -1083,6 +1083,54 @@ class TestInterpreter < MiniTest::Test
     assert_equal 42, copy.get(:num)
     assert_equal :integer, copy.var_type(:num)
     assert_equal 'line 2 char 1', copy.var_loc(:num)
+  end
+
+  def test_template_downstream_value
+    template = {
+      :type=>slice('value', 1),
+    }
+
+    tokens = [{
+      :object=>{
+        :template=>slice('&', 2),
+        :type=>slice('var_name', 2),
+        :value=>{:integer=>slice('42', 2)}
+      }
+    }]
+
+    o = SlideField::ObjectData.new :parent, 'loc'
+    o.set :var_name, template, 'loc', :object
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    copy = o[:value].first
+
+    assert_equal 42, copy.get(:num)
+    assert_equal :integer, copy.var_type(:num)
+    assert_equal 'line 2 char 3', copy.var_loc(:num)
+  end
+
+  def test_template_merge_value
+    template = {
+      :type=>slice('value', 1),
+      :value=>{:integer=>slice('42', 1)}
+    }
+
+    tokens = [{
+      :object=>{
+        :template=>slice('&', 2),
+        :type=>slice('var_name', 2),
+        :value=>{:integer=>slice('42', 2)}
+      }
+    }]
+
+    o = SlideField::ObjectData.new :parent, 'loc'
+    o.set :var_name, template, 'loc', :object
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Variable 'num' is already defined at line 2 char 3", error.message
   end
 
   def test_undefined_template
