@@ -62,4 +62,8 @@ class SlideField::ObjectData
     end
     "[#{array.join '] ['}]"
   end
+
+  def rules
+    SlideField::ObjectRules[@type]
+  end
 end

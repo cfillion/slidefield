@@ -82,4 +82,9 @@ class TestObjectData < MiniTest::Test
     assert_equal "[context1] [context2]", o3.context_string
     assert_equal "[context1] [context2] [context1]", o4.context_string
   end
+
+  def test_rules
+    o = SlideField::ObjectData.new :slide, 'loc'
+    assert_instance_of SlideField::ObjectRules::Slide, o.rules
+  end
 end
