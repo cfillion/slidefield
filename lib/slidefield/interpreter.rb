@@ -360,6 +360,9 @@ class SlideField::Interpreter
     when [:integer, :y]
       type = :point
       value = [0, value]
+    when [:string, :lines]
+      type = :integer
+      value = value.lines.count
     else
       raise SlideField::InterpreterError,
         "Invalid filter '#{name}' for type '#{type}' at #{get_loc token}"

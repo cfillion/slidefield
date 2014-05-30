@@ -1135,7 +1135,7 @@ class TestInterpreter < MiniTest::Test
     assert_equal "Unexpected 'integer', expecting 'object' at line 1 char 2", error.message
   end
 
-  def test_point_x_filter
+  def test_filter_point_x
     tokens = [
       {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:filter=>slice('x', 1), :point=>slice('12x34', 1)}}},
     ]
@@ -1148,7 +1148,7 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 4', o.var_loc(:var)
   end
 
-  def test_point_y_filter
+  def test_filter_point_y
     tokens = [
       {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:filter=>slice('y', 1), :point=>slice('12x34', 1)}}},
     ]
@@ -1161,7 +1161,7 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 4', o.var_loc(:var)
   end
 
-  def test_integer_x_filter
+  def test_filter_integer_x
     tokens = [
       {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:filter=>slice('x', 1), :integer=>slice('1', 1)}}},
     ]
@@ -1174,7 +1174,7 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 4', o.var_loc(:var)
   end
 
-  def test_integer_y_filter
+  def test_filter_integer_y
     tokens = [
       {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:filter=>slice('y', 1), :integer=>slice('1', 1)}}},
     ]
@@ -1187,8 +1187,20 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 4', o.var_loc(:var)
   end
 
+  def test_filter_string_lines
+    tokens = [
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:filter=>slice('lines', 1), :string=>slice('first\\nsecond', 1)}}},
+    ]
 
-  def test_identifier_filter
+    o = SlideField::ObjectData.new :child, 'loc'
+    SlideField::Interpreter.new.interpret_tree tokens, o
+
+    assert_equal 2, o.get(:var)
+    assert_equal :integer, o.var_type(:var)
+    assert_equal 'line 1 char 4', o.var_loc(:var)
+  end
+
+  def test_filter_identifier
     tokens = [
       {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:filter=>slice('x', 1), :identifier=>slice('test', 1)}}},
     ]
