@@ -99,4 +99,10 @@ class TestExamples < MiniTest::Test
 
     assert_match /&wrong_template/, error.message
   end
+
+  def test_include_unclosed_object
+    assert_raises SlideField::ParseError do
+      @interpreter.run_string '\\include "test/unclosed_object.sfp"', @path
+    end
+  end
 end

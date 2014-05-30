@@ -61,8 +61,8 @@ class SlideField::Interpreter
       line = $1.to_i - 1
       column = $2.to_i - 1
 
-      if line > -1
-        source = input.lines[line].chomp
+      if line > -1 && source = input.lines[line]
+        source.chomp!
         arrow = "#{"\x20" * column}^"
         message += "\n\t#{source}\n\t#{arrow}"
       end
