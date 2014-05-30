@@ -292,7 +292,7 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 1 char 4', o.var_loc(:var)
   end
 
-  def test_set_unset_identifier
+  def test_set_undefined_identifier
     tokens = [
       {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:identifier=>slice('test', 1)}}},
     ]
@@ -1059,6 +1059,35 @@ class TestInterpreter < MiniTest::Test
     assert_equal 44, copy.get(:var)
     assert_equal :integer, copy.var_type(:var)
     assert_equal 'line 3 char 3', copy.var_loc(:var)
+  end
+
+  def test_undefined_template
+    tokens = [{
+      :object=>{:template=>slice('&', 1), :type=>slice('var_name', 1)}
+    }]
+
+    o = SlideField::ObjectData.new :parent, 'loc'
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Undefined variable 'var_name' at line 1 char 2", error.message
+  end
+
+  def test_invalid_template
+    tokens = [{
+      :object=>{:template=>slice('&', 1), :type=>slice('var_name', 1)}
+    }]
+
+    o = SlideField::ObjectData.new :parent, 'loc'
+    o.set :var_name, 42, 'loc', :integer
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.extract_tree tokens, o
+    end
+
+    assert_equal "Unexpected 'integer', expecting 'object' at line 1 char 2", error.message
   end
 
   def slice(val, line)

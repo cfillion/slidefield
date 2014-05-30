@@ -232,11 +232,21 @@ class SlideField::Interpreter
 
     if stmt_data[:template]
       template = object.get type
+      unless template
+        raise SlideField::InterpreterError,
+          "Undefined variable '#{type}' at #{get_loc type_t}"
+      end
+
+      unless :object == tpl_type = object.var_type(type)
+        raise SlideField::InterpreterError,
+          "Unexpected '#{tpl_type}', expecting 'object' at #{get_loc type_t}"
+      end
+
       type = template[:type].to_sym
 
       if template[:body]
-        template[:body] = rebind_tokens template[:body], stmt_data[:template]
-        body = template[:body] + body
+        tpl_body = rebind_tokens template[:body], stmt_data[:template]
+        body = tpl_body + body
       end
     end
 
