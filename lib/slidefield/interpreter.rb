@@ -228,7 +228,16 @@ class SlideField::Interpreter
   def extract_object(rules, stmt_data, object, include_path, context)
     type_t = stmt_data[:type]
     type = type_t.to_sym
-    body = stmt_data[:body]
+    body = stmt_data[:body] || []
+
+    if stmt_data[:template]
+      template = object.get type
+      type = template[:type].to_sym
+
+      if template[:body]
+        body = template[:body] + body
+      end
+    end
 
     unless rules.accepted_children.include?(type)
       raise SlideField::InterpreterError,

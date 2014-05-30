@@ -95,7 +95,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_unsupported_type
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:dog_food=>slice('yum', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:dog_food=>slice('yum', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -108,7 +108,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_unsupported_operator
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('baconize', 1), :value=>{:integer=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('baconize', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -121,7 +121,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_unsupported_cast
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:cast=>slice('aaaa', 1), :integer=>slice('1', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('aaaa', 1), :integer=>slice('1', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -134,7 +134,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_set_already_defined
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:integer=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -149,7 +149,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_set_integer
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:integer=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -162,7 +162,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_set_point
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:point=>slice('12x34', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:point=>slice('12x34', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -175,7 +175,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_set_point_x_cast
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :point=>slice('12x34', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :point=>slice('12x34', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -188,7 +188,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_set_point_y_cast
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:cast=>slice('y', 1), :point=>slice('12x34', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('y', 1), :point=>slice('12x34', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -201,7 +201,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_set_string
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:string=>slice('"hello"', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:string=>slice('"hello"', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -214,7 +214,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_set_color
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:color=>slice('#C0FF33FF', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:color=>slice('#C0FF33FF', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -227,7 +227,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_set_boolean
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:boolean=>slice(':true', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:boolean=>slice(':true', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -246,7 +246,7 @@ class TestInterpreter < MiniTest::Test
 
     tokens = [{
       :assignment=>{
-        :variable=>slice(:var, 1),
+        :variable=>slice('var', 1),
         :operator=>slice('=', 1),
         :value=>{:object=>object}
       }
@@ -266,7 +266,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_set_identifier
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:identifier=>slice('test', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:identifier=>slice('test', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -280,7 +280,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_set_identifier_cast
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :identifier=>slice('test', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :identifier=>slice('test', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -294,7 +294,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_set_unset_identifier
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:identifier=>slice('test', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:identifier=>slice('test', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -321,7 +321,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_add_undefined
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:integer=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('+=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -334,7 +334,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_add_incompatible
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:integer=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('+=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -349,7 +349,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_add_integer
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:integer=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('+=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -363,7 +363,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_add_point
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:point=>slice('42x42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('+=', 1), :value=>{:point=>slice('42x42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -377,7 +377,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_add_string
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:string=>slice('" world"', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('+=', 1), :value=>{:string=>slice('" world"', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -391,7 +391,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_add_color
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:color=>slice('#01010101', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('+=', 1), :value=>{:color=>slice('#01010101', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -405,7 +405,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_add_color_overflow
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:color=>slice('#01010101', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('+=', 1), :value=>{:color=>slice('#01010101', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -419,7 +419,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_add_boolean
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:boolean=>slice(':true', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('+=', 1), :value=>{:boolean=>slice(':true', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -434,7 +434,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_add_identifier
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('+=', 1), :value=>{:identifier=>slice('test', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('+=', 1), :value=>{:identifier=>slice('test', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -449,7 +449,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_sub_undefined
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:integer=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('-=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -462,7 +462,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_sub_incompatible
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:integer=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('-=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -477,7 +477,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_sub_integer
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:integer=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('-=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -491,7 +491,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_sub_point
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:point=>slice('42x42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('-=', 1), :value=>{:point=>slice('42x42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -505,8 +505,8 @@ class TestInterpreter < MiniTest::Test
 
   def test_sub_string
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:string=>slice('" world"', 1)}}},
-      {:assignment=>{:variable=>slice(:var, 2), :operator=>slice('-=', 2), :value=>{:string=>slice('"test"', 2)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('-=', 1), :value=>{:string=>slice('" world"', 1)}}},
+      {:assignment=>{:variable=>slice('var', 2), :operator=>slice('-=', 2), :value=>{:string=>slice('"test"', 2)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -520,7 +520,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_sub_color
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:color=>slice('#01010101', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('-=', 1), :value=>{:color=>slice('#01010101', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -534,7 +534,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_sub_color_underflow
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:color=>slice('#01010101', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('-=', 1), :value=>{:color=>slice('#01010101', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -548,7 +548,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_sub_boolean
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:boolean=>slice(':true', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('-=', 1), :value=>{:boolean=>slice(':true', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -563,7 +563,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_sub_identifier
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('-=', 1), :value=>{:identifier=>slice('test', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('-=', 1), :value=>{:identifier=>slice('test', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -578,7 +578,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_mul_undefined
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:integer=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('*=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -591,7 +591,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_mul_incompatible
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:integer=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('*=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -606,7 +606,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_mul_integer
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:integer=>slice('4', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('*=', 1), :value=>{:integer=>slice('4', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -620,7 +620,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_mul_point
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:point=>slice('4x2', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('*=', 1), :value=>{:point=>slice('4x2', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -634,7 +634,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_mul_string
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:string=>slice('"3"', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('*=', 1), :value=>{:string=>slice('"3"', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -648,7 +648,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_mul_string_invalid
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:string=>slice('"aaaa"', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('*=', 1), :value=>{:string=>slice('"aaaa"', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -663,7 +663,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_mul_color
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:color=>slice('#02020202', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('*=', 1), :value=>{:color=>slice('#02020202', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -678,7 +678,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_mul_boolean
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:boolean=>slice(':true', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('*=', 1), :value=>{:boolean=>slice(':true', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -693,7 +693,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_mul_identifier
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('*=', 1), :value=>{:identifier=>slice('test', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('*=', 1), :value=>{:identifier=>slice('test', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -708,7 +708,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_div_undefined
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:integer=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('/=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -721,7 +721,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_div_incompatible
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:integer=>slice('42', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('/=', 1), :value=>{:integer=>slice('42', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -736,7 +736,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_div_integer
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:integer=>slice('2', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('/=', 1), :value=>{:integer=>slice('2', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -750,7 +750,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_div_integer_by_zero
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:integer=>slice('0', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('/=', 1), :value=>{:integer=>slice('0', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -765,7 +765,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_div_point
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:point=>slice('2x3', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('/=', 1), :value=>{:point=>slice('2x3', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -779,7 +779,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_div_point_by_zero
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:point=>slice('2x0', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('/=', 1), :value=>{:point=>slice('2x0', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -794,7 +794,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_div_string
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:string=>slice('" world"', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('/=', 1), :value=>{:string=>slice('" world"', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -809,7 +809,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_div_color
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:color=>slice('#02020202', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('/=', 1), :value=>{:color=>slice('#02020202', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -824,7 +824,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_div_boolean
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:boolean=>slice(':true', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('/=', 1), :value=>{:boolean=>slice(':true', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -839,7 +839,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_div_identifier
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('/=', 1), :value=>{:identifier=>slice('test', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('/=', 1), :value=>{:identifier=>slice('test', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -855,7 +855,7 @@ class TestInterpreter < MiniTest::Test
   def test_children
     tokens = [
       {:object=>{:type=>slice('child', 1), :body=>[
-        {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:identifier=>slice('parent_var', 1)}}},
+        {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:identifier=>slice('parent_var', 1)}}},
       ]}},
     ]
 
@@ -958,7 +958,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_escape_sequence
     tokens = [
-      {:assignment=>{:variable=>slice(:var, 1), :operator=>slice('=', 1), :value=>{:string=>slice('"\\\\ \\"\\n\\s"', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:string=>slice('"\\\\ \\"\\n\\s"', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -990,6 +990,75 @@ class TestInterpreter < MiniTest::Test
     assert_equal [1,1], o.get(:test)
     assert_equal :point, o.var_type(:test)
     assert_equal 'loc', o.var_loc(:test)
+  end
+
+  def test_template
+    tokens = [{
+      :object=>{:template=>slice('&', 1), :type=>slice('var_name', 1)}
+    }]
+
+    o = SlideField::ObjectData.new :parent, 'loc'
+    o.set :var_name, {:type=>slice('child', 2)}, 'loc', :object
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+
+    assert_equal 1, o[:child].count
+    assert_equal 'line 1 char 2', o[:child].first.loc
+  end
+
+  def test_template_copy_body
+    template = {
+      :type=>slice('child', 1),
+      :body=>[
+        {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:integer=>slice('42', 1)}}},
+      ]
+    }
+
+    tokens = [{
+      :object=>{
+        :template=>slice('&', 2),
+        :type=>slice('var_name', 2),
+      }
+    }]
+
+    o = SlideField::ObjectData.new :parent, 'loc'
+    o.set :var_name, template, 'loc', :object
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    copy = o[:child].first
+
+    assert_equal 42, copy.get(:var)
+    assert_equal :integer, copy.var_type(:var)
+    assert_equal 'line 1 char 4', copy.var_loc(:var)
+  end
+
+  def test_template_merge_body
+    template = {
+      :type=>slice('child', 1),
+      :body=>[
+        {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:integer=>slice('2', 1)}}},
+      ]
+    }
+
+    tokens = [{
+      :object=>{
+        :template=>slice('&', 2),
+        :type=>slice('var_name', 2),
+        :body=>[
+          {:assignment=>{:variable=>slice('var', 3), :operator=>slice('+=', 3), :value=>{:integer=>slice('42', 3)}}},
+        ]
+      }
+    }]
+
+    o = SlideField::ObjectData.new :parent, 'loc'
+    o.set :var_name, template, 'loc', :object
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    copy = o[:child].first
+
+    assert_equal 44, copy.get(:var)
+    assert_equal :integer, copy.var_type(:var)
+    assert_equal 'line 3 char 3', copy.var_loc(:var)
   end
 
   def slice(val, line)
