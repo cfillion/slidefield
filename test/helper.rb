@@ -1,13 +1,11 @@
 require 'slidefield'
 require 'minitest/autorun'
 
-# Pretty Print objects in MiniTest diffs
-require 'pp'
-
+# use awesome_print for objects diff
 module MiniTest
   module Assertions
     def mu_pp(obj)
-      obj.pretty_inspect
+      obj.awesome_inspect
     end
   end
 end
