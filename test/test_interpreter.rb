@@ -1061,6 +1061,30 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 3 char 3', copy.var_loc(:var)
   end
 
+  def test_template_copy_value
+    template = {
+      :type=>slice('value', 1),
+      :value=>{:integer=>slice('42', 1)}
+    }
+
+    tokens = [{
+      :object=>{
+        :template=>slice('&', 2),
+        :type=>slice('var_name', 2),
+      }
+    }]
+
+    o = SlideField::ObjectData.new :parent, 'loc'
+    o.set :var_name, template, 'loc', :object
+
+    SlideField::Interpreter.new.extract_tree tokens, o
+    copy = o[:value].first
+
+    assert_equal 42, copy.get(:num)
+    assert_equal :integer, copy.var_type(:num)
+    assert_equal 'line 2 char 1', copy.var_loc(:num)
+  end
+
   def test_undefined_template
     tokens = [{
       :object=>{:template=>slice('&', 1), :type=>slice('var_name', 1)}

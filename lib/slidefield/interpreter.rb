@@ -53,7 +53,7 @@ class SlideField::Interpreter
       raise SlideField::ParseError, reason
     end
 
-    extract_tree tree, object, nil, include_path, context, close
+    extract_tree tree, object, include_path, context, close
   rescue SlideField::Error => error
     message = error.message
 
@@ -71,32 +71,18 @@ class SlideField::Interpreter
     raise error.class, "[#{context}] #{message}"
   end
 
-  def extract_tree(tree, object, value_data = nil, child_path = nil, child_context = nil, close_object = true)
-    rules = SlideField::ObjectRules[object.type]
-    unless rules
+  def extract_tree(tree, object, child_path = nil, child_context = nil, close_object = true)
+    unless rules = object.rules
       # the object was allowed but we don't know anything about it?!
       raise SlideField::InterpreterError,
         "Unsupported object '#{object.type}'"
     end
 
-    if value_data
-      # anonymous value
-      val_type, value_t, value = extract_value value_data, object
-      val_name = rules.matching_variables(val_type).first # guess variable name
-
-      unless val_name
-        raise SlideField::InterpreterError,
-          "Unexpected '#{val_type}', expecting one of #{rules.known_variables_types} at #{get_loc value_t}"
-      end
-
-      object.set val_name, value, get_loc(value_t), val_type
-    end
-
     tree.respond_to? :each and tree.each {|stmt|
       if stmt_data = stmt[:assignment]
-        extract_variable rules, stmt_data, object
+        extract_variable stmt_data, object
       elsif stmt_data = stmt[:object]
-        extract_object rules, stmt_data, object, child_path, child_context
+        extract_object stmt_data, object, child_path, child_context
       else
         # we got strange data from the parser?!
         raise SlideField::InterpreterError,
@@ -134,7 +120,7 @@ class SlideField::Interpreter
   end
 
   private
-  def extract_variable(rules, stmt_data, object)
+  def extract_variable(stmt_data, object)
     var_name_t = stmt_data[:variable]
     var_name = var_name_t.to_sym
 
@@ -150,7 +136,7 @@ class SlideField::Interpreter
           "Variable '#{var_name}' is already defined at #{get_loc var_name_t}"
       end
 
-      if valid_type = rules.type_of(var_name)
+      if valid_type = object.rules.type_of(var_name)
         if var_type != valid_type
           raise SlideField::InterpreterError,
             "Unexpected '#{var_type}', expecting '#{valid_type}' at #{get_loc var_value_t}"
@@ -225,9 +211,10 @@ class SlideField::Interpreter
       "divided by zero at #{get_loc var_value_t}"
   end
 
-  def extract_object(rules, stmt_data, object, include_path, context)
+  def extract_object(stmt_data, object, include_path, context)
     type_t = stmt_data[:type]
     type = type_t.to_sym
+    value_data = stmt_data[:value]
     body = stmt_data[:body] || []
 
     if stmt_data[:template]
@@ -244,15 +231,19 @@ class SlideField::Interpreter
 
       type = template[:type].to_sym
 
+      if template[:value]
+        value_data = rebind_tokens template[:value], stmt_data[:template]
+      end
+
       if template[:body]
         tpl_body = rebind_tokens template[:body], stmt_data[:template]
         body = tpl_body + body
       end
     end
 
-    unless rules.accepted_children.include?(type)
+    unless object.rules.accepted_children.include?(type)
       raise SlideField::InterpreterError,
-        "Unexpected object '#{type}', expecting one of #{rules.accepted_children} at #{get_loc type_t}"
+        "Unexpected object '#{type}', expecting one of #{object.rules.accepted_children} at #{get_loc type_t}"
     end
 
     child = SlideField::ObjectData.new type, get_loc(type_t)
@@ -262,7 +253,21 @@ class SlideField::Interpreter
     # enable inheritance
     child.parent = object
 
-    extract_tree body, child || [], stmt_data[:value], include_path, context
+    if value_data
+      # anonymous value
+      val_type, value_t, value = extract_value value_data, child
+      val_name = child.rules.matching_variables(val_type).first # guess variable name
+
+      unless val_name
+        raise SlideField::InterpreterError,
+          "Unexpected '#{val_type}', expecting one of #{child.rules.known_variables_types} at #{get_loc value_t}"
+      end
+
+      child.set val_name, value, get_loc(value_t), val_type
+    end
+
+
+    extract_tree body, child || [], include_path, context
 
     # process special objects
     if child.type == :include
