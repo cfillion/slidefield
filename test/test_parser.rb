@@ -107,17 +107,17 @@ class TestParser < MiniTest::Test
     ]
   end
 
-  def test_converter
+  def test_filter
     tokens = [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:cast=>'converter_name', :identifier=>'val'}}
+      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:filter=>'filter_name', :identifier=>'val'}}
     ]
 
-    expect 'var=(converter_name)val', tokens
-    expect 'var=(converter_name)  val', tokens
-    expect 'var= (converter_name)  val', tokens
-    expect "var= (converter_name)\t\tval", tokens
-    expect "var= (converter_name)%{%}val", tokens
-    expect "var= ( converter_name )val", tokens
+    expect 'var=(filter_name)val', tokens
+    expect 'var=(filter_name)  val', tokens
+    expect 'var= (filter_name)  val', tokens
+    expect "var= (filter_name)\t\tval", tokens
+    expect "var= (filter_name)%{%}val", tokens
+    expect "var= ( filter_name )val", tokens
   end
 
   def test_object
@@ -188,8 +188,8 @@ class TestParser < MiniTest::Test
       {:object=>{:type=>'test', :value=>{:boolean=>':true'}}}
     ]
 
-    expect '\\test (converter)val', [
-      {:object=>{:type=>'test', :value=>{:cast=>'converter', :identifier=>'val'}}}
+    expect '\\test (filter)val', [
+      {:object=>{:type=>'test', :value=>{:filter=>'filter', :identifier=>'val'}}}
     ]
   end
 

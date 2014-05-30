@@ -45,7 +45,7 @@ class SlideField::Parser < Parslet::Parser
 
   rule(:converter) {
     str('(') >> spaces? >> (
-      identifier.as(:cast)
+      identifier.as(:filter)
     ) >>
     spaces? >> str(')') >>
     inline_spaces?

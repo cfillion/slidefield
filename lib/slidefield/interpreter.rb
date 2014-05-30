@@ -288,7 +288,7 @@ class SlideField::Interpreter
   end
 
   def extract_value(data, object)
-    filter_token = data.delete :cast
+    filter_token = data.delete :filter
     value_data = data.first
     type = value_data[0]
     token = value_data[1]

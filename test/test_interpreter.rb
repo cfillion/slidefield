@@ -1137,7 +1137,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_point_x_filter
     tokens = [
-      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :point=>slice('12x34', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:filter=>slice('x', 1), :point=>slice('12x34', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -1150,7 +1150,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_point_y_filter
     tokens = [
-      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('y', 1), :point=>slice('12x34', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:filter=>slice('y', 1), :point=>slice('12x34', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -1163,7 +1163,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_integer_x_filter
     tokens = [
-      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :integer=>slice('1', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:filter=>slice('x', 1), :integer=>slice('1', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -1176,7 +1176,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_integer_y_filter
     tokens = [
-      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('y', 1), :integer=>slice('1', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:filter=>slice('y', 1), :integer=>slice('1', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -1190,7 +1190,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_identifier_filter
     tokens = [
-      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :identifier=>slice('test', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:filter=>slice('x', 1), :identifier=>slice('test', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
@@ -1204,7 +1204,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_unknown_filter
     tokens = [
-      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('aaaa', 1), :integer=>slice('1', 1)}}},
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:filter=>slice('aaaa', 1), :integer=>slice('1', 1)}}},
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
