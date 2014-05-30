@@ -17,4 +17,5 @@ begin
   viewer.show
 rescue SlideField::Error => e
   puts "#{e.class}: #{e}"
+rescue Interrupt
 end
