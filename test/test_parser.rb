@@ -229,6 +229,12 @@ class TestParser < MiniTest::Test
     end
   end
 
+  def test_template
+    expect '\\&test', [
+      {:object=>{:template=>'&', :type=>'test'}}
+    ]
+  end
+
   def test_comments
     assert_raises Parslet::ParseFailed do
       parse "%{"

@@ -43,7 +43,6 @@ class SlideField::Parser < Parslet::Parser
     str('"')
   }
 
-  rule(:obj_type) { str('\\') >> identifier.as(:type) >> inline_spaces? }
   rule(:converter) {
     str('(') >> spaces? >> (
       identifier.as(:cast)
@@ -66,7 +65,10 @@ class SlideField::Parser < Parslet::Parser
 
   rule(:assignment) { identifier.as(:variable) >> operator >> value.as(:value) }
   rule(:object) {
-    obj_type >>
+    str('\\') >>
+    str('&').as(:template).maybe >>
+    identifier.as(:type) >>
+    inline_spaces? >>
     value.as(:value).maybe >>
     (
       open >>
