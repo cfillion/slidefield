@@ -1032,7 +1032,33 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 2 char 1', copy.var_loc(:var)
   end
 
-  def test_template_merge_body
+  def test_template_downstream_body
+    template = {
+      :type=>slice('child', 1),
+    }
+
+    tokens = [{
+      :object=>{
+        :template=>slice('&', 2),
+        :type=>slice('var_name', 2),
+        :body=>[
+          {:assignment=>{:variable=>slice('var', 3), :operator=>slice('=', 3), :value=>{:integer=>slice('42', 3)}}},
+        ]
+      }
+    }]
+
+    o = SlideField::ObjectData.new :parent, 'loc'
+    o.set :var_name, template, 'loc', :object
+
+    SlideField::Interpreter.new.interpret_tree tokens, o
+    copy = o[:child].first
+
+    assert_equal 42, copy.get(:var)
+    assert_equal :integer, copy.var_type(:var)
+    assert_equal 'line 3 char 3', copy.var_loc(:var)
+  end
+
+  def test_template_merge_bodies
     template = {
       :type=>slice('child', 1),
       :body=>[
@@ -1109,7 +1135,7 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'line 2 char 3', copy.var_loc(:num)
   end
 
-  def test_template_merge_value
+  def test_template_double_value
     template = {
       :type=>slice('value', 1),
       :value=>{:integer=>slice('42', 1)}
