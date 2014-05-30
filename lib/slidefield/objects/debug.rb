@@ -7,6 +7,8 @@ module SlideField::ObjectRules
       variable :thing, :color
       variable :thing, :boolean
       variable :thing, :object
+
+      # don't call super here
     end
   end
 end
