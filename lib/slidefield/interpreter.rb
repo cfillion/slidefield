@@ -288,7 +288,7 @@ class SlideField::Interpreter
   end
 
   def extract_value(data, object)
-    cast_token = data.delete :cast
+    filter_token = data.delete :cast
     value_data = data.first
     type = value_data[0]
     token = value_data[1]
@@ -306,8 +306,8 @@ class SlideField::Interpreter
       token = token[:type]
     end
 
-    if cast_token
-      type, value = cast cast_token, type, value
+    if filter_token
+      type, value = filter filter_token, type, value
     end
 
     return type, token, value
@@ -345,18 +345,24 @@ class SlideField::Interpreter
     end
   end
 
-  def cast(token, type, value)
-    id = token.to_sym
-    case [type, id]
+  def filter(token, type, value)
+    name = token.to_sym
+    case [type, name]
     when [:point, :x]
       type = :integer
       value = value[0]
     when [:point, :y]
       type = :integer
       value = value[1]
+    when [:integer, :x]
+      type = :point
+      value = [value, 0]
+    when [:integer, :y]
+      type = :point
+      value = [0, value]
     else
       raise SlideField::InterpreterError,
-        "Invalid converter '#{id}' for type '#{type}' at #{get_loc token}"
+        "Invalid filter '#{name}' for type '#{type}' at #{get_loc token}"
     end
 
     return type, value

@@ -119,19 +119,6 @@ class TestInterpreter < MiniTest::Test
     assert_equal "Unsupported operator 'baconize' at line 1 char 2", error.message
   end
 
-  def test_unsupported_cast
-    tokens = [
-      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('aaaa', 1), :integer=>slice('1', 1)}}},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
-    end
-
-    assert_equal "Invalid converter 'aaaa' for type 'integer' at line 1 char 3", error.message
-  end
-
   def test_set_already_defined
     tokens = [
       {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:integer=>slice('42', 1)}}},
@@ -171,32 +158,6 @@ class TestInterpreter < MiniTest::Test
     assert_equal [12,34], o.get(:var)
     assert_equal :point, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_set_point_x_cast
-    tokens = [
-      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :point=>slice('12x34', 1)}}},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    SlideField::Interpreter.new.interpret_tree tokens, o
-
-    assert_equal 12, o.get(:var)
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 'line 1 char 4', o.var_loc(:var)
-  end
-
-  def test_set_point_y_cast
-    tokens = [
-      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('y', 1), :point=>slice('12x34', 1)}}},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    SlideField::Interpreter.new.interpret_tree tokens, o
-
-    assert_equal 34, o.get(:var)
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 'line 1 char 4', o.var_loc(:var)
   end
 
   def test_set_string
@@ -276,20 +237,6 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'hello', o.get(:var)
     assert_equal :string, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_set_identifier_cast
-    tokens = [
-      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :identifier=>slice('test', 1)}}},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :test, [12,21], 'loc', :point
-
-    SlideField::Interpreter.new.interpret_tree tokens, o
-    assert_equal 12, o.get(:var)
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 'line 1 char 4', o.var_loc(:var)
   end
 
   def test_set_undefined_identifier
@@ -1187,6 +1134,87 @@ class TestInterpreter < MiniTest::Test
 
     assert_equal "Unexpected 'integer', expecting 'object' at line 1 char 2", error.message
   end
+
+  def test_point_x_filter
+    tokens = [
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :point=>slice('12x34', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    SlideField::Interpreter.new.interpret_tree tokens, o
+
+    assert_equal 12, o.get(:var)
+    assert_equal :integer, o.var_type(:var)
+    assert_equal 'line 1 char 4', o.var_loc(:var)
+  end
+
+  def test_point_y_filter
+    tokens = [
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('y', 1), :point=>slice('12x34', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    SlideField::Interpreter.new.interpret_tree tokens, o
+
+    assert_equal 34, o.get(:var)
+    assert_equal :integer, o.var_type(:var)
+    assert_equal 'line 1 char 4', o.var_loc(:var)
+  end
+
+  def test_integer_x_filter
+    tokens = [
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :integer=>slice('1', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    SlideField::Interpreter.new.interpret_tree tokens, o
+
+    assert_equal [1,0], o.get(:var)
+    assert_equal :point, o.var_type(:var)
+    assert_equal 'line 1 char 4', o.var_loc(:var)
+  end
+
+  def test_integer_y_filter
+    tokens = [
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('y', 1), :integer=>slice('1', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    SlideField::Interpreter.new.interpret_tree tokens, o
+
+    assert_equal [0,1], o.get(:var)
+    assert_equal :point, o.var_type(:var)
+    assert_equal 'line 1 char 4', o.var_loc(:var)
+  end
+
+
+  def test_identifier_filter
+    tokens = [
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('x', 1), :identifier=>slice('test', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    o.set :test, [12,21], 'loc', :point
+
+    SlideField::Interpreter.new.interpret_tree tokens, o
+    assert_equal 12, o.get(:var)
+    assert_equal :integer, o.var_type(:var)
+    assert_equal 'line 1 char 4', o.var_loc(:var)
+  end
+
+  def test_unknown_filter
+    tokens = [
+      {:assignment=>{:variable=>slice('var', 1), :operator=>slice('=', 1), :value=>{:cast=>slice('aaaa', 1), :integer=>slice('1', 1)}}},
+    ]
+
+    o = SlideField::ObjectData.new :child, 'loc'
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.interpret_tree tokens, o
+    end
+
+    assert_equal "Invalid filter 'aaaa' for type 'integer' at line 1 char 3", error.message
+  end
+
 
   def slice(val, line)
     @col_cache[line] = 0 unless @col_cache[line]
