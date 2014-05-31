@@ -365,6 +365,8 @@ class TestParser < MiniTest::Test
     assert_raises Parslet::ParseFailed do
       parse "%{"
     end
+
+    parse "% {"
   end
 
   def test_separator
