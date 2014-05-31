@@ -248,7 +248,7 @@ class SlideField::Interpreter
 
     unless object.rules.accepted_children.include?(type)
       raise SlideField::InterpreterError,
-        "Unexpected object '#{type}', expecting one of #{object.rules.accepted_children} at #{get_loc type_t}"
+        "Unexpected object '#{type}', expecting one of #{object.rules.accepted_children.sort} at #{get_loc type_t}"
     end
 
     child = SlideField::ObjectData.new type, get_loc(type_t)

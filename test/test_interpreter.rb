@@ -1100,7 +1100,7 @@ class TestInterpreter < MiniTest::Test
       @interpreter.interpret_tree tokens, o
     end
 
-    assert_equal "Unexpected object 'qwfpgjluy', expecting one of [:child, :value, :aaaa] at line 1 char 1", error.message
+    assert_equal "Unexpected object 'qwfpgjluy', expecting one of [:aaaa, :child, :value] at line 1 char 1", error.message
   end
 
   def test_missing_variable
