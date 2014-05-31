@@ -29,9 +29,7 @@ module SlideField::ObjectManager
     end
 
     def draw
-      @window.scale @x_scale, @y_scale do
-        @image.draw @x, @y, @z, 1, 1, @color
-      end
+      @image.draw @x, @y, @z, @x_scale, @y_scale, @color
     end
   end
 end

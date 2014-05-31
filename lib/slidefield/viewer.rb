@@ -20,7 +20,12 @@ class SlideField::Viewer < Gosu::Window
   end
 
   def draw
-    @current.draw
+    @slides[@current].draw
+    @redraw = false
+  end
+
+  def needs_redraw?
+    @redraw
   end
 
   def button_down(id)
@@ -38,7 +43,7 @@ class SlideField::Viewer < Gosu::Window
       Gosu::KbPageDown,
       Gosu::KbNumpadAdd
 
-      change_slide @index+1
+      change_slide @current+1
     when
       Gosu::KbBackspace,
       Gosu::KbLeft,
@@ -46,7 +51,7 @@ class SlideField::Viewer < Gosu::Window
       Gosu::KbPageUp,
       Gosu::KbNumpadSubtract
 
-      change_slide @index-1
+      change_slide @current-1
     when Gosu::KbEscape, Gosu::KbQ
       close
     end
@@ -54,11 +59,12 @@ class SlideField::Viewer < Gosu::Window
 
   private
   def change_slide(index)
-    return if index < 0 || index > @slides.length-1
-    @index = index
+    return if @current == index || index < 0 || index > @slides.length-1
 
-    @current.deactivate if @current
-    @current = @slides[index]
-    @current.activate
+    @slides[@current].deactivate if @current
+    @current = index
+    @slides[@current].activate
+
+    @redraw = true
   end
 end
