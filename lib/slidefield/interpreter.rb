@@ -62,9 +62,11 @@ class SlideField::Interpreter
       column = $2.to_i - 1
 
       if line > -1 && source = input.lines[line]
-        source.chomp!
+        excerpt = source.strip
+        column -= source.index excerpt
         arrow = "#{"\x20" * column}^"
-        message += "\n\t#{source}\n\t#{arrow}"
+
+        message += "\n\t#{excerpt}\n\t#{arrow}"
       end
     end
 

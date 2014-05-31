@@ -54,7 +54,7 @@ class TestInterpreter < MiniTest::Test
     Parslet::Slice.new pos, val, line_cache
   end
 
-  def test_run_parser_error
+  def test_excerpt_parse_error
     error = assert_raises SlideField::ParseError do
       @interpreter.run_string '"'
     end
@@ -64,9 +64,18 @@ class TestInterpreter < MiniTest::Test
     assert_match /\n\t"\n\t\^\Z/, error.message
   end
 
-  def test_run_interpreter_error
+  def test_excerpt_interpreter_error
     error = assert_raises SlideField::InterpreterError do
       @interpreter.run_string "\\object\n"
+    end
+
+    assert_match /\A\[input\] /, error.message
+    assert_match /\n\t\\object\n\t \^\Z/, error.message
+  end
+
+  def test_strip_excerpt
+    error = assert_raises SlideField::InterpreterError do
+      @interpreter.run_string "\t\t\t\t       \t       \\object"
     end
 
     assert_match /\A\[input\] /, error.message
