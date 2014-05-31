@@ -315,7 +315,7 @@ class SlideField::Interpreter
 
     if type == :identifier
       if id_value = object.get(value.to_sym)
-        type = object.var_type(value.to_sym)
+        type = object.var_type value.to_sym
         value = id_value
       else
         raise SlideField::InterpreterError,
@@ -323,6 +323,14 @@ class SlideField::Interpreter
       end
     elsif type == :object
       token = token[:type]
+
+      if value[:template]
+        # we got something like `alias = \&template`
+        # a template must be copied using the standard syntax `alias = template`
+        # otherwise the reference would not be resolved
+        raise SlideField::InterpreterError,
+          "Unexpected template reference at #{get_loc token}"
+      end
     end
 
     filters.reverse_each {|filter_token|

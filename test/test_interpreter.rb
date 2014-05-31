@@ -1399,6 +1399,29 @@ class TestInterpreter < MiniTest::Test
     assert_equal "Variable 'num' is already defined at line 2 char 3", error.message
   end
 
+  def test_template_of_template
+    tokens = [
+      {:assignment=>{
+        :variable=>slice('alias', 1),
+        :operator=>slice('=', 1),
+        :value=>{
+          :filters=>[],
+          :object=>{:template=>slice('&', 1), :type=>slice('template', 1)}
+        }
+      }},
+      {:object=>{:template=>slice('&', 2), :type=>slice('alias', 2)}}
+    ]
+
+    o = SlideField::ObjectData.new :parent, 'loc'
+    o.set :template, {:type=>slice('child', 2)}, 'loc', :object
+
+    error = assert_raises SlideField::InterpreterError do
+      @interpreter.interpret_tree tokens, o
+    end
+
+    assert_equal "Unexpected template reference at line 1 char 4", error.message
+  end
+
   def test_undefined_template
     tokens = [{
       :object=>{:template=>slice('&', 1), :type=>slice('var_name', 1)}
