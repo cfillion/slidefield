@@ -43,15 +43,15 @@ class SlideField::Parser < Parslet::Parser
     str('"')
   }
 
-  rule(:converter) {
+  rule(:filter) {
     str('(') >> spaces? >> (
-      identifier.as(:filter)
+      identifier.as(:name)
     ) >>
     spaces? >> str(')') >>
     inline_spaces?
   }
   rule(:value) {
-    converter.maybe >>
+    filter.repeat.as(:filters) >>
     (
       identifier.as(:identifier) |
       string.as(:string) |

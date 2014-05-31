@@ -301,7 +301,7 @@ class SlideField::Interpreter
   end
 
   def extract_value(data, object)
-    filter_token = data.delete :filter
+    filters = data.delete :filters
     value_data = data.first
     type = value_data[0]
     token = value_data[1]
@@ -319,9 +319,9 @@ class SlideField::Interpreter
       token = token[:type]
     end
 
-    if filter_token
+    filters.reverse_each {|filter_token|
       type, value = filter filter_token, type, value
-    end
+    }
 
     return type, token, value
   end
@@ -359,7 +359,9 @@ class SlideField::Interpreter
   end
 
   def filter(token, type, value)
-    name = token.to_sym
+    name_t = token[:name]
+    name = name_t.to_sym
+
     case [type, name]
     when [:point, :x]
       type = :integer
@@ -378,7 +380,7 @@ class SlideField::Interpreter
       value = value.lines.count
     else
       raise SlideField::InterpreterError,
-        "Invalid filter '#{name}' for type '#{type}' at #{get_loc token}"
+        "Invalid filter '#{name}' for type '#{type}' at #{get_loc name_t}"
     end
 
     return type, value

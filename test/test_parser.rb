@@ -3,7 +3,11 @@ require File.expand_path('../helper', __FILE__)
 class TestParser < MiniTest::Test
   def test_var_identifier
     tokens = [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:identifier=>'val'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{:filters=>[], :identifier=>'val'}
+      }
     ]
 
     expect 'var=val', tokens
@@ -18,98 +22,178 @@ class TestParser < MiniTest::Test
     expect "var=val;%comment", tokens
 
     expect 'var+=val', [
-      :assignment=>{:variable=>'var', :operator=>'+=', :value=>{:identifier=>'val'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'+=',
+        :value=>{:filters=>[], :identifier=>'val'}
+      }
     ]
     expect 'var-=val', [
-      :assignment=>{:variable=>'var', :operator=>'-=', :value=>{:identifier=>'val'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'-=',
+        :value=>{:filters=>[], :identifier=>'val'}
+      }
     ]
     expect 'var*=val', [
-      :assignment=>{:variable=>'var', :operator=>'*=', :value=>{:identifier=>'val'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'*=',
+        :value=>{:filters=>[], :identifier=>'val'}
+      }
     ]
     expect 'var/=val', [
-      :assignment=>{:variable=>'var', :operator=>'/=', :value=>{:identifier=>'val'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'/=',
+        :value=>{:filters=>[], :identifier=>'val'}
+      }
     ]
   end
 
   def test_var_integer
     expect 'var=42', [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:integer=>'42'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{:filters=>[], :integer=>'42'}
+      }
     ]
 
     expect 'var=-42', [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:integer=>'-42'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{:filters=>[], :integer=>'-42'}
+      }
     ]
   end
 
   def test_var_string
     expect 'var="value"', [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:string=>'"value"'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{:filters=>[], :string=>'"value"'}
+      }
     ]
 
     expect 'var="say \"hello\""', [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:string=>'"say \\"hello\\""'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{:filters=>[], :string=>'"say \\"hello\\""'}
+      }
     ]
   end
 
   def test_var_point
     expect 'var=42x24', [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:point=>'42x24'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{:filters=>[], :point=>'42x24'}
+      }
     ]
 
     expect 'var=-42x24', [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:point=>'-42x24'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{:filters=>[], :point=>'-42x24'}
+      }
     ]
 
     expect 'var=42x-24', [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:point=>'42x-24'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{:filters=>[], :point=>'42x-24'}
+      }
     ]
   end
 
   def test_var_color
     expect 'var=#C0FF33FF', [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:color=>'#C0FF33FF'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{:filters=>[], :color=>'#C0FF33FF'}
+      }
     ]
 
     expect 'var=#c0ff33ff', [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:color=>'#c0ff33ff'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{:filters=>[], :color=>'#c0ff33ff'}
+      }
     ]
   end
 
   def test_var_boolean
     expect 'var=:true', [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:boolean=>':true'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{:filters=>[], :boolean=>':true'}
+      }
     ]
 
     expect 'var=:false', [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:boolean=>':false'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{:filters=>[], :boolean=>':false'}
+      }
     ]
   end
 
   def test_var_object
     expect 'var=\\test', [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{
-        :object=>{:type=>'test'}
-      }}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{:filters=>[], :object=>{:type=>'test'}}
+      }
     ]
 
     expect 'var=\\test {}', [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{
-        :object=>{:type=>'test', :body=>[]}
-      }}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{:filters=>[], :object=>{:type=>'test', :body=>[]}}
+      }
     ]
 
     expect "var=\\test {\n\tvar=val\n}", [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{
-        :object=>{:type=>'test', :body=>[
-          {:assignment=>{:variable=>'var', :operator=>'=', :value=>{:identifier=>'val'}}}
-        ]}
-      }}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{
+          :filters=>[],
+          :object=>{:type=>'test', :body=>[
+            {:assignment=>{
+              :variable=>'var',
+              :operator=>'=',
+              :value=>{:filters=>[], :identifier=>'val'}}
+            }
+          ]}
+        }
+      }
     ]
   end
 
   def test_filter
     tokens = [
-      :assignment=>{:variable=>'var', :operator=>'=', :value=>{:filter=>'filter_name', :identifier=>'val'}}
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{
+          :filters=>[{:name=>'filter_name'}],
+          :identifier=>'val'
+        }
+      }
     ]
 
     expect 'var=(filter_name)val', tokens
@@ -118,6 +202,20 @@ class TestParser < MiniTest::Test
     expect "var= (filter_name)\t\tval", tokens
     expect "var= (filter_name)%{%}val", tokens
     expect "var= ( filter_name )val", tokens
+
+    tokens = [
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :value=>{
+          :filters=>[{:name=>'first'}, {:name=>'second'}],
+          :identifier=>'val'
+        }
+      }
+    ]
+
+    expect "var=(first)(second)val", tokens
+    expect "var=(first) (second)val", tokens
   end
 
   def test_object
@@ -154,7 +252,10 @@ class TestParser < MiniTest::Test
 
   def test_object_value
     tokens = [
-      {:object=>{:type=>'test', :value=>{:identifier=>'val'}}}
+      {:object=>{
+        :type=>'test',
+        :value=>{:filters=>[], :identifier=>'val'}
+      }}
     ]
 
     expect '\\test val', tokens
@@ -165,31 +266,52 @@ class TestParser < MiniTest::Test
     end
 
     expect '\\test 42', [
-      {:object=>{:type=>'test', :value=>{:integer=>'42'}}}
+      {:object=>{
+        :type=>'test',
+        :value=>{:filters=>[], :integer=>'42'}
+      }}
     ]
 
     expect '\\test4-2', [
-      {:object=>{:type=>'test4', :value=>{:integer=>'-2'}}}
+      {:object=>{
+        :type=>'test4',
+        :value=>{:filters=>[], :integer=>'-2'}
+      }}
     ]
 
     expect '\\test "string"', [
-      {:object=>{:type=>'test', :value=>{:string=>'"string"'}}}
+      {:object=>{
+        :type=>'test',
+        :value=>{:filters=>[], :string=>'"string"'}
+      }}
     ]
 
     expect '\\test 24x42', [
-      {:object=>{:type=>'test', :value=>{:point=>'24x42'}}}
+      {:object=>{
+        :type=>'test',
+        :value=>{:filters=>[], :point=>'24x42'}
+      }}
     ]
 
     expect '\\test #FFFFFFFF', [
-      {:object=>{:type=>'test', :value=>{:color=>'#FFFFFFFF'}}}
+      {:object=>{
+        :type=>'test',
+        :value=>{:filters=>[], :color=>'#FFFFFFFF'}
+      }}
     ]
 
     expect '\\test :true', [
-      {:object=>{:type=>'test', :value=>{:boolean=>':true'}}}
+      {:object=>{
+        :type=>'test',
+        :value=>{:filters=>[], :boolean=>':true'}
+      }}
     ]
 
     expect '\\test (filter)val', [
-      {:object=>{:type=>'test', :value=>{:filter=>'filter', :identifier=>'val'}}}
+      {:object=>{
+        :type=>'test',
+        :value=>{:filters=>[{:name=>'filter'}], :identifier=>'val'}
+      }}
     ]
   end
 
@@ -220,7 +342,11 @@ class TestParser < MiniTest::Test
 
     expect "\\test{var=val;}", [
       {:object=>{:type=>'test', :body=>[
-        {:assignment=>{:variable=>'var', :operator=>'=', :value=>{:identifier=>'val'}}}
+        {:assignment=>{
+          :variable=>'var',
+          :operator=>'=',
+          :value=>{:filters=>[], :identifier=>'val'}}
+        }
       ]}}
     ]
 
