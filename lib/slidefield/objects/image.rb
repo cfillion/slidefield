@@ -3,6 +3,7 @@ module SlideField::ObjectRules
     def rules
       property :source, :string
       property :size, :point, [0,0]
+      property :color, :color, [255, 255, 255, 255]
 
       super
     end
@@ -14,6 +15,7 @@ module SlideField::ObjectManager
     def load
       @x, @y = @obj.get :position
       @z = @obj.get :z_order
+      @color = Gosu::Color.rgba *@obj.get(:color)
 
       source = File.expand_path @obj.get(:source), @obj.include_path
       width, height = @obj.get :size
@@ -28,7 +30,7 @@ module SlideField::ObjectManager
 
     def draw
       @window.scale @x_scale, @y_scale do
-        @image.draw @x, @y, @z
+        @image.draw @x, @y, @z, 1, 1, @color
       end
     end
   end
