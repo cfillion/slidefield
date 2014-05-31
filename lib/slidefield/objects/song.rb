@@ -1,9 +1,9 @@
 module SlideField::ObjectRules
   class Song < SBase
     def rules
-      variable :source, :string
-      variable :volume, :integer, 100
-      variable :loop, :boolean, true
+      property :source, :string
+      property :volume, :integer, 100
+      property :loop, :boolean, true
 
       super
     end

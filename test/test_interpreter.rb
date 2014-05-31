@@ -14,21 +14,21 @@ module SlideField::ObjectRules
 
   class Type < Base
     def rules
-      variable :test, :point, [0,0]
+      property :test, :point, [0,0]
     end
   end
 
   class Value < Base
     def rules
-      variable :num, :integer, 0
-      variable :num2, :integer, 0
-      variable :str, :string, ""
+      property :num, :integer, 0
+      property :num2, :integer, 0
+      property :str, :string, ""
     end
   end
 
   class Picky < Base
     def rules
-      variable :king_name, :string
+      property :king_name, :string
       child :superchild, true
     end
   end

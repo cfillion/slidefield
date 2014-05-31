@@ -1,13 +1,13 @@
 module SlideField::ObjectRules
   class Text < GBase
     def rules
-      variable :content, :string
-      variable :color, :color, [255, 255, 255, 255]
-      variable :font, :string, "sans"
-      variable :height, :integer, 20
-      variable :width, :integer, 0
-      variable :spacing, :integer, 0
-      variable :align, :string, "left"
+      property :content, :string
+      property :color, :color, [255, 255, 255, 255]
+      property :font, :string, "sans"
+      property :height, :integer, 20
+      property :width, :integer, 0
+      property :spacing, :integer, 0
+      property :align, :string, "left"
 
       super
     end

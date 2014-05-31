@@ -1,8 +1,9 @@
 module SlideField::ObjectRules
   class Layout < Base
     def rules
-      variable :size, :point
-      variable :fullscreen, :boolean, true
+      property :size, :point
+      property :fullscreen, :boolean, true
+
       super
     end
   end

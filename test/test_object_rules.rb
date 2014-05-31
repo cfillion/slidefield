@@ -3,9 +3,9 @@ require File.expand_path('../helper', __FILE__)
 module SlideField::ObjectRules
   class RulesTest < Base
     def rules
-      variable :var1, :string, "default"
-      variable :var2, :integer, nil
-      variable :var3, :string, "value"
+      property :var1, :string, "default"
+      property :var2, :integer, nil
+      property :var3, :string, "value"
 
       child :obj1
       child :obj2, true
@@ -32,25 +32,25 @@ class TestObjectRules < MiniTest::Test
     assert_same first, second
   end
 
-  def test_known_variables
+  def test_properties_names
     rules = SlideField::ObjectRules::RulesTest.get
-    assert_equal [:var1, :var2, :var3], rules.known_variables
+    assert_equal [:var1, :var2, :var3], rules.properties_names
   end
 
-  def test_known_variables_types
+  def test_properties_types
     rules = SlideField::ObjectRules::RulesTest.get
-    assert_equal [:string, :integer], rules.known_variables_types
+    assert_equal [:string, :integer], rules.properties_types
   end
 
 
-  def test_required_variables
+  def test_required_properties
     rules = SlideField::ObjectRules::RulesTest.get
-    assert_equal [:var2], rules.required_variables
+    assert_equal [:var2], rules.required_properties
   end
 
-  def test_optional_variables
+  def test_optional_properties
     rules = SlideField::ObjectRules::RulesTest.get
-    assert_equal [:var1, :var3], rules.optional_variables
+    assert_equal [:var1, :var3], rules.optional_properties
   end
 
 
@@ -60,9 +60,9 @@ class TestObjectRules < MiniTest::Test
     assert_equal nil, rules.type_of(:unknown)
   end
 
-  def test_matching_variables
+  def test_matching_properties
     rules = SlideField::ObjectRules::RulesTest.get
-    assert_equal [:var1, :var3], rules.matching_variables(:string)
+    assert_equal [:var1, :var3], rules.matching_properties(:string)
   end
 
   def test_default_value

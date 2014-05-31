@@ -1,8 +1,8 @@
 module SlideField::ObjectRules
   class Image < GBase
     def rules
-      variable :source, :string
-      variable :size, :point, [0,0]
+      property :source, :string
+      property :size, :point, [0,0]
 
       super
     end

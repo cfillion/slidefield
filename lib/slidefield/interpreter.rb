@@ -88,14 +88,14 @@ class SlideField::Interpreter
       # finalize the object once all its content has been processed
 
       rules = object.rules
-      rules.required_variables.each {|name|
+      rules.required_properties.each {|name|
         unless object.get name
           raise SlideField::InterpreterError,
             "Missing property '#{name}' for object '#{object.type}' at #{object.loc}"
         end
       }
 
-      rules.optional_variables.each {|name|
+      rules.optional_properties.each {|name|
         next unless object.get(name).nil?
 
         default = rules.default_value name
@@ -279,11 +279,11 @@ class SlideField::Interpreter
 
   def interpret_anon_value(value_data, object)
     val_type, value_t, value = extract_value value_data, object
-    var_name = object.rules.matching_variables(val_type).first # guess variable name
+    var_name = object.rules.matching_properties(val_type).first # guess variable name
 
     unless var_name
       raise SlideField::InterpreterError,
-        "Unexpected '#{val_type}', expecting one of #{object.rules.known_variables_types} at #{get_loc value_t}"
+        "Unexpected '#{val_type}', expecting one of #{object.rules.properties_types} at #{get_loc value_t}"
     end
 
     if object.has? var_name

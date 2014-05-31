@@ -1,9 +1,9 @@
 module SlideField::ObjectRules
   class Include < Base
     def rules
-      variable :source, :string
+      property :source, :string
 
-      # don't call super here
+      # don't call super
     end
   end
 end

@@ -1,8 +1,8 @@
 module SlideField::ObjectRules
   class Rect < GBase
     def rules
-      variable :size, :point
-      variable :fill, :color, [255, 255, 255, 255]
+      property :size, :point
+      property :fill, :color, [255, 255, 255, 255]
 
       super
     end

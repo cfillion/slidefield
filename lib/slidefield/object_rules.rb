@@ -11,40 +11,40 @@ module SlideField::ObjectRules
     @@cache = {}
 
     def initialize
-      @variables = []
+      @properties = []
       @children = []
     end
 
-    def known_variables
-      @variables.collect {|hash| hash[:name] }
+    def properties_names
+      @properties.collect {|hash| hash[:name] }
     end
 
-    def known_variables_types
-      @variables.collect {|hash| hash[:type] }.uniq
+    def properties_types
+      @properties.collect {|hash| hash[:type] }.uniq
     end
 
-    def required_variables
-      required = @variables.select {|hash| hash[:default].nil? }
+    def required_properties
+      required = @properties.select {|hash| hash[:default].nil? }
       required.collect {|hash| hash[:name] }
     end
 
-    def optional_variables
-      required = @variables.select {|hash| !hash[:default].nil? }
+    def optional_properties
+      required = @properties.select {|hash| !hash[:default].nil? }
       required.collect {|hash| hash[:name] }
     end
 
     def type_of(name)
-      rule = @variables.select {|hash| hash[:name] == name }.first
+      rule = @properties.select {|hash| hash[:name] == name }.first
       rule[:type] if rule
     end
 
-    def matching_variables(type)
-      matches = @variables.select {|hash| hash[:type] == type }
+    def matching_properties(type)
+      matches = @properties.select {|hash| hash[:type] == type }
       matches.collect {|hash| hash[:name] }
     end
 
     def default_value(name)
-      rule = @variables.select {|hash| hash[:name] == name }.first
+      rule = @properties.select {|hash| hash[:name] == name }.first
       rule[:default] if rule
     end
 
@@ -68,8 +68,8 @@ module SlideField::ObjectRules
     end
 
     protected
-    def variable(name, type, default = nil)
-      @variables << {:name=>name, :type=>type, :default=>default}
+    def property(name, type, default = nil)
+      @properties << {:name=>name, :type=>type, :default=>default}
     end
 
     def child(type, required = false)
