@@ -104,10 +104,18 @@ class SlideField::Interpreter
         object.set name, default, 'default', type
       }
 
-      rules.required_children.each {|type|
-        if object[type].empty?
+      rules.accepted_children.each {|type|
+        min, max = rules.requirements_of_child type
+        count = object[type].count
+
+        if count < min
           raise SlideField::InterpreterError,
-            "Object '#{type}' not found in '#{object.type}' at #{object.loc}"
+            "Object '#{object.type}' must have at least #{min} '#{type}', #{count} found at #{object.loc}"
+        end
+
+        if max > 0 && count > max
+          raise SlideField::InterpreterError,
+            "Object '#{object.type}' can not have more than #{max} '#{type}', #{count} found at #{object.loc}"
         end
       }
     end

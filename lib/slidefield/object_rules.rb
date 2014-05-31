@@ -52,9 +52,9 @@ module SlideField::ObjectRules
       @children.collect {|hash| hash[:type] }
     end
 
-    def required_children
-      required = @children.select {|hash| hash[:required] }
-      required.collect {|hash| hash[:type] }
+    def requirements_of_child(type)
+      rule = @children.select {|hash| hash[:type] == type }.first
+      rule[:requirements] if rule
     end
 
     def self.get
@@ -72,8 +72,8 @@ module SlideField::ObjectRules
       @properties << {:name=>name, :type=>type, :default=>default}
     end
 
-    def child(type, required = false)
-      @children << {:type=>type, :required=>required}
+    def child(type, min = 0, max = 0)
+      @children << {:type=>type, :requirements=>[min, max]}
     end
   end
 end

@@ -8,7 +8,8 @@ module SlideField::ObjectRules
       property :var3, :string, "value"
 
       child :obj1
-      child :obj2, true
+      child :obj2, 1
+      child :obj3, 1, 2
       super
     end
   end
@@ -73,11 +74,14 @@ class TestObjectRules < MiniTest::Test
 
   def test_accepted_children
     rules = SlideField::ObjectRules::RulesTest.get
-    assert_equal [:obj1, :obj2, :include, :debug], rules.accepted_children
+    assert_equal [:obj1, :obj2, :obj3, :include, :debug], rules.accepted_children
   end
 
-  def test_required_children
+  def test_requirements_of_child
     rules = SlideField::ObjectRules::RulesTest.get
-    assert_equal [:obj2], rules.required_children
+    assert_equal [0, 0], rules.requirements_of_child(:obj1)
+    assert_equal [1, 0], rules.requirements_of_child(:obj2)
+    assert_equal [1, 2], rules.requirements_of_child(:obj3)
+    assert_equal nil, rules.requirements_of_child(:obj4)
   end
 end

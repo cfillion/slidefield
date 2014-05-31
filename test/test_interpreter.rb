@@ -29,7 +29,9 @@ module SlideField::ObjectRules
   class Picky < Base
     def rules
       property :king_name, :string
-      child :superchild, true
+      child :minOne, 1
+      child :minTwo, 2
+      child :maxOne, 1, 1
     end
   end
 end
@@ -1092,11 +1094,46 @@ class TestInterpreter < MiniTest::Test
   def test_missing_child
     o = SlideField::ObjectData.new :picky, 'location'
     o.set :king_name, 'value', 'var loc', :string
+
     error = assert_raises SlideField::InterpreterError do
       SlideField::Interpreter.new.interpret_tree [], o
     end
 
-    assert_equal "Object 'superchild' not found in 'picky' at location", error.message
+    assert_equal "Object 'picky' must have at least 1 'minOne', 0 found at location", error.message
+
+    c1 = SlideField::ObjectData.new :minOne, 'location'
+    o << c1
+
+    c2 = SlideField::ObjectData.new :minTwo, 'location'
+    o << c2
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.interpret_tree [], o
+    end
+
+    assert_equal "Object 'picky' must have at least 2 'minTwo', 1 found at location", error.message
+  end
+
+  def test_child_overdose
+    o = SlideField::ObjectData.new :picky, 'location'
+    o.set :king_name, 'value', 'var loc', :string
+
+    c1 = SlideField::ObjectData.new :minOne, 'location'
+    o << c1
+
+    c2 = SlideField::ObjectData.new :minTwo, 'location'
+    o << c2
+    o << c2
+
+    c3 = SlideField::ObjectData.new :maxOne, 'location'
+    o << c3
+    o << c3
+
+    error = assert_raises SlideField::InterpreterError do
+      SlideField::Interpreter.new.interpret_tree [], o
+    end
+
+    assert_equal "Object 'picky' can not have more than 1 'maxOne', 2 found at location", error.message
   end
 
   def test_file_not_found
