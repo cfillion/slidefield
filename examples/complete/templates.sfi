@@ -1,0 +1,84 @@
+background = \image {
+  size = layout_size
+}
+
+title = \text {
+  color = #FFFFFFFF
+  font = title_font
+  height = 100
+  position = 100x70
+  z_order = 1
+
+  % append <b>
+  copy = content
+  content -= copy
+  content += "<b>"
+  content += copy
+  
+  % support alignment
+  x = (x)position
+  x *= 2
+  width = (x)layout_size
+  width -= x
+
+  % shadow
+  \text #00000099 {
+    position += 2x2
+    z_order -= 1
+  }
+}
+
+info_box = \rect {
+  padding = 10
+  text_height = 40
+
+  box_height = (lines)content
+  box_height *= text_height
+  box_height += padding
+
+  size = 650x0
+  size += (y)box_height
+
+  position = layout_size
+  position -= size
+  position /= 2x1
+  position -= 0x100
+
+  fill = #FFFFFF69
+
+  \text {
+    position += (x)padding
+    position += (y)padding
+
+    height = text_height
+    color = #011010FF
+    font = info_font
+    z_order = 1
+
+    % shadow
+    \text {
+      position += 1x1
+      color = #FFFFFF99
+      z_order -= 1
+    }
+  }
+}
+
+credit = \text {
+  position = 10x-30
+  position += (y)(y)layout_size
+
+  color = #FFFFFFFF
+  z_order = 1
+
+  link = content
+  content -= content
+  content += "<b>Photo Credit:</b> "
+  content += link
+
+  \text {
+    position += 1x1
+    color = #000000FF
+    z_order -= 1
+  }
+}

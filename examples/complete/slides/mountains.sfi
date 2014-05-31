@@ -1,3 +1,29 @@
 \slide {
-  \text "Hello World!"
+  \&background "../assets/mount_everest.jpg"
+  \&title "Mount Everest"
+
+  \&info_box {
+    content = "<b>Country:</b> Nepal\n"
+    content += "<b>Elevation:</b> 8,848 m\n"
+    content += "<b>First ascent:</b> 29 May 1953\n"
+    content += "<b>Easiest route:</b> South Col\n"
+    content += "<b>Notes:</b> Earth's highest mountain"
+  }
+
+  \&credit "https://en.wikipedia.org/wiki/File:Mount_Everest_as_seen_from_Drukair2_PLW_edit.jpg"
+}
+
+\slide {
+  \&background "../assets/K2.jpg"
+  \&title "K2"
+
+  \&info_box {
+    content = "<b>Country:</b> Pakistan\n"
+    content += "<b>Elevation:</b> 8,611 m\n"
+    content += "<b>First ascent:</b> 31 July 1954\n"
+    content += "<b>Easiest route:</b> Abruzzi Spur\n"
+    content += "<b>Notes:</b> The mountain was first\nsurveyed by a European team in 1856"
+  }
+
+  \&credit "https://en.wikipedia.org/wiki/File:K2_2006b.jpg"
 }

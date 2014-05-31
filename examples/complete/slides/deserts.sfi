@@ -1,0 +1,23 @@
+\slide {
+  \&background "../assets/sahara.jpg"
+  \&title "Sahara"
+
+  \&info_box {
+    content = "<b>Area:</b> 9,400,000 km²\n"
+    content += "<b>Notes:</b> The world's hottest desert"
+  }
+
+  \&credit "https://en.wikipedia.org/wiki/File:Sahara_satellite_hires.jpg"
+}
+
+\slide {
+  \&background "../assets/gobi.jpg"
+  \&title "Gobi"
+
+  \&info_box {
+    content = "<b>Area:</b> 1,295,000 km²\n"
+    content += "<b>Notes:</b> The expansion of the Gobi is\nattributed mostly to human activities"
+  }
+
+  \&credit "https://en.wikipedia.org/wiki/File:Khongoryn_Els,_Gurvansaikhan_NP,_Gobi_desert,_Mongolia.jpg"
+}

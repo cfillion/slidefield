@@ -1,33 +1,6 @@
-% ---- STRINGS ---- %
-hello = "Hello"
-hello += " World"
-% hello contains "Hello World"
+% ---- LAYOUT ---- %
+layout_size = 1920x1080
 
-world = hello
-% world contains "Hello World" too
-
-hello -= " World"
-% hello contains just "Hello"
-
-world -= "Hello "
-% world contains just "World"
-
-% ---- INTEGERS ---- %
-life = 42
-% life contains 42
-
-life += 1
-% life contains 43
-
-life -= 1
-% life contains 42 again
-
-% ---- SIZES ---- %
-resolution = 1920x1080
-% resolution contains 1920x1080
-
-resolution -= 1200x504
-% resolution contains 720x576
-
-resolution += 0x4
-% resolution is now 720x580
+% ---- SLIDES ---- %
+title_font = "URW Bookman L"
+info_font = "monospace"
