@@ -1,21 +1,63 @@
 #!/usr/bin/env ruby
 require 'slidefield'
+require 'optparse'
 
-if ARGV.length != 1
-  puts "Usage:\n\tslidefield path/to/file.sfp"
-  exit
+def parse_opts
+  options = []
+
+  OptionParser.new do |opts|
+    opts.program_name = "SlideField"
+    opts.version = SlideField::VERSION
+    opts.banner = "Usage: slidefield [options] [file ...]"
+
+    opts.on '-c', '--check', "Check input only" do
+      options << :check
+    end
+
+    opts.on_tail '-v', '--version', "Show version number" do
+      puts opts.ver
+      exit
+    end
+
+    opts.on_tail '-h', '--help', "Show this message" do
+      puts opts.help
+      exit
+    end
+  end.parse!
+
+  options
 end
 
-entry_file = File.absolute_path ARGV[0]
-
 begin
-  interpreter = SlideField::Interpreter.new
-  interpreter.run_file entry_file
+  begin
+    options = parse_opts
+  rescue OptionParser::InvalidOption => e
+    raise SlideField::Error, e
+  end
 
-  viewer = SlideField::Viewer.new interpreter.root
-  viewer.caption = File.basename(entry_file)
-  viewer.show
+  files = ARGV
+
+  # read from standard input by default
+  files << '-' if files.empty?
+
+  files.each {|file|
+    interpreter = SlideField::Interpreter.new
+    if '-' == file
+      interpreter.run_string STDIN.read
+    else
+      path = File.absolute_path file
+      interpreter.run_file path
+    end
+
+    next if options.include? :check
+
+    project_root = interpreter.root
+    viewer = SlideField::Viewer.new project_root
+    viewer.caption = project_root.context
+    viewer.show
+  }
 rescue SlideField::Error => e
-  puts "#{e.class}: #{e}"
+  warn "#{e.class}: #{e}"
 rescue Interrupt
+  puts
 end
