@@ -54,10 +54,10 @@ class TestObjectRules < MiniTest::Test
   end
 
 
-  def test_type_of
+  def test_type_of_property
     rules = SlideField::ObjectRules::RulesTest.get
-    assert_equal :string, rules.type_of(:var1)
-    assert_equal nil, rules.type_of(:unknown)
+    assert_equal :string, rules.type_of_property(:var1)
+    assert_equal nil, rules.type_of_property(:unknown)
   end
 
   def test_matching_properties

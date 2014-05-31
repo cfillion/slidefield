@@ -268,7 +268,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.interpret_tree tokens, o
     end
 
-    assert_equal "Unexpected 'integer', expecting 'point' at line 1 char 3", error.message
+    assert_equal "Unexpected 'integer', expecting 'point' for property 'test' at line 1 char 3", error.message
   end
 
   def test_add_undefined
@@ -296,7 +296,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.interpret_tree tokens, o
     end
 
-    assert_equal "Unexpected 'integer', expecting 'string' at line 1 char 3", error.message
+    assert_equal "Unexpected 'integer', expecting 'string' for variable or property 'var' at line 1 char 3", error.message
   end
 
   def test_add_integer
@@ -424,7 +424,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.interpret_tree tokens, o
     end
 
-    assert_equal "Unexpected 'integer', expecting 'string' at line 1 char 3", error.message
+    assert_equal "Unexpected 'integer', expecting 'string' for variable or property 'var' at line 1 char 3", error.message
   end
 
   def test_sub_integer
@@ -553,7 +553,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.interpret_tree tokens, o
     end
 
-    assert_equal "Unexpected 'integer', expecting 'string' at line 1 char 3", error.message
+    assert_equal "Unexpected 'integer', expecting 'string' for variable or property 'var' at line 1 char 3", error.message
   end
 
   def test_mul_integer
@@ -683,7 +683,7 @@ class TestInterpreter < MiniTest::Test
       SlideField::Interpreter.new.interpret_tree tokens, o
     end
 
-    assert_equal "Unexpected 'integer', expecting 'string' at line 1 char 3", error.message
+    assert_equal "Unexpected 'integer', expecting 'string' for variable or property 'var' at line 1 char 3", error.message
   end
 
   def test_div_integer

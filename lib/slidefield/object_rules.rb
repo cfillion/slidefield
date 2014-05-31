@@ -33,7 +33,7 @@ module SlideField::ObjectRules
       required.collect {|hash| hash[:name] }
     end
 
-    def type_of(name)
+    def type_of_property(name)
       rule = @properties.select {|hash| hash[:name] == name }.first
       rule[:type] if rule
     end

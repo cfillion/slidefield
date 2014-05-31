@@ -99,7 +99,7 @@ class SlideField::Interpreter
         next unless object.get(name).nil?
 
         default = rules.default_value name
-        type = rules.type_of name
+        type = rules.type_of_property name
 
         object.set name, default, 'default', type
       }
@@ -132,10 +132,10 @@ class SlideField::Interpreter
           "Variable '#{var_name}' is already defined at #{get_loc var_name_t}"
       end
 
-      if valid_type = object.rules.type_of(var_name)
+      if valid_type = object.rules.type_of_property(var_name)
         if var_type != valid_type
           raise SlideField::InterpreterError,
-            "Unexpected '#{var_type}', expecting '#{valid_type}' at #{get_loc var_value_t}"
+            "Unexpected '#{var_type}', expecting '#{valid_type}' for property '#{var_name}' at #{get_loc var_value_t}"
         end
       end
 
@@ -152,7 +152,7 @@ class SlideField::Interpreter
 
       if var_type != origin_type
         raise SlideField::InterpreterError,
-          "Unexpected '#{var_type}', expecting '#{origin_type}' at #{get_loc var_value_t}"
+          "Unexpected '#{var_type}', expecting '#{origin_type}' for variable or property '#{var_name}' at #{get_loc var_value_t}"
       end
 
       value = nil
