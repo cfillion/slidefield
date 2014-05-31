@@ -1276,28 +1276,17 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    assert_output "DEBUG OUTPUT | type = string | location = line 1 char 2 | value = i haz bugs\n\n" do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+    o.context = 'parent context'
+
+    pretty, err = capture_io do
+      ap :type=>:string, :location=>'line 1 char 2', :value=>'i haz bugs'
+    end
+
+    assert_output "DEBUG in local context at line 1 char 1:\n#{pretty}\n" do
+      SlideField::Interpreter.new.interpret_tree tokens, o, nil, 'local context'
     end
 
     assert_empty o[:debug]
-  end
-
-  def test_debug_object
-    object = {:type=>slice('test', 1)}
-
-    tokens = [
-      {:object=>{:type=>slice('debug', 2), :value=>{:object=>object}}}
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    pretty, err = capture_io do
-      ap object
-    end
-
-    assert_output "DEBUG OUTPUT | type = object | location = line 1 char 1 | value = \n#{pretty}\n" do
-      SlideField::Interpreter.new.interpret_tree tokens, o
-    end
   end
 
   def slice(val, line)

@@ -264,13 +264,14 @@ class SlideField::Interpreter
       source = File.expand_path child.get(:source), include_path
       run_file source, object
     when :debug
-      thing_type = child.var_type :thing
-      thing_val = child.get :thing
-      thing_val = nil if thing_type == :object
+      debug_infos = {
+        :type=>child.var_type(:thing),
+        :location=>child.var_loc(:thing),
+        :value=>child.get(:thing)
+      }
 
-      puts "DEBUG OUTPUT | type = %s | location = %s | value = %s" %
-        [thing_type, child.var_loc(:thing), thing_val]
-      ap child.get :thing unless thing_val
+      puts "DEBUG in #{child.context} at #{child.loc}:"
+      ap debug_infos
       puts
     else
       object << child
