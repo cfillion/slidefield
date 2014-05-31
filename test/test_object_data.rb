@@ -87,4 +87,22 @@ class TestObjectData < MiniTest::Test
     o = SlideField::ObjectData.new :slide, 'loc'
     assert_instance_of SlideField::ObjectRules::Slide, o.rules
   end
+
+  def test_ancestor
+    parent = SlideField::ObjectData.new :parent, 'loc'
+    assert_equal [], parent.children
+
+    child1 = SlideField::ObjectData.new :child1, 'loc'
+    child2 = SlideField::ObjectData.new :child2, 'loc'
+    child3 = SlideField::ObjectData.new :child3, 'loc'
+
+    parent << child1
+    child1 << child2
+    child2 << child3
+
+    assert_equal parent, child1.ancestor(:parent)
+    assert_equal parent, child2.ancestor(:parent)
+    assert_equal child1, child3.ancestor(:child1)
+    assert_nil parent.ancestor(:parent)
+  end
 end

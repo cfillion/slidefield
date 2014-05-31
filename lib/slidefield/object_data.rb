@@ -53,6 +53,15 @@ class SlideField::ObjectData
     @children.select {|o| o.type == selector }
   end
 
+  def ancestor(selector)
+    p = @parent
+    while p
+      return p if p.type == selector
+      p = p.parent
+    end
+    nil
+  end
+
   def context_string
     array = [@context]
     parent = @parent
