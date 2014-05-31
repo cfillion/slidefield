@@ -39,11 +39,24 @@ end
 class TestInterpreter < MiniTest::Test
   def setup
     @col_cache = []
+    @interpreter = SlideField::Interpreter.new
+    @path = File.expand_path 'resources', __dir__
+  end
+
+  def slice(val, line)
+    @col_cache[line] = 0 unless @col_cache[line]
+    col = @col_cache[line] += 1
+
+    line_cache = MiniTest::Mock.new
+    line_cache.expect :line_and_column, [line, col], [Object]
+
+    pos = Parslet::Position.new val, 0
+    Parslet::Slice.new pos, val, line_cache
   end
 
   def test_run_parser_error
     error = assert_raises SlideField::ParseError do
-      SlideField::Interpreter.new.run_string '"'
+      @interpreter.run_string '"'
     end
 
     assert_match /\A\[input\] /, error.message
@@ -53,7 +66,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_run_interpreter_error
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.run_string "\\object\n"
+      @interpreter.run_string "\\object\n"
     end
 
     assert_match /\A\[input\] /, error.message
@@ -62,7 +75,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_run_interpreter_validation
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.run_string "% nothing\n"
+      @interpreter.run_string "% nothing\n"
     end
 
     assert_match /\A\[input\] /, error.message
@@ -71,7 +84,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_empty_tree
     o = SlideField::ObjectData.new :parent, 'loc'
-    SlideField::Interpreter.new.interpret_tree "", o
+    @interpreter.interpret_tree "", o
   end
 
   def test_unsupported_object
@@ -81,7 +94,7 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :parent, 'loc'
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Unsupported object 'aaaa'", error.message
@@ -94,7 +107,7 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :child, 'loc'
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Unsupported statement 'hello_world'", error.message
@@ -111,7 +124,7 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :child, 'loc'
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Unsupported type 'dog_food' at line 1 char 3", error.message
@@ -128,7 +141,7 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :child, 'loc'
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Unsupported operator 'baconize' at line 1 char 2", error.message
@@ -147,7 +160,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, 1
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Variable 'var' is already defined at line 1 char 1", error.message
@@ -163,7 +176,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal 42, o.get(:var)
     assert_equal :integer, o.var_type(:var)
@@ -180,7 +193,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal [12,34], o.get(:var)
     assert_equal :point, o.var_type(:var)
@@ -197,7 +210,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal 'hello', o.get(:var)
     assert_equal :string, o.var_type(:var)
@@ -214,7 +227,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal [192, 255, 51, 255], o.get(:var)
     assert_equal :color, o.var_type(:var)
@@ -231,7 +244,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal true, o.get(:var)
     assert_equal :boolean, o.var_type(:var)
@@ -256,7 +269,7 @@ class TestInterpreter < MiniTest::Test
     o.include_path = 'include/path/'
     o.context = 'the/file.sfp'
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     val = o.get(:var)
 
     assert_equal object, o.get(:var)
@@ -276,7 +289,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :test, 'hello', 'loc', :string
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 'hello', o.get(:var)
     assert_equal :string, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -293,7 +306,7 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :child, 'loc'
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Undefined variable 'test' at line 1 char 3", error.message
@@ -311,7 +324,7 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :type, 'loc'
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Unexpected 'integer', expecting 'point' for property 'test' at line 1 char 3", error.message
@@ -328,7 +341,7 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :child, 'loc'
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Undefined variable 'var' at line 1 char 1", error.message
@@ -347,7 +360,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, 'test', 'loc', :string
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Unexpected 'integer', expecting 'string' for variable or property 'var' at line 1 char 3", error.message
@@ -365,7 +378,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, 42, 'loc', :integer
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 84, o.get(:var)
     assert_equal :integer, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -383,7 +396,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, [42,42], 'loc', :point
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal [84,84], o.get(:var)
     assert_equal :point, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -401,7 +414,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, 'hello', 'loc', :string
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 'hello world', o.get(:var)
     assert_equal :string, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -419,7 +432,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, [0, 0, 0, 0], 'loc', :color
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal [1, 1, 1, 1], o.get(:var)
     assert_equal :color, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -437,7 +450,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, [255, 255, 255, 255], 'loc', :color
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal [255, 255, 255, 255], o.get(:var)
     assert_equal :color, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -456,7 +469,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, true, 'loc', :boolean
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Invalid operator '+=' for type 'boolean' at line 1 char 2", error.message
@@ -475,7 +488,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, 'hello', 'loc', :string
     o.set :test, ' world', 'loc', :string
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 'hello world', o.get(:var)
     assert_equal :string, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -492,7 +505,7 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :child, 'loc'
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Undefined variable 'var' at line 1 char 1", error.message
@@ -511,7 +524,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, 'test', 'loc', :string
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Unexpected 'integer', expecting 'string' for variable or property 'var' at line 1 char 3", error.message
@@ -529,7 +542,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, 44, 'loc', :integer
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 2, o.get(:var)
     assert_equal :integer, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -547,7 +560,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, [46,44], 'loc', :point
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal [4,2], o.get(:var)
     assert_equal :point, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -570,7 +583,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, 'hello world', 'loc', :string
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 'hello', o.get(:var)
     assert_equal :string, o.var_type(:var)
     assert_equal 'line 2 char 3', o.var_loc(:var)
@@ -588,7 +601,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, [1, 1, 1, 1], 'loc', :color
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal [0, 0, 0, 0], o.get(:var)
     assert_equal :color, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -606,7 +619,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, [0, 0, 0, 0], 'loc', :color
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal [0, 0, 0, 0], o.get(:var)
     assert_equal :color, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -625,7 +638,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, true, 'loc', :boolean
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Invalid operator '-=' for type 'boolean' at line 1 char 2", error.message
@@ -644,7 +657,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, 3, 'loc', :integer
     o.set :test, 2, 'loc', :integer
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 1, o.get(:var)
     assert_equal :integer, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -661,7 +674,7 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :child, 'loc'
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Undefined variable 'var' at line 1 char 1", error.message
@@ -680,7 +693,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, 'test', 'loc', :string
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Unexpected 'integer', expecting 'string' for variable or property 'var' at line 1 char 3", error.message
@@ -698,7 +711,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, 4, 'loc', :integer
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 16, o.get(:var)
     assert_equal :integer, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -716,7 +729,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, [4,2], 'loc', :point
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal [16,4], o.get(:var)
     assert_equal :point, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -734,7 +747,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, 'test', 'loc', :string
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 'testtesttest', o.get(:var)
     assert_equal :string, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -753,7 +766,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, 'test', 'loc', :string
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Invalid string multiplier 'aaaa', integer > 0 required at line 1 char 3", error.message
@@ -772,7 +785,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, [4, 4, 4, 4], 'loc', :color
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Invalid operator '*=' for type 'color' at line 1 char 2", error.message
@@ -791,7 +804,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, true, 'loc', :boolean
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Invalid operator '*=' for type 'boolean' at line 1 char 2", error.message
@@ -810,7 +823,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, 3, 'loc', :integer
     o.set :test, 2, 'loc', :integer
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 6, o.get(:var)
     assert_equal :integer, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -827,7 +840,7 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :child, 'loc'
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Undefined variable 'var' at line 1 char 1", error.message
@@ -846,7 +859,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, 'test', 'loc', :string
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Unexpected 'integer', expecting 'string' for variable or property 'var' at line 1 char 3", error.message
@@ -864,7 +877,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, 7, 'loc', :integer
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 3, o.get(:var)
     assert_equal :integer, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -883,7 +896,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, 42, 'loc', :integer
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "divided by zero at line 1 char 3", error.message
@@ -901,7 +914,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :var, [7,42], 'loc', :point
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal [3,14], o.get(:var)
     assert_equal :point, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -920,7 +933,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, [42,42], 'loc', :point
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "divided by zero at line 1 char 3", error.message
@@ -939,7 +952,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, 'hello world', 'loc', :string
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Invalid operator '/=' for type 'string' at line 1 char 2", error.message
@@ -958,7 +971,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, [4, 4, 4, 4], 'loc', :color
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Invalid operator '/=' for type 'color' at line 1 char 2", error.message
@@ -977,7 +990,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, true, 'loc', :boolean
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Invalid operator '/=' for type 'boolean' at line 1 char 2", error.message
@@ -996,7 +1009,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var, 6, 'loc', :integer
     o.set :test, 2, 'loc', :integer
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 3, o.get(:var)
     assert_equal :integer, o.var_type(:var)
     assert_equal 'line 1 char 3', o.var_loc(:var)
@@ -1016,7 +1029,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :parent, 'loc'
     o.set :parent_var, 'hello', 'loc', :string
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 1, o.children.count
     assert_equal 'hello', o[:child][0].get(:var)
   end
@@ -1031,7 +1044,7 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :parent, 'loc'
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 1, o.children.count
     assert_equal 42, o[:value][0].get(:num)
   end
@@ -1047,7 +1060,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :parent, 'loc'
     o.set :test, 42, 'loc', :integer
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     assert_equal 1, o.children.count
     assert_equal 42, o[:value][0].get(:num)
   end
@@ -1062,7 +1075,7 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :parent, 'loc'
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Unexpected 'point', expecting one of [:integer, :string] at line 1 char 2", error.message
@@ -1075,7 +1088,7 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :parent, 'loc'
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Unexpected object 'qwfpgjluy', expecting one of [:child, :value, :aaaa] at line 1 char 1", error.message
@@ -1085,7 +1098,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :picky, 'location'
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree [], o
+      @interpreter.interpret_tree [], o
     end
 
     assert_equal "Missing property 'king_name' for object 'picky' at location", error.message
@@ -1096,7 +1109,7 @@ class TestInterpreter < MiniTest::Test
     o.set :king_name, 'value', 'var loc', :string
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree [], o
+      @interpreter.interpret_tree [], o
     end
 
     assert_equal "Object 'picky' must have at least 1 'minOne', 0 found at location", error.message
@@ -1108,7 +1121,7 @@ class TestInterpreter < MiniTest::Test
     o << c2
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree [], o
+      @interpreter.interpret_tree [], o
     end
 
     assert_equal "Object 'picky' must have at least 2 'minTwo', 1 found at location", error.message
@@ -1130,14 +1143,14 @@ class TestInterpreter < MiniTest::Test
     o << c3
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree [], o
+      @interpreter.interpret_tree [], o
     end
 
     assert_equal "Object 'picky' can not have more than 1 'maxOne', 2 found at location", error.message
   end
 
   def test_file_not_found
-    i = SlideField::Interpreter.new
+    i = @interpreter
     error = assert_raises SlideField::InterpreterError do
       i.run_file 'no.entry'
     end
@@ -1146,7 +1159,7 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_include_not_found
-    i = SlideField::Interpreter.new
+    i = @interpreter
     error = assert_raises SlideField::InterpreterError do
       i.run_string '\\include "/hello"'
     end
@@ -1164,7 +1177,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal "\\ \"\ns", o.get(:var)
     assert_equal :string, o.var_type(:var)
@@ -1173,7 +1186,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_default_value
     o = SlideField::ObjectData.new :type, 'loc'
-    SlideField::Interpreter.new.interpret_tree [], o
+    @interpreter.interpret_tree [], o
 
     assert_equal [0,0], o.get(:test)
     assert_equal :point, o.var_type(:test)
@@ -1187,7 +1200,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :type, 'loc'
     o.parent = p
 
-    SlideField::Interpreter.new.interpret_tree [], o
+    @interpreter.interpret_tree [], o
 
     assert_equal [1,1], o.get(:test)
     assert_equal :point, o.var_type(:test)
@@ -1202,7 +1215,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :parent, 'loc'
     o.set :var_name, {:type=>slice('child', 2)}, 'loc', :object
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal 1, o[:child].count
     assert_equal 'line 1 char 2', o[:child].first.loc
@@ -1230,7 +1243,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :parent, 'loc'
     o.set :var_name, template, 'loc', :object
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     copy = o[:child].first
 
     assert_equal 42, copy.get(:var)
@@ -1260,7 +1273,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :parent, 'loc'
     o.set :var_name, template, 'loc', :object
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     copy = o[:child].first
 
     assert_equal 42, copy.get(:var)
@@ -1297,7 +1310,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :parent, 'loc'
     o.set :var_name, template, 'loc', :object
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     copy = o[:child].first
 
     assert_equal 44, copy.get(:var)
@@ -1321,7 +1334,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :parent, 'loc'
     o.set :var_name, template, 'loc', :object
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     copy = o[:value].first
 
     assert_equal 42, copy.get(:num)
@@ -1345,7 +1358,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :parent, 'loc'
     o.set :var_name, template, 'loc', :object
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
     copy = o[:value].first
 
     assert_equal 42, copy.get(:num)
@@ -1371,7 +1384,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var_name, template, 'loc', :object
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Variable 'num' is already defined at line 2 char 3", error.message
@@ -1385,7 +1398,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :parent, 'loc'
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Undefined variable 'var_name' at line 1 char 2", error.message
@@ -1400,7 +1413,7 @@ class TestInterpreter < MiniTest::Test
     o.set :var_name, 42, 'loc', :integer
 
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Unexpected 'integer', expecting 'object' at line 1 char 2", error.message
@@ -1419,7 +1432,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal :integer, o.var_type(:var)
     assert_equal 12, o.get(:var)
@@ -1439,7 +1452,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal :integer, o.var_type(:var)
     assert_equal 34, o.get(:var)
@@ -1459,7 +1472,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal :point, o.var_type(:var)
     assert_equal [1,0], o.get(:var)
@@ -1479,7 +1492,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal :point, o.var_type(:var)
     assert_equal [0,1], o.get(:var)
@@ -1499,7 +1512,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal :integer, o.var_type(:var)
     assert_equal 2, o.get(:var)
@@ -1522,7 +1535,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal :point, o.var_type(:var)
     assert_equal [0,42], o.get(:var)
@@ -1544,7 +1557,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :child, 'loc'
     o.set :test, [12,21], 'loc', :point
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal :integer, o.var_type(:var)
     assert_equal 12, o.get(:var)
@@ -1565,7 +1578,7 @@ class TestInterpreter < MiniTest::Test
 
     o = SlideField::ObjectData.new :child, 'loc'
     error = assert_raises SlideField::InterpreterError do
-      SlideField::Interpreter.new.interpret_tree tokens, o
+      @interpreter.interpret_tree tokens, o
     end
 
     assert_equal "Invalid filter 'aaaa' for type 'integer' at line 1 char 3", error.message
@@ -1600,7 +1613,7 @@ class TestInterpreter < MiniTest::Test
     o = SlideField::ObjectData.new :parent, 'loc'
     o.set :var_name, template, 'loc', :object
 
-    SlideField::Interpreter.new.interpret_tree tokens, o
+    @interpreter.interpret_tree tokens, o
 
     assert_equal 2, o[:child].count
 
@@ -1632,20 +1645,90 @@ class TestInterpreter < MiniTest::Test
     end
 
     assert_output "DEBUG in local context at line 1 char 1:\n#{pretty}\n" do
-      SlideField::Interpreter.new.interpret_tree tokens, o, nil, 'local context'
+      @interpreter.interpret_tree tokens, o, nil, 'local context'
     end
 
     assert_empty o[:debug]
   end
 
-  def slice(val, line)
-    @col_cache[line] = 0 unless @col_cache[line]
-    col = @col_cache[line] += 1
+  def test_parse_error
+    error = assert_raises SlideField::ParseError do
+      @interpreter.run_file @path + '/parse_error.sfp'
+    end
 
-    line_cache = MiniTest::Mock.new
-    line_cache.expect :line_and_column, [line, col], [Object]
+    assert_match /\A\[parse_error.sfp\] /, error.message
+  end
 
-    pos = Parslet::Position.new val, 0
-    Parslet::Slice.new pos, val, line_cache
+  def test_include_relative
+    @interpreter.run_string '\\include "../../examples/minimal/main.sfp"', @path
+  end
+
+  def test_include_absolute
+    ex_path = File.expand_path '../examples', __dir__
+    @interpreter.run_string '\\include "' + ex_path + '/minimal/main.sfp"'
+  end
+
+  def test_include_parse_error
+    error = assert_raises SlideField::ParseError do
+      @interpreter.run_string '\\include "parse_error.sfp"', @path
+    end
+
+    assert_match /\A\[input\] \[parse_error.sfp\] /, error.message
+    refute_match /\\include/, error.message
+  end
+
+  def test_reparse
+    ex_path = File.expand_path '../examples', __dir__
+    @interpreter.run_file ex_path + '/minimal/main.sfp'
+
+    error = assert_raises SlideField::InterpreterError do
+      @interpreter.run_file ex_path + '/minimal/main.sfp'
+    end
+
+    assert_equal "File already interpreted: '#{ex_path}/minimal/main.sfp'", error.message
+  end
+
+  def test_recursive_include
+    error = assert_raises SlideField::InterpreterError do
+      @interpreter.run_file @path + '/recursive_include.sfp'
+    end
+
+    assert_equal "[recursive_include.sfp] File already interpreted: '#{@path}/recursive_include.sfp'", error.message
+  end
+
+  def test_include_parent_folder
+    error = assert_raises SlideField::InterpreterError do
+      @interpreter.run_file @path + '/sub/include_parent.sfp'
+    end
+
+    assert_match /\A\[include_parent.sfp\] \[..\/unknown_object.sfp\] /, error.message
+
+    error = assert_raises SlideField::ParseError do
+      @interpreter.run_file @path + '/parse_error.sfp'
+    end
+
+    assert_match /\A\[parse_error.sfp\] /, error.message
+  end
+
+  def test_include_subfolder
+    error = assert_raises SlideField::InterpreterError do
+      @interpreter.run_file @path + '/include_sub.sfp'
+    end
+
+    assert_match /\A\[include_sub.sfp\] \[sub\/include_parent.sfp\] \[unknown_object.sfp\] /, error.message
+  end
+
+  def test_include_wrong_template
+    error = assert_raises SlideField::InterpreterError do
+      @interpreter.run_string '\\include "wrong_template.sfp"; \\&wrong_template', @path
+    end
+
+    assert_match /&wrong_template/, error.message
+  end
+
+  def test_include_unclosed_object
+    assert_raises SlideField::ParseError do
+      @interpreter.run_string '\\include "unclosed_object.sfp"', @path
+    end
   end
 end
