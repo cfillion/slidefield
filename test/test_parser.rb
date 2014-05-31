@@ -1,6 +1,29 @@
-require File.expand_path('../helper', __FILE__)
+require File.expand_path '../helper', __FILE__
 
 class TestParser < MiniTest::Test
+  def expect(input, tokens)
+    assert_equal tokens, parse(input)
+  end
+
+  def parse(input)
+    clean_tokens SlideField::Parser.new.parse(input)
+  end
+
+  def clean_tokens(tokens)
+    case tokens
+    when Array
+      tokens.collect {|e|
+        clean_tokens e
+      }
+    when Hash
+      tokens.merge(tokens) {|k,e|
+        clean_tokens e
+      }
+    when Parslet::Slice
+      tokens.to_s
+    end
+  end
+
   def test_var_identifier
     tokens = [
       :assignment=>{
@@ -381,28 +404,5 @@ class TestParser < MiniTest::Test
 
     parse "\\test; life = 42"
     parse "life = 42; \\test"
-  end
-
-  def expect(input, tokens)
-    assert_equal tokens, parse(input)
-  end
-
-  def parse(input)
-    clean_tokens SlideField::Parser.new.parse(input)
-  end
-
-  def clean_tokens(tokens)
-    case tokens
-    when Array
-      tokens.collect {|e|
-        clean_tokens e
-      }
-    when Hash
-      tokens.merge(tokens) {|k,e|
-        clean_tokens e
-      }
-    when Parslet::Slice
-      tokens.to_s
-    end
   end
 end

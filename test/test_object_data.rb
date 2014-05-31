@@ -1,4 +1,4 @@
-require File.expand_path('../helper', __FILE__)
+require File.expand_path '../helper', __FILE__
 
 class TestObjectData < MiniTest::Test
   def test_initialize
