@@ -81,8 +81,7 @@ class SlideField::Interpreter
         interpret_object stmt_data, object, child_path, child_context
       else
         # we got strange data from the parser?!
-        raise SlideField::InterpreterError,
-          "Unsupported statement '#{stmt.keys.first}'"
+        raise "Unsupported statement '#{stmt.keys.first}'"
       end
     }
 
@@ -209,8 +208,7 @@ class SlideField::Interpreter
       object.set var_name, value, get_loc(var_value_t)
     else
       # the parser gave us strange data?!
-      raise SlideField::InterpreterError,
-        "Unsupported operator '#{operator}' at #{get_loc operator_t}"
+      raise "Unsupported operator '#{operator}' at #{get_loc operator_t}"
     end
   rescue ZeroDivisionError
     raise SlideField::InterpreterError,
@@ -260,8 +258,7 @@ class SlideField::Interpreter
 
     unless child.rules
       # the object was allowed but we don't know anything about it?!
-      raise SlideField::InterpreterError,
-        "Unsupported object '#{child.type}'"
+      raise "Unsupported object '#{child.type}'"
     end
 
     interpret_anon_value tpl_value_data, child if tpl_value_data
@@ -363,7 +360,7 @@ class SlideField::Interpreter
       token == ':true'
     else
       # the parser gave us strange data?!
-      raise SlideField::InterpreterError, "Unsupported type '#{type}' at #{get_loc token}"
+      raise "Unsupported type '#{type}' at #{get_loc token}"
     end
   end
 

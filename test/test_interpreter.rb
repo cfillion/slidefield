@@ -102,7 +102,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :parent, 'loc'
-    error = assert_raises SlideField::InterpreterError do
+    error = assert_raises RuntimeError do
       @interpreter.interpret_tree tokens, o
     end
 
@@ -115,7 +115,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    error = assert_raises SlideField::InterpreterError do
+    error = assert_raises RuntimeError do
       @interpreter.interpret_tree tokens, o
     end
 
@@ -132,7 +132,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    error = assert_raises SlideField::InterpreterError do
+    error = assert_raises RuntimeError do
       @interpreter.interpret_tree tokens, o
     end
 
@@ -149,7 +149,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    error = assert_raises SlideField::InterpreterError do
+    error = assert_raises RuntimeError do
       @interpreter.interpret_tree tokens, o
     end
 
