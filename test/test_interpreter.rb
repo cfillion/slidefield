@@ -1628,7 +1628,7 @@ class TestInterpreter < MiniTest::Test
     o.context = 'parent context'
 
     pretty, err = capture_io do
-      ap :type=>:string, :location=>'line 1 char 2', :value=>'i haz bugs'
+      ap :type=>:string, :value=>'i haz bugs'
     end
 
     assert_output "DEBUG in local context at line 1 char 1:\n#{pretty}\n" do

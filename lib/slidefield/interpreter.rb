@@ -274,7 +274,6 @@ class SlideField::Interpreter
     when :debug
       debug_infos = {
         :type=>child.var_type(:thing),
-        :location=>child.var_loc(:thing),
         :value=>child.get(:thing)
       }
 
