@@ -37,8 +37,17 @@ module SlideField::ObjectManager
       @image = Gosu::Image.from_text @window, content, font, height, spacing, width, align
     end
 
-    def draw
-      @image.draw @x, @y, @z, 1, 1, @color
+    def draw(animator)
+      tr = animator.transform @obj
+      return if tr.skip_draw?
+
+      x = @x + tr.x_offset
+      y = @y + tr.y_offset
+
+      color = @color.dup
+      color.alpha = tr.opacity * @color.alpha
+
+      @image.draw x, y, @z, tr.scale, tr.scale, color
     end
   end
 end

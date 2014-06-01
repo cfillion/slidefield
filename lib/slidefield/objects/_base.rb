@@ -8,6 +8,7 @@ module SlideField::ObjectRules
 
   class SBase < Base
     def rules
+      child :animation
       child :image
       child :rect
       child :song

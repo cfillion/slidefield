@@ -15,8 +15,8 @@ module SlideField::ObjectManager
       forward :activate
     end
 
-    def draw
-      forward :draw
+    def draw(animator)
+      forward :draw, animator
     end
 
     def deactivate
@@ -36,8 +36,8 @@ module SlideField::ObjectManager
       }
     end
 
-    def forward(event)
-      @children.each {|c| c.execute event }
+    def forward(event, *args)
+      @children.each {|c| c.execute event, *args }
     end
   end
 end

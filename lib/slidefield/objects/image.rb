@@ -28,8 +28,20 @@ module SlideField::ObjectManager
       @y_scale = height / @image.height.to_f
     end
 
-    def draw
-      @image.draw @x, @y, @z, @x_scale, @y_scale, @color
+    def draw(animator)
+      tr = animator.transform @obj
+      return if tr.skip_draw?
+
+      x = @x + tr.x_offset
+      y = @y + tr.y_offset
+
+      x_scale = tr.scale * @x_scale
+      y_scale = tr.scale * @y_scale
+
+      color = @color.dup
+      color.alpha = tr.opacity * @color.alpha
+
+      @image.draw x, y, @z, x_scale, y_scale, color
     end
   end
 end

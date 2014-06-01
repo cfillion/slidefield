@@ -2,8 +2,8 @@ require File.expand_path '../helper', __FILE__
 
 module SlideField::ObjectManager
   class CatchTest < Base
-    def load
-      raise 'error message'
+    def load(what)
+      raise what
     end
   end
 end
@@ -40,7 +40,7 @@ class TestObjectManager < MiniTest::Test
 
     manager = SlideField::ObjectManager.new obj, nil
     error = assert_raises SlideField::RuntimeError do
-      manager.execute :load
+      manager.execute :load, 'error message'
     end
 
     assert_equal "[context] An error occured while executing the 'load' event on the object 'catchTest' at loc:\n\t(RuntimeError) error message", error.message

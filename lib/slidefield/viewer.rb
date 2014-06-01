@@ -6,6 +6,8 @@ class SlideField::Viewer < Gosu::Window
 
     super *layout_size, fullscreen
 
+    @animator = SlideField::Animator.new layout_size
+
     @slides = []
     project[:slide].each {|slide_data|
       manager = SlideField::ObjectManager.new slide_data, self
@@ -17,15 +19,23 @@ class SlideField::Viewer < Gosu::Window
   end
 
   def update
+    @time = Gosu::milliseconds
   end
 
   def draw
-    @slides[@current].draw
-    @redraw = false
+    @animator.frame @time, true, @forward do
+      @slides[@current].draw @animator
+    end
+
+    if @animator.need_redraw?
+      @animator.frame @time, false, @forward do
+        @slides[@previous].draw @animator if @previous
+      end
+    end
   end
 
   def needs_redraw?
-    @redraw
+    @animator.need_redraw?
   end
 
   def button_down(id)
@@ -61,10 +71,18 @@ class SlideField::Viewer < Gosu::Window
   def change_slide(index)
     return if @current == index || index < 0 || index > @slides.length-1
 
-    @slides[@current].deactivate if @current
+    @previous = @current
     @current = index
+
+    if @previous
+      @slides[@previous].deactivate
+      @forward = @previous < @current
+    else
+      @forward = true
+    end
+
     @slides[@current].activate
 
-    @redraw = true
+    @animator.reset
   end
 end

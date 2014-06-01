@@ -19,12 +19,24 @@ module SlideField::ObjectManager
       @fill = Gosu::Color.rgba *@obj.get(:fill)
     end
 
-    def draw
+    def draw(animator)
+      tr = animator.transform @obj
+      return if tr.skip_draw?
+
+      x = @x + tr.x_offset
+      y = @y + tr.y_offset
+
+      width = @width * tr.scale
+      height = @height * tr.scale
+
+      color = @fill.dup
+      color.alpha = tr.opacity * @fill.alpha
+
       @window.draw_quad(
-        @x, @y, @fill,
-        @width + @x, @y, @fill,
-        @x, @height + @y, @fill,
-        @width + @x, @height + @y, @fill,
+        x, y, color,
+        width + x, y, color,
+        x, height + y, color,
+        width + x, height + y, color,
         @z
       )
     end

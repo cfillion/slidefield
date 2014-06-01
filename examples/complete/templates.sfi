@@ -31,6 +31,7 @@ title = \text {
 info_box = \rect {
   padding = 10
   text_height = 40
+  z_order = 1
 
   box_height = (lines)content
   box_height *= text_height
@@ -53,7 +54,6 @@ info_box = \rect {
     height = text_height
     color = #011010FF
     font = info_font
-    z_order = 1
 
     % shadow
     \text {
