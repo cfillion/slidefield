@@ -11,8 +11,9 @@ layout_size = 1366x768
 
 \slide {
   \text "Second Slide"
-  \text "Press <b>Backspace</b> to return to the previous\nslide" {
-    position = 0x20
+  \text "Press <b>Backspace</b> to return to the previous slide" {
+    position = 0x30
+    width = 200
   }
 
   \text "This example contains 3 slides.\n(Press <b>Enter</b> again)" {
