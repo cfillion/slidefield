@@ -38,9 +38,9 @@ The type of the variable cannot be changed after the variable creation.
 Integers:
 
     variable = 42
-    variable += 2 % add
+    variable += 2  % add
     variable -= 10 % subtract
-    variable *= 6 % multiply
+    variable *= 6  % multiply
     variable /= 10 % divide
     % variable is 20
 
@@ -48,17 +48,17 @@ Character strings:
 
     variable = "hello"
     variable += " world!\n" % append
-    variable -= "!" % remove '!'
-    variable *= "3" % multiply
+    variable -= "!"         % remove the bang
+    variable *= "3"         % multiply by 3
     % variable is "hello world\nhello world\nhello world\n"
 
 Size or point coordinates:
 
     variable = 2x4
     variable += 100x80 % add
-    variable -= 10x0 % subtract
-    variable *= 3x4 % multiply
-    variable /= 2x2 % divide
+    variable -= 10x0   % subtract
+    variable *= 3x4    % multiply
+    variable /= 2x2    % divide
     % variable is 138x168
 
 Colors (red, blue, green & alpha in hexadecimal notation):
@@ -141,10 +141,10 @@ compatible with the value's type.
     \image "relative/path/to/image.png"
     \image {
       source = "relative/path/to/image.png"
-      size = 0x0 % automatic if 0 (optional)
+      size = 0x0        % automatic if 0 (optional)
       color = #FFFFFFFF % color filter (optional)
-      position = 0x0 % optional
-      z_order = 0 % optional
+      position = 0x0    % optional
+      z_order = 0       % optional
     }
 
 **(Slide)** Add a rectangle:
@@ -153,8 +153,8 @@ compatible with the value's type.
     \rect {
       size = 100x100
       fill = #FFFFFFFF % optional
-      position = 0x0 % optional
-      z_order = 0 % optional
+      position = 0x0   % optional
+      z_order = 0      % optional
     }
 
 **(Slide)** Play an audio file:
@@ -172,12 +172,12 @@ compatible with the value's type.
     \text {
       content = "Hello World!"
       color = #FFFFFFFF % optional
-      font = "sans" % font name or relative font path (optional)
+      font = "sans"     % font name or relative font path (optional)
       % font = "./my_font.ttf"
-      height = 20 % font height in pixels (optional)
-      width = 0 % maximum width (automatic if 0, optional)
-      spacing = 0 % line spacing (optional)
-      align = "left" % optional
+      height = 20       % font height in pixels (optional)
+      width = 0         % maximum width (automatic if 0, optional)
+      spacing = 0       % line spacing (optional)
+      align = "left"    % optional
       %{
       other possible values are:
       align = "right"
@@ -185,7 +185,7 @@ compatible with the value's type.
       align = "justify"
       %}
       position = 0x0 % optional
-      z_order = 0 % optional
+      z_order = 0    % optional
     }
 
 ### Filters
