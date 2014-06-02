@@ -1,6 +1,4 @@
 class SlideField::Animator
-  attr_accessor :current, :forward
-
   def initialize(layout_size)
     @layout_size = layout_size
     reset

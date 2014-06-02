@@ -2,8 +2,8 @@ class SlideField::Interpreter
   attr_accessor :root
 
   def initialize
-    @parser = SlideField::Parser.new
     @files = []
+    @parser = SlideField::Parser.new
     @root = SlideField::ObjectData.new(:ROOT, 'line 0 char 0')
   end
 
@@ -192,7 +192,7 @@ class SlideField::Interpreter
           value = copy
         when '*='
           multiplier = var_value.to_i
-          if multiplier < 1
+          unless multiplier > 0
             raise SlideField::InterpreterError,
               "Invalid string multiplier '#{var_value}', integer > 0 required at #{get_loc var_value_t}"
           end
