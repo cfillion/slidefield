@@ -1,8 +1,8 @@
-background = \image {
+background_tpl = \image {
   size = layout_size
 }
 
-title = \text {
+title_tpl = \text {
   color = #FFFFFFFF
   font = title_font
   height = 100
@@ -28,7 +28,7 @@ title = \text {
   }
 }
 
-info_box = \rect {
+infobox_tpl = \rect {
   padding = 10
   text_height = 40
   z_order = 1
@@ -64,7 +64,7 @@ info_box = \rect {
   }
 }
 
-credit = \text {
+credit_tpl = \text {
   position = 10x-30
   position += (y)(y)layout_size
 
@@ -80,5 +80,27 @@ credit = \text {
     position += 1x1
     color = #000000FF
     z_order -= 1
+  }
+}
+
+slide_tpl = \slide {
+  \animation "fade" {
+    \&background_tpl background_src
+  }
+
+  \&title_tpl {
+    content = "<b>"
+    content += title
+  }
+
+  \animation "slide left" {
+    \&infobox_tpl {
+      content = infos
+    }
+  }
+
+  \&credit_tpl {
+    content = "<b>Photo Credit:</b> "
+    content += background_link
   }
 }

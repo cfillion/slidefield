@@ -1,33 +1,19 @@
-\slide {
-  \animation "fade" {
-    \&background "../assets/sahara.jpg"
-  }
+\&slide_tpl {
+  title = "Sahara"
 
-  \&title "Sahara"
+  infos  = "<b>Area:</b> 9,400,000 km²\n"
+  infos += "<b>Notes:</b> The world's hottest desert"
 
-  \animation "slide left" {
-    \&info_box {
-      content = "<b>Area:</b> 9,400,000 km²\n"
-      content += "<b>Notes:</b> The world's hottest desert"
-    }
-  }
-
-  \&credit "https://en.wikipedia.org/wiki/File:Sahara_satellite_hires.jpg"
+  background_src  = "../assets/sahara.jpg"
+  background_link = "https://en.wikipedia.org/wiki/File:Sahara_satellite_hires.jpg"
 }
 
-\slide {
-  \animation "fade" {
-    \&background "../assets/gobi.jpg"
-  }
+\&slide_tpl {
+  title = "Gobi"
 
-  \&title "Gobi"
+  infos  = "<b>Area:</b> 1,295,000 km²\n"
+  infos += "<b>Notes:</b> The expansion of the Gobi is\nattributed mostly to human activities"
 
-  \animation "slide left" {
-    \&info_box {
-      content = "<b>Area:</b> 1,295,000 km²\n"
-      content += "<b>Notes:</b> The expansion of the Gobi is\nattributed mostly to human activities"
-    }
-  }
-
-  \&credit "https://en.wikipedia.org/wiki/File:Khongoryn_Els,_Gurvansaikhan_NP,_Gobi_desert,_Mongolia.jpg"
+  background_src  = "../assets/gobi.jpg"
+  background_link = "https://en.wikipedia.org/wiki/File:Khongoryn_Els,_Gurvansaikhan_NP,_Gobi_desert,_Mongolia.jpg"
 }

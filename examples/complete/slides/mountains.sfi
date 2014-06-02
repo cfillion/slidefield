@@ -1,39 +1,25 @@
-\slide {
-  \animation "fade" {
-    \&background "../assets/mount_everest.jpg"
-  }
+\&slide_tpl {
+  title = "Mount Everest"
 
-  \&title "Mount Everest"
+  infos  = "<b>Country:</b> Nepal\n"
+  infos += "<b>Elevation:</b> 8,848 m\n"
+  infos += "<b>First ascent:</b> 29 May 1953\n"
+  infos += "<b>Easiest route:</b> South Col\n"
+  infos += "<b>Notes:</b> Earth's highest mountain"
 
-  \animation "slide left" {
-    \&info_box {
-      content = "<b>Country:</b> Nepal\n"
-      content += "<b>Elevation:</b> 8,848 m\n"
-      content += "<b>First ascent:</b> 29 May 1953\n"
-      content += "<b>Easiest route:</b> South Col\n"
-      content += "<b>Notes:</b> Earth's highest mountain"
-    }
-  }
-
-  \&credit "https://en.wikipedia.org/wiki/File:Mount_Everest_as_seen_from_Drukair2_PLW_edit.jpg"
+  background_src  = "../assets/mount_everest.jpg"
+  background_link = "https://en.wikipedia.org/wiki/File:Mount_Everest_as_seen_from_Drukair2_PLW_edit.jpg"
 }
 
-\slide {
-  \animation "fade" {
-    \&background "../assets/K2.jpg"
-  }
+\&slide_tpl {
+  title = "K2"
 
-  \&title "K2"
+  infos  = "<b>Country:</b> Pakistan\n"
+  infos += "<b>Elevation:</b> 8,611 m\n"
+  infos += "<b>First ascent:</b> 31 July 1954\n"
+  infos += "<b>Easiest route:</b> Abruzzi Spur\n"
+  infos += "<b>Notes:</b> The mountain was first\nsurveyed by a European team in 1856"
 
-  \animation "slide left" {
-
-    \&info_box {
-      content = "<b>Country:</b> Pakistan\n"
-      content += "<b>Elevation:</b> 8,611 m\n"
-      content += "<b>First ascent:</b> 31 July 1954\n"
-      content += "<b>Easiest route:</b> Abruzzi Spur\n"
-      content += "<b>Notes:</b> The mountain was first\nsurveyed by a European team in 1856"
-    }
-  }
-  \&credit "https://en.wikipedia.org/wiki/File:K2_2006b.jpg"
+  background_src  = "../assets/K2.jpg"
+  background_link = "https://en.wikipedia.org/wiki/File:K2_2006b.jpg"
 }
