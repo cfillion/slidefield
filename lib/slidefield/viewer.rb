@@ -27,9 +27,10 @@ class SlideField::Viewer < Gosu::Window
       @slides[@current].draw @animator
     end
 
-    if @animator.need_redraw?
+    # animate the previous slide
+    if @previous && @animator.need_redraw?
       @animator.frame @time, false, @forward do
-        @slides[@previous].draw @animator if @previous
+        @slides[@previous].draw @animator
       end
     end
   end
