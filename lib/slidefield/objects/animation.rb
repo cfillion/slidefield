@@ -1,5 +1,5 @@
 module SlideField::ObjectRules
-  class Animation < GBase
+  class Animation < SBase
     def rules
       property :name, :string
       property :duration, :integer, 400

@@ -9,12 +9,6 @@ title_tpl = \text {
   position = 100x70
   z_order = 1
 
-  % append <b>
-  copy = content
-  content -= copy
-  content += "<b>"
-  content += copy
-  
   % support alignment
   x = (x)position
   x *= 2
@@ -70,11 +64,6 @@ credit_tpl = \text {
 
   color = #FFFFFFFF
   z_order = 1
-
-  link = content
-  content -= content
-  content += "<b>Photo Credit:</b> "
-  content += link
 
   \text {
     position += 1x1

@@ -1,5 +1,5 @@
 module SlideField::ObjectRules
-  class Slide < GBase; end
+  class Slide < SBase; end
 end
 
 module SlideField::ObjectManager
