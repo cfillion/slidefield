@@ -188,7 +188,7 @@ class SlideField::Interpreter
           value = origin_val + var_value
         when '-='
           copy = origin_val.dup
-          copy[var_value] = '' if copy[var_value]
+          copy[var_value] = '' while copy.include? var_value
           value = copy
         when '*='
           multiplier = var_value.to_i

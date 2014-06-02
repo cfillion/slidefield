@@ -590,7 +590,7 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 'hello world', 'loc', :string
+    o.set :var, 'hello world world', 'loc', :string
 
     @interpreter.interpret_tree tokens, o
     assert_equal 'hello', o.get(:var)
