@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["cfi30"]
   spec.email         = ["slidefield@cfillion.tk"]
   spec.summary       = %q{A presentation software that reads plain text files written in its own interpreted language.}
-  spec.homepage      = ""
+  spec.homepage      = "https://bitbucket.org/cfi30/slidefield"
   spec.license       = "GPL"
 
   spec.files         = `git ls-files -z`.split "\x0"
