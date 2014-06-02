@@ -7,11 +7,10 @@ Gem::Specification.new do |spec|
   spec.name          = "slidefield"
   spec.version       = SlideField::VERSION
   spec.authors       = ["cfi30"]
-  spec.email         = ["git@cfillion.tk"]
-  spec.summary       = %q{TODO: Write a short summary. Required.}
-  spec.description   = %q{TODO: Write a longer description. Optional.}
+  spec.email         = ["slidefield@cfillion.tk"]
+  spec.summary       = %q{A presentation software that reads plain text files written in its own interpreted language.}
   spec.homepage      = ""
-  spec.license       = "MIT"
+  spec.license       = "GPL"
 
   spec.files         = `git ls-files -z`.split "\x0"
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename f }
