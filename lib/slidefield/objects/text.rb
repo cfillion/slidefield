@@ -28,6 +28,10 @@ module SlideField::ObjectManager
       width = @obj.get :width
       align = @obj.get(:align).to_sym
 
+      if font.include? '/'
+        font = File.expand_path font, @obj.include_path
+      end
+
       if width < 1
         # automatic width
         temp = Gosu::Image.from_text @window, content, font, height
