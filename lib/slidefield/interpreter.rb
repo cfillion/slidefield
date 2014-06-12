@@ -218,11 +218,15 @@ class SlideField::Interpreter
   def interpret_object(stmt_data, object, include_path, context)
     type_t = stmt_data[:type]
     type = type_t.to_sym
-    value_data = stmt_data[:value]
-    tpl_value_data = nil
     body = stmt_data[:body] || []
 
-    if stmt_data[:template]
+    anon_values = []
+    anon_values << stmt_data[:value] if stmt_data[:value]
+
+    template_t = stmt_data[:template]
+    template = stmt_data
+
+    while template[:template]
       template = object.get type
       unless template
         raise SlideField::InterpreterError,
@@ -237,11 +241,12 @@ class SlideField::Interpreter
       type = template[:type].to_sym
 
       if template[:value]
-        tpl_value_data = rebind_tokens template[:value], stmt_data[:template]
+        tpl_value = rebind_tokens template[:value], template_t
+        anon_values << tpl_value
       end
 
       if template[:body]
-        tpl_body = rebind_tokens template[:body], stmt_data[:template]
+        tpl_body = rebind_tokens template[:body], template_t
         body += tpl_body
       end
     end
@@ -261,8 +266,9 @@ class SlideField::Interpreter
       raise "Unsupported object '#{child.type}'"
     end
 
-    interpret_anon_value tpl_value_data, child if tpl_value_data
-    interpret_anon_value value_data, child if value_data
+    anon_values.each {|value_data|
+      interpret_anon_value value_data, child
+    }
     interpret_tree body, child || [], include_path, context
 
     # process special objects
@@ -323,14 +329,6 @@ class SlideField::Interpreter
       end
     elsif type == :object
       token = token[:type]
-
-      if value[:template]
-        # we got something like `alias = \&template`
-        # a template must be copied using the standard syntax `alias = template`
-        # otherwise the reference would not be resolved
-        raise SlideField::InterpreterError,
-          "Unexpected template reference at #{get_loc token}"
-      end
     end
 
     filters.reverse_each {|filter_token|

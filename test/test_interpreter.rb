@@ -22,6 +22,7 @@ module SlideField::ObjectRules
     def rules
       property :num, :integer, 0
       property :num2, :integer, 0
+      property :bool, :boolean, false
       property :str, :string, ""
     end
   end
@@ -47,8 +48,10 @@ class TestInterpreter < MiniTest::Test
     @col_cache[line] = 0 unless @col_cache[line]
     col = @col_cache[line] += 1
 
-    line_cache = MiniTest::Mock.new
-    line_cache.expect :line_and_column, [line, col], [Object]
+    line_cache = Class.new
+    line_cache.define_singleton_method :line_and_column do |pos|
+      [line, col]
+    end
 
     pos = Parslet::Position.new val, 0
     Parslet::Slice.new pos, val, line_cache
@@ -1087,7 +1090,7 @@ class TestInterpreter < MiniTest::Test
       @interpreter.interpret_tree tokens, o
     end
 
-    assert_equal "Unexpected 'point', expecting one of [:integer, :string] at line 1 char 2", error.message
+    assert_equal "Unexpected 'point', expecting one of [:integer, :boolean, :string] at line 1 char 2", error.message
   end
 
   def test_unknown_object
@@ -1396,7 +1399,7 @@ class TestInterpreter < MiniTest::Test
       @interpreter.interpret_tree tokens, o
     end
 
-    assert_equal "Variable 'num' is already defined at line 2 char 3", error.message
+    assert_equal "Variable 'num' is already defined at line 2 char 1", error.message
   end
 
   def test_template_of_template
@@ -1413,13 +1416,57 @@ class TestInterpreter < MiniTest::Test
     ]
 
     o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :template, {:type=>slice('child', 2)}, 'loc', :object
+    o.set :template, {:type=>slice('child', 3)}, 'loc', :object
 
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
+    @interpreter.interpret_tree tokens, o
 
-    assert_equal "Unexpected template reference at line 1 char 4", error.message
+    assert_equal 1, o[:child].count
+    assert_equal 'line 2 char 2', o[:child].first.loc
+  end
+
+  def test_template_triple_value
+    template = {
+      :type=>slice('value', 1),
+      :value=>{:filters=>[], :integer=>slice('42', 1)}
+    }
+
+    tokens = [
+      {:assignment=>{
+        :variable=>slice('alias', 2),
+        :operator=>slice('=', 2),
+        :value=>{
+          :filters=>[],
+          :object=>{
+            :template=>slice('&', 2),
+          :value=>{:filters=>[], :string=>slice('"test"', 2)},
+            :type=>slice('template', 2)
+          }
+        }
+      }},
+      {:object=>{
+        :template=>slice('&', 3),
+        :value=>{:filters=>[], :boolean=>slice(':true', 3)},
+        :type=>slice('alias', 3)}
+      }
+    ]
+
+    o = SlideField::ObjectData.new :parent, 'loc'
+    o.set :template, template, 'loc', :object
+
+    @interpreter.interpret_tree tokens, o
+    copy = o[:value].first
+
+    assert_equal 42, copy.get(:num)
+    assert_equal :integer, copy.var_type(:num)
+    assert_equal 'line 3 char 1', copy.var_loc(:num)
+
+    assert_equal 'test', copy.get(:str)
+    assert_equal :string, copy.var_type(:str)
+    assert_equal 'line 3 char 1', copy.var_loc(:str)
+
+    assert_equal true, copy.get(:bool)
+    assert_equal :boolean, copy.var_type(:bool)
+    assert_equal 'line 3 char 2', copy.var_loc(:bool)
   end
 
   def test_undefined_template
