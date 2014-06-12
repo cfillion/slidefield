@@ -9,7 +9,6 @@ Requirements: ruby, sdl, sdl_ttf, freeimage
 
     $ gem install slidefield
 
-
 ## Usage
 
     $ slidefield [options] [file ...]
