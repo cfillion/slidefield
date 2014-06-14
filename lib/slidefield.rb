@@ -25,3 +25,13 @@ require 'slidefield/objects/rect.rb'
 require 'slidefield/objects/slide.rb'
 require 'slidefield/objects/song.rb'
 require 'slidefield/objects/text.rb'
+
+module SlideField
+  def self.ondebug(&block)
+    @ondebug = block
+  end
+
+  def self.debug(message)
+    @ondebug[message] if @ondebug
+  end
+end

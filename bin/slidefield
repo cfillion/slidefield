@@ -1,16 +1,4 @@
 #!/usr/bin/env ruby
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'slidefield'
 require 'optparse'
@@ -25,6 +13,10 @@ def parse_opts
 
     opts.on '-c', '--check', "Check input only" do
       options << :check
+    end
+
+    opts.on '-d', '--debug', "Enable debug messages" do
+      options << :debug
     end
 
     opts.on_tail '-v', '--version', "Show version number and copyright" do
@@ -61,10 +53,19 @@ begin
     raise SlideField::Error, e
   end
 
+  if options.include? :debug
+    SlideField.ondebug do |message|
+      puts message
+    end
+  end
+
   files = ARGV
 
   # read from standard input by default
   files << '-' if files.empty?
+
+  SlideField.debug "Options: #{options}"
+  SlideField.debug "File List: #{files}"
 
   files.each {|file|
     interpreter = SlideField::Interpreter.new

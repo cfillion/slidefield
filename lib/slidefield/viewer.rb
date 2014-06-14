@@ -10,6 +10,9 @@ class SlideField::Viewer < Gosu::Window
 
     @slides = []
     project[:slide].each {|slide_data|
+      SlideField.debug \
+        "Loading resources... (#{slide_data.context} at #{slide_data.loc})"
+
       manager = SlideField::ObjectManager.new slide_data, self
       manager.load
       @slides << manager
