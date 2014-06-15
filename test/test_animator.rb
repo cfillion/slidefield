@@ -6,19 +6,21 @@ class TestAnimator < MiniTest::Test
     @assert_number = 0
   end
 
-  def get_object(anim_name, duration)
+  def get_object(anim_name, duration, enter = true, leave = true)
 
     a = SlideField::ObjectData.new :animation, 'animation loc'
     a.set :name, anim_name, 'name loc', :string
     a.set :duration, duration, 'duration loc', :integer
+    a.set :enter, enter, 'enter loc', :boolean
+    a.set :leave, leave, 'leave loc', :boolean
 
     obj = SlideField::ObjectData.new :object, 'object loc'
     a << obj
     obj
   end
 
-  def assert_animation(anim_name, duration, tests)
-    obj = get_object anim_name, duration
+  def assert_animation(anim_name, duration, tests, enter = true, leave = true, need_redraw = true)
+    obj = get_object anim_name, duration, enter, leave
     tests.each_with_index {|test, index|
       time, current, forward, assertions = test
 
@@ -30,7 +32,7 @@ class TestAnimator < MiniTest::Test
         }
       end
 
-      assert @animator.need_redraw?,
+      assert_equal need_redraw, @animator.need_redraw?,
         "animator.need_redraw? in test #{index + 1}"
     }
   end
@@ -240,5 +242,21 @@ class TestAnimator < MiniTest::Test
       [50, false, nil, {:scale=>0.5}],
       [100, false, nil, {:scale=>0.0}],
     ]
+  end
+
+  def test_enter_disabled
+    assert_animation 'fade', 100, [
+      [0, true, nil, {:opacity=>1.0}],
+      [50, true, nil, {:opacity=>1.0}],
+      [100, true, nil, {:opacity=>1.0}],
+    ], false, true, false
+  end
+
+  def test_leave_disabled
+    assert_animation 'fade', 100, [
+      [0, false, nil, {:opacity=>1.0}],
+      [50, false, nil, {:opacity=>1.0}],
+      [100, false, nil, {:opacity=>1.0}],
+    ], true, false, false
   end
 end

@@ -31,6 +31,11 @@ class SlideField::Animator
     # no animation
     return tr if anim.nil?
 
+    # direction disabled
+    cur_direction = @frame.forward? ? @frame.current? : !@frame.current?
+    dir_enabled = cur_direction ? anim.enter : anim.leave
+    anim.enabled = false unless dir_enabled
+
     elapsed = @frame.time - anim.start_time
     position = elapsed / anim.duration
     anim.enabled = false if position > 1.0
@@ -78,14 +83,16 @@ class SlideField::Animator
   def animation_for(data)
     return @animations[data] if @animations.has_key? data
 
-    anim_struct = Struct.new :enabled, :start_time, :name, :duration
-    anim = anim_struct.new false, 0.0, '', 0
+    anim_struct = Struct.new :enabled, :start_time, :name, :duration, :enter, :leave
+    anim = anim_struct.new false, 0.0, '', 0, true, true
 
     if data
       anim.enabled = true
       anim.start_time = @frame.time.to_f
       anim.name = data.get :name
       anim.duration = data.get :duration
+      anim.enter = data.get :enter
+      anim.leave = data.get :leave
     end
 
     @animations[data] = anim

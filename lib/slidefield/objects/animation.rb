@@ -3,6 +3,8 @@ module SlideField::ObjectRules
     def rules
       property :name, :string
       property :duration, :integer, 400
+      property :enter, :boolean, true
+      property :leave, :boolean, true
 
       super
     end
