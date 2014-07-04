@@ -27,5 +27,9 @@ module SlideField::ObjectManager
     def deactivate
       @instance.stop
     end
+
+    def unload
+      @song = nil
+    end
   end
 end
