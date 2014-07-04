@@ -53,5 +53,9 @@ module SlideField::ObjectManager
 
       @image.draw x, y, @z, tr.scale, tr.scale, color
     end
+
+    def unload
+      @image = nil
+    end
   end
 end

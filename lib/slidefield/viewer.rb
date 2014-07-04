@@ -10,11 +10,7 @@ class SlideField::Viewer < Gosu::Window
 
     @slides = []
     project[:slide].each {|slide_data|
-      SlideField.debug \
-        "Loading resources... (#{slide_data.context} at #{slide_data.loc})"
-
       manager = SlideField::ObjectManager.new slide_data, self
-      manager.load
       @slides << manager
     }
 
@@ -75,6 +71,11 @@ class SlideField::Viewer < Gosu::Window
   def change_slide(index)
     return if @current == index || index < 0 || index > @slides.length-1
 
+    if @previous
+      @slides[@previous].unload
+      GC.start
+    end
+
     @previous = @current
     @current = index
 
@@ -85,6 +86,7 @@ class SlideField::Viewer < Gosu::Window
       @forward = true
     end
 
+    @slides[@current].load
     @slides[@current].activate
 
     @animator.reset
