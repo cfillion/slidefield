@@ -36,7 +36,7 @@ The type of the variable cannot be changed after the variable creation.
 
 Integers:
 
-    variable = 42
+    variable  = 42
     variable += 2  % add
     variable -= 10 % subtract
     variable *= 6  % multiply
@@ -45,7 +45,7 @@ Integers:
 
 Character strings:
 
-    variable = "hello"
+    variable  = "hello"
     variable += " world!\n" % append
     variable -= "!"         % remove the bang
     variable *= "3"         % multiply by 3
@@ -53,7 +53,7 @@ Character strings:
 
 Size or point coordinates:
 
-    variable = 2x4
+    variable  = 2x4
     variable += 100x80 % add
     variable -= 10x0   % subtract
     variable *= 3x4    % multiply
@@ -62,7 +62,7 @@ Size or point coordinates:
 
 Colors (red, blue, green & alpha in hexadecimal notation):
 
-    variable = #C0FF33FF
+    variable  = #C0FF33FF
     variable += #03003300 % add
     variable -= #0C240055 % subtract
     % variable is #B7DB66AA
