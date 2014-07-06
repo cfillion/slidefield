@@ -244,19 +244,35 @@ class TestAnimator < MiniTest::Test
     ]
   end
 
-  def test_enter_disabled
+  def test_enter_disabled_forward
     assert_animation 'fade', 100, [
-      [0, true, nil, {:opacity=>1.0}],
-      [50, true, nil, {:opacity=>1.0}],
-      [100, true, nil, {:opacity=>1.0}],
+      [0, true, true, {:opacity=>1.0}],
+      [50, true, true, {:opacity=>1.0}],
+      [100, true, true, {:opacity=>1.0}],
     ], false, true, false
   end
 
-  def test_leave_disabled
+  def test_enter_disabled_backward
     assert_animation 'fade', 100, [
-      [0, false, nil, {:opacity=>1.0}],
-      [50, false, nil, {:opacity=>1.0}],
-      [100, false, nil, {:opacity=>1.0}],
+      [0, false, false, {:opacity=>1.0}],
+      [50, false, false, {:opacity=>1.0}],
+      [100, false, false, {:opacity=>1.0}],
+    ], false, true, false
+  end
+
+  def test_leave_disabled_forward
+    assert_animation 'fade', 100, [
+      [0, false, true, {:opacity=>1.0}],
+      [50, false, true, {:opacity=>1.0}],
+      [100, false, true, {:opacity=>1.0}],
+    ], true, false, false
+  end
+
+  def test_leave_disabled_backward
+    assert_animation 'fade', 100, [
+      [0, true, false, {:opacity=>1.0}],
+      [50, true, false, {:opacity=>1.0}],
+      [100, true, false, {:opacity=>1.0}],
     ], true, false, false
   end
 end
