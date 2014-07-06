@@ -1,4 +1,8 @@
 class SlideField::Viewer < Gosu::Window
+  # preloader settings
+  LOAD_AROUND = 4
+  LOAD_DELAY = 1000
+
   def initialize(project)
     layout = project[:layout].first
     layout_size = layout.get :size
@@ -6,6 +10,7 @@ class SlideField::Viewer < Gosu::Window
 
     super *layout_size, fullscreen
 
+    @time = 0
     @animator = SlideField::Animator.new layout_size
 
     @slides = []
@@ -18,7 +23,15 @@ class SlideField::Viewer < Gosu::Window
   end
 
   def update
-    @time = Gosu::milliseconds
+    now = Gosu::milliseconds
+    if now - @time > LOAD_DELAY && @need_reload
+      smart_loader
+      @need_reload = false
+    end
+
+    return unless needs_redraw?
+    @time = now
+    @need_reload = true
   end
 
   def draw
@@ -67,14 +80,8 @@ class SlideField::Viewer < Gosu::Window
     end
   end
 
-  private
   def change_slide(index)
     return if @current == index || index < 0 || index > @slides.length-1
-
-    if @previous
-      @slides[@previous].unload
-      GC.start
-    end
 
     @previous = @current
     @current = index
@@ -86,9 +93,32 @@ class SlideField::Viewer < Gosu::Window
       @forward = true
     end
 
-    @slides[@current].load
-    @slides[@current].activate
+    # can't wait the preloader
+    unless @slides[@current].loaded?
+      @slides[@current].load
+    end
 
+    @slides[@current].activate
     @animator.reset
+  end
+
+  private
+  def smart_loader
+    ahead = LOAD_AROUND / 2
+    behind = -ahead
+
+    @slides.each_with_index {|manager, index|
+      rel_index = index - @current
+      keep = rel_index >= behind && rel_index <= ahead
+
+      if keep && !manager.loaded?
+        manager.load
+      elsif !keep && manager.loaded?
+        manager.unload
+      end
+    }
+
+    # really unload resources
+    GC.start
   end
 end
