@@ -13,7 +13,7 @@ module SlideField::ObjectManager
     end
 
     def execute(event, *args)
-      SlideField.debug "Event: '%s' (%s at %s)" % [event, @obj.context, @obj.loc]
+      SlideField.debug "Event: #{event} (#{@obj.type} in #{@obj.context} at #{@obj.loc})"
       send "on_#{event}", *args
     rescue => e
       SlideField.debug "Backtrace: #{e.backtrace.join "\n"}"
