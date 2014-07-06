@@ -132,6 +132,8 @@ compatible with the value's type.
       name = "zoom"
       %}
       duration = 400 % in ms (optional)
+      enter = :true % optional
+      leave = :true % optional
     }
 *Note: The animation is applied only to nested objects.*
 
