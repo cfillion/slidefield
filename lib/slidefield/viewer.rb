@@ -24,14 +24,18 @@ class SlideField::Viewer < Gosu::Window
 
   def update
     now = Gosu::milliseconds
-    if now - @time > LOAD_DELAY && @need_reload
-      smart_loader
-      @need_reload = false
+
+    unless needs_redraw?
+      if now - @time > LOAD_DELAY && @can_preload
+        smart_loader
+        @can_preload = false
+      end
+
+      return
     end
 
-    return unless needs_redraw?
     @time = now
-    @need_reload = true
+    @can_preload = true
   end
 
   def draw
@@ -93,17 +97,15 @@ class SlideField::Viewer < Gosu::Window
       @forward = true
     end
 
-    # can't wait the preloader
-    unless @slides[@current].loaded?
-      @slides[@current].load
-    end
-
+    @slides[@current].load unless @slides[@current].loaded?
     @slides[@current].activate
     @animator.reset
   end
 
   private
   def smart_loader
+    SlideField.debug "(Un)loading resources..."
+
     ahead = LOAD_AROUND / 2
     behind = -ahead
 
