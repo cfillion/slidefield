@@ -45,4 +45,16 @@ class TestObjectManager < MiniTest::Test
 
     assert_equal "[context] An error occured while executing the 'load' event on the object 'catchTest' at loc:\n\t(RuntimeError) error message", error.message
   end
+
+  def test_unknown_event
+    obj = SlideField::ObjectData.new :catchTest, 'loc'
+    obj.context = 'context'
+
+    manager = SlideField::ObjectManager.new obj, nil
+    error = assert_raises NameError do
+      manager.on_jump
+    end
+
+    assert_equal "No such event", error.message
+  end
 end
