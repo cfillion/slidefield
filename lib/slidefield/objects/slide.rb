@@ -4,26 +4,32 @@ end
 
 module SlideField::ObjectManager
   class Slide < Base
-    def load
+    def loaded?
+      @is_loaded
+    end
+
+    def on_load
+      @is_loaded = true
       @children = []
       add_children_of @obj
 
       forward :load
     end
 
-    def activate
+    def on_activate
       forward :activate
     end
 
-    def draw(animator)
+    def on_draw(animator)
       forward :draw, animator
     end
 
-    def deactivate
+    def on_deactivate
       forward :deactivate
     end
 
-    def unload
+    def on_unload
+      @is_loaded = false
       forward :unload
     end
 

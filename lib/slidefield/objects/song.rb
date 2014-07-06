@@ -12,7 +12,7 @@ end
 
 module SlideField::ObjectManager
   class Song < Base
-    def load
+    def on_load
       source = File.expand_path @obj.get(:source), @obj.include_path
       @loop = @obj.get(:loop)
       @volume = @obj.get(:volume) / 100.0
@@ -20,15 +20,16 @@ module SlideField::ObjectManager
       @song = Gosu::Sample.new @window, source
     end
 
-    def activate
+    def on_activate
       @instance = @song.play @volume, 1, @loop
     end
 
-    def deactivate
+    def on_deactivate
       @instance.stop
+      @instance = nil
     end
 
-    def unload
+    def on_unload
       @song = nil
     end
   end

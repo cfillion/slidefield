@@ -12,7 +12,7 @@ end
 
 module SlideField::ObjectManager
   class Image < Base
-    def load
+    def on_load
       @x, @y = @obj.get :position
       @z = @obj.get :z_order
       @color = Gosu::Color.rgba *@obj.get(:color)
@@ -28,7 +28,7 @@ module SlideField::ObjectManager
       @y_scale = height / @image.height.to_f
     end
 
-    def draw(animator)
+    def on_draw(animator)
       tr = animator.transform @obj
       return if tr.skip_draw?
 
@@ -44,7 +44,7 @@ module SlideField::ObjectManager
       @image.draw x, y, @z, x_scale, y_scale, color
     end
 
-    def unload
+    def on_unload
       @image = nil
     end
   end

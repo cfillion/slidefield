@@ -16,7 +16,7 @@ end
 
 module SlideField::ObjectManager
   class Text < Base
-    def load
+    def on_load
       @x, @y = @obj.get :position
       @z = @obj.get :z_order
       @color = Gosu::Color.rgba *@obj.get(:color)
@@ -41,7 +41,7 @@ module SlideField::ObjectManager
       @image = Gosu::Image.from_text @window, content, font, height, spacing, width, align
     end
 
-    def draw(animator)
+    def on_draw(animator)
       tr = animator.transform @obj
       return if tr.skip_draw?
 
@@ -54,7 +54,7 @@ module SlideField::ObjectManager
       @image.draw x, y, @z, tr.scale, tr.scale, color
     end
 
-    def unload
+    def on_unload
       @image = nil
     end
   end

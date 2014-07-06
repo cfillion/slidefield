@@ -13,17 +13,24 @@ module SlideField::ObjectManager
     end
 
     def execute(event, *args)
-      send event, *args
+      SlideField.debug "Event: '%s' (%s at %s)" % [event, @obj.context, @obj.loc]
+      send "on_#{event}", *args
     rescue => e
+      SlideField.debug "Backtrace: #{e.backtrace.join "\n"}"
       raise SlideField::RuntimeError,
         "#{@obj.context_string} An error occured while executing the '#{event}' event on the object '#{@obj.type}' at #{@obj.loc}:\n" +
         "\t(#{e.class}) #{e.message}"
     end
 
-    def load; end
-    def activate; end
-    def draw(animator); end
-    def deactivate; end
-    def unload; end
+    def method_missing(method, *args)
+      raise NameError, "No such event" if method.to_s.start_with? 'on_'
+      execute method, *args
+    end
+
+    def on_load; end
+    def on_activate; end
+    def on_draw(animator); end
+    def on_deactivate; end
+    def on_unload; end
   end
 end

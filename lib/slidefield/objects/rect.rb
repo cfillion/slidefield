@@ -11,7 +11,7 @@ end
 
 module SlideField::ObjectManager
   class Rect < Base
-    def load
+    def on_load
       @x, @y = @obj.get :position
       @z = @obj.get :z_order
 
@@ -19,7 +19,7 @@ module SlideField::ObjectManager
       @fill = Gosu::Color.rgba *@obj.get(:fill)
     end
 
-    def draw(animator)
+    def on_draw(animator)
       tr = animator.transform @obj
       return if tr.skip_draw?
 
