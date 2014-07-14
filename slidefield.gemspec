@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["slidefield@cfillion.tk"]
   spec.summary       = %q{A presentation software that reads plain text files written in its own interpreted language.}
   spec.homepage      = "https://bitbucket.org/cfi30/slidefield"
-  spec.license       = "GPL"
+  spec.license       = "GPL-3.0+"
 
   spec.files         = `git ls-files -z`.split "\x0"
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename f }
@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency 'bundler', '~> 1.6'
-  spec.add_development_dependency 'minitest', '~> 5.3'
+  spec.add_development_dependency 'minitest', '~> 5.4'
   spec.add_development_dependency 'rake'
 
   spec.add_runtime_dependency 'awesome_print', '~> 1.2'
