@@ -7,19 +7,19 @@ def parse_opts
   options = []
 
   OptionParser.new do |opts|
-    opts.program_name = "SlideField"
+    opts.program_name = 'SlideField'
     opts.version = SlideField::VERSION
-    opts.banner = "Usage: slidefield [options] [file ...]"
+    opts.banner = 'Usage: slidefield [options] [file ...]'
 
-    opts.on '-c', '--check', "Check input only" do
+    opts.on '-c', '--check', 'Check input only' do
       options << :check
     end
 
-    opts.on '-d', '--debug', "Enable debug messages" do
+    opts.on '-d', '--debug', 'Enable debug messages' do
       options << :debug
     end
 
-    opts.on_tail '-v', '--version', "Show version number and copyright" do
+    opts.on_tail '-v', '--version', 'Show version number and copyright' do
       puts opts.ver
       puts <<GPL
 Copyright (C) 2014 by Christian Fillion
@@ -37,7 +37,7 @@ GPL
       exit
     end
 
-    opts.on_tail '-h', '--help', "Show this message" do
+    opts.on_tail '-h', '--help', 'Show this message' do
       puts opts.help
       exit
     end
