@@ -97,9 +97,9 @@ compatible with the value's type.
 
 **(Anywhere)** Load another file at the current location:
 
-    \include "relative/path/to/file.sfp"
+    \include "path/to/file.sfp"
     \include {
-      source = "relative/path/to/file.sfp"
+      source = "path/to/file.sfp"
     }
 
 **(Anywhere)** Print debug information about any value to standard output:
@@ -139,9 +139,9 @@ compatible with the value's type.
 
 **(Slide)** Add an image:
 
-    \image "relative/path/to/image.png"
+    \image "path/to/image.png"
     \image {
-      source = "relative/path/to/image.png"
+      source = "path/to/image.png"
       size = 0x0        % automatic if 0 (optional)
       color = #FFFFFFFF % color filter (optional)
       position = 0x0    % optional
@@ -160,9 +160,9 @@ compatible with the value's type.
 
 **(Slide)** Play an audio file:
 
-    \song "relative/path/to/audio.ogg"
+    \song "path/to/audio.ogg"
     \song {
-      source = "relative/path/to/audio.ogg"
+      source = "path/to/audio.ogg"
       volume = 100 % optional
       loop = :true % optional
     }
@@ -173,7 +173,7 @@ compatible with the value's type.
     \text {
       content = "Hello World!"
       color = #FFFFFFFF % optional
-      font = "sans"     % font name or relative font path (optional)
+      font = "sans"     % font name or path (optional)
       % font = "./my_font.ttf"
       height = 20       % font height in pixels (optional)
       width = 0         % maximum width (automatic if 0, optional)
@@ -233,14 +233,14 @@ Custom objects can be created using templates.
     % usage
     \&slide_template {
       title = "Hello World!"
-      background = "relative/path/to/image.png"
+      background = "path/to/image.png"
     }
 
 Equivalent of the above example without using templates:
 
     \slide {
       title = "Hello World!"
-      background = "relative/path/to/image.png"
+      background = "path/to/image.png"
       \image background { size = 1920x1080; }
       \text title { height = 72; }
     }
