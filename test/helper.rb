@@ -1,4 +1,4 @@
-require 'slidefield'
+require 'simplecov'
 require 'minitest/autorun'
 
 # use awesome_print for objects diff
@@ -9,3 +9,10 @@ module MiniTest
     end
   end
 end
+
+SimpleCov.start {
+  project_name 'SlideField'
+  add_filter '/test/'
+}
+
+require 'slidefield'
