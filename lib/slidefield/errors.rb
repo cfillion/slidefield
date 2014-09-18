@@ -1,6 +1,7 @@
 module SlideField
-  class Error < RuntimeError; end
-  class ParseError < Error; end
-  class InterpreterError < Error; end
-  class RuntimeError < Error; end
+  Error            = Class.new RuntimeError
+
+  ParseError       = Class.new Error
+  InterpreterError = Class.new Error
+  RuntimeError     = Class.new Error
 end
