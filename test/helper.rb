@@ -13,6 +13,7 @@ end
 SimpleCov.start {
   project_name 'SlideField'
   add_filter '/test/'
+  add_group 'Objects', '/lib/slidefield/objects/'
 }
 
 require 'slidefield'
