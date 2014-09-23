@@ -260,7 +260,7 @@ Equivalent of the above example without using templates:
 
 ## Contributing
 
-1. [Fork it](https://bitbucket.org/cfi30/slidefield/fork)
+1. [Fork it](https://github.com/cfi30/slidefield/fork)
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Test your changes (`rake`)
 4. Commit your changes (`git commit -am 'Add some feature'`)
