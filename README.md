@@ -246,16 +246,16 @@ Equivalent of the above example without using templates:
 
 ## Changelog
 
+### 0.1
+
+- First public release
+
 #### 0.1.1
 
 - (un)load subsequent slides in background
 - greatly reduced memory usage and startup time
 - new 'enter' and 'leave' properties for `\animation`
 - support template inheritance
-
-### 0.1
-
-- First public release
 
 ## Contributing
 
