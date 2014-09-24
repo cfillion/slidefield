@@ -8,7 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = SlideField::VERSION
   spec.authors       = ["cfillion"]
   spec.email         = ["slidefield@cfillion.tk"]
-  spec.summary       = %q{A presentation software that reads plain text files written in its own interpreted language.}
+  spec.summary       = "Text-based presentation software."
+  spec.description   = "SlideField is a text-based presentation software with its own interpreted language."
   spec.homepage      = "https://github.com/cfillion/slidefield"
   spec.license       = "GPL-3.0+"
 

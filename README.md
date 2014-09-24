@@ -1,7 +1,6 @@
 # SlideField
 
-**A presentation software that reads plain text files written in its own
-    interpreted language.**
+SlideField is a text-based presentation software with its own interpreted language.
 
 ## Installation
 
