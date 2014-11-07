@@ -13,10 +13,10 @@ module SlideField::ObjectManager
     end
 
     def execute(event, *args)
-      SlideField.debug "Event: #{event} (#{@obj.type} in #{@obj.context} at #{@obj.loc})"
+      SlideField.log.debug('object_manager') { "Event: #{event} (#{@obj.type} in #{@obj.context} at #{@obj.loc})" }
       send "on_#{event}", *args
     rescue => e
-      SlideField.debug "Backtrace: #{e.backtrace.join "\n"}"
+      SlideField.log.debug('object_manager') { "Backtrace: #{e.backtrace.join "\n"}" }
       raise SlideField::RuntimeError,
         "#{@obj.context_string} An error occured while executing the '#{event}' event on the object '#{@obj.type}' at #{@obj.loc}:\n" +
         "\t(#{e.class}) #{e.message}"

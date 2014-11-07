@@ -54,9 +54,7 @@ begin
   end
 
   if options.include? :debug
-    SlideField.ondebug do |message|
-      puts message
-    end
+    SlideField.log.level = Logger::DEBUG
   end
 
   files = ARGV
@@ -64,8 +62,8 @@ begin
   # read from standard input by default
   files << '-' if files.empty?
 
-  SlideField.debug "Options: #{options}"
-  SlideField.debug "File List: #{files}"
+  SlideField.log.debug "Options: #{options}"
+  SlideField.log.debug "File List: #{files}"
 
   files.each {|file|
     interpreter = SlideField::Interpreter.new

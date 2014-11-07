@@ -104,7 +104,7 @@ class SlideField::Viewer < Gosu::Window
 
   private
   def smart_loader
-    SlideField.debug "(Un)loading resources..."
+    SlideField.log.debug('viewer') { "(Un)loading resources..." }
 
     ahead = LOAD_AROUND / 2
     behind = -ahead

@@ -2,6 +2,7 @@ require 'slidefield/version'
 
 require 'ap'
 require 'gosu'
+require 'logger'
 require 'parslet'
 require 'pathname'
 
@@ -27,11 +28,11 @@ require 'slidefield/objects/song.rb'
 require 'slidefield/objects/text.rb'
 
 module SlideField
-  def self.ondebug(&block)
-    @ondebug = block
-  end
+  @logger = Logger.new STDERR
+  @logger.datetime_format = '%Y-%m-%d %H:%M:%S.%L '
+  @logger.level = Logger::WARN
 
-  def self.debug(message)
-    @ondebug[message] if @ondebug
+  def self.log
+    @logger
   end
 end
