@@ -4,3 +4,5 @@ rvm:
   - 2.0.0
   - 1.9.3
   - 1.9.2
+before_install:
+  - sudo apt-get install -qq build-essential libsdl2-dev libsdl2-ttf-dev libpango1.0-dev libgl1-mesa-dev libfreeimage-dev libopenal-dev libsndfile-dev
