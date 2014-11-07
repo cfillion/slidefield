@@ -41,7 +41,8 @@ class TestInterpreter < MiniTest::Test
   def setup
     @col_cache = []
     @interpreter = SlideField::Interpreter.new
-    @path = File.expand_path 'resources', __dir__
+    @resources_path = File.expand_path '../resources', __FILE__
+    @examples_path = File.expand_path '../../examples', __FILE__
   end
 
   def slice(val, line)
@@ -1732,24 +1733,23 @@ class TestInterpreter < MiniTest::Test
 
   def test_parse_error
     error = assert_raises SlideField::ParseError do
-      @interpreter.run_file @path + '/parse_error.sfp'
+      @interpreter.run_file File.join(@resources_path, 'parse_error.sfp')
     end
 
     assert_match /\A\[parse_error.sfp\] /, error.message
   end
 
   def test_include_relative
-    @interpreter.run_string '\\include "../../examples/minimal/main.sfp"', @path
+    @interpreter.run_string '\\include "../../examples/minimal/main.sfp"', @resources_path
   end
 
   def test_include_absolute
-    ex_path = File.expand_path '../examples', __dir__
-    @interpreter.run_string '\\include "' + ex_path + '/minimal/main.sfp"'
+    @interpreter.run_string '\\include "' + File.join(@examples_path, 'minimal/main.sfp') + '"'
   end
 
   def test_include_parse_error
     error = assert_raises SlideField::ParseError do
-      @interpreter.run_string '\\include "parse_error.sfp"', @path
+      @interpreter.run_string '\\include "parse_error.sfp"', @resources_path
     end
 
     assert_match /\A\[input\] \[parse_error.sfp\] /, error.message
@@ -1757,33 +1757,36 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_reparse
-    ex_path = File.expand_path '../examples', __dir__
-    @interpreter.run_file ex_path + '/minimal/main.sfp'
+    file_path = File.join @examples_path, 'minimal/main.sfp'
+
+    @interpreter.run_file file_path
 
     error = assert_raises SlideField::InterpreterError do
-      @interpreter.run_file ex_path + '/minimal/main.sfp'
+      @interpreter.run_file file_path
     end
 
-    assert_equal "File already interpreted: '#{ex_path}/minimal/main.sfp'", error.message
+    assert_equal "File already interpreted: '#{file_path}'", error.message
   end
 
   def test_recursive_include
+    file_path = File.join @resources_path, 'recursive_include.sfp'
+
     error = assert_raises SlideField::InterpreterError do
-      @interpreter.run_file @path + '/recursive_include.sfp'
+      @interpreter.run_file file_path
     end
 
-    assert_equal "[recursive_include.sfp] File already interpreted: '#{@path}/recursive_include.sfp'", error.message
+    assert_equal "[recursive_include.sfp] File already interpreted: '#{file_path}'", error.message
   end
 
   def test_include_parent_folder
     error = assert_raises SlideField::InterpreterError do
-      @interpreter.run_file @path + '/sub/include_parent.sfp'
+      @interpreter.run_file File.join(@resources_path, 'sub/include_parent.sfp')
     end
 
     assert_match /\A\[include_parent.sfp\] \[..\/unknown_object.sfp\] /, error.message
 
     error = assert_raises SlideField::ParseError do
-      @interpreter.run_file @path + '/parse_error.sfp'
+      @interpreter.run_file File.join(@resources_path, 'parse_error.sfp')
     end
 
     assert_match /\A\[parse_error.sfp\] /, error.message
@@ -1791,7 +1794,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_include_subfolder
     error = assert_raises SlideField::InterpreterError do
-      @interpreter.run_file @path + '/include_sub.sfp'
+      @interpreter.run_file File.join(@resources_path, 'include_sub.sfp')
     end
 
     assert_match /\A\[include_sub.sfp\] \[sub\/include_parent.sfp\] \[unknown_object.sfp\] /, error.message
@@ -1799,7 +1802,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_include_wrong_template
     error = assert_raises SlideField::InterpreterError do
-      @interpreter.run_string '\\include "wrong_template.sfp"; \\&wrong_template', @path
+      @interpreter.run_string '\\include "wrong_template.sfp"; \\&wrong_template', @resources_path
     end
 
     assert_match /&wrong_template/, error.message
@@ -1807,7 +1810,7 @@ class TestInterpreter < MiniTest::Test
 
   def test_include_unclosed_object
     assert_raises SlideField::ParseError do
-      @interpreter.run_string '\\include "unclosed_object.sfp"', @path
+      @interpreter.run_string '\\include "unclosed_object.sfp"', @resources_path
     end
   end
 end

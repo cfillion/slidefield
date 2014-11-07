@@ -32,7 +32,7 @@ class SlideField::Interpreter
 
   def run_string(input, include_path = '.', context = 'input', parent_obj = nil)
     SlideField.log.debug('interpreter') { "Parsing #{context}..." }
-    include_path = File.absolute_path(include_path) + File::SEPARATOR
+    include_path = File.absolute_path include_path
 
     object = parent_obj || @root
     object.include_path = include_path unless object.include_path
