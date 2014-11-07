@@ -1168,7 +1168,7 @@ class TestInterpreter < MiniTest::Test
       i.run_file 'no.entry'
     end
 
-    assert_match /\ANo such file or directory(?: @ rb_sysopen)? - no.entry\Z/, error.message
+    assert_match /\ANo such file or directory(?: @ rb_sysopen)? - no\.entry\Z/, error.message
   end
 
   def test_include_not_found
