@@ -1168,7 +1168,7 @@ class TestInterpreter < MiniTest::Test
       i.run_file 'no.entry'
     end
 
-    assert_equal "No such file or directory @ rb_sysopen - no.entry", error.message
+    assert_match /\ANo such file or directory(?: @ rb_sysopen)? - no.entry\Z/, error.message
   end
 
   def test_include_not_found
@@ -1177,7 +1177,7 @@ class TestInterpreter < MiniTest::Test
       i.run_string '\\include "/hello"'
     end
 
-    assert_equal "[input] No such file or directory @ rb_sysopen - /hello", error.message
+    assert_match /\A\[input\] No such file or directory(?: @ rb_sysopen)? - \/hello\Z/, error.message
   end
 
   def test_escape_sequence
