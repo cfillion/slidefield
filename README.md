@@ -1,5 +1,11 @@
 # SlideField
 
+[![Gem Version](https://badge.fury.io/rb/slidefield.svg)](http://badge.fury.io/rb/slidefield)
+[![Build Status](https://travis-ci.org/cfillion/slidefield.svg?branch=master)](https://travis-ci.org/cfillion/slidefield)
+[![Dependency Status](https://gemnasium.com/cfillion/slidefield.svg)](https://gemnasium.com/cfillion/slidefield)
+[![Code Climate](https://codeclimate.com/github/cfillion/slidefield/badges/gpa.svg)](https://codeclimate.com/github/cfillion/slidefield)
+[![Coverage Status](https://img.shields.io/coveralls/cfillion/slidefield.svg)](https://coveralls.io/r/cfillion/slidefield?branch=master)
+
 SlideField is a text-based presentation software with its own interpreted language.
 
 ## Installation
