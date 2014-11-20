@@ -4,6 +4,7 @@ layout_size = 1366x768
 
 \slide {
   \text "Hello World!" { height = 50; }
+
   \text "Press <b>Enter</b> to display the next slide" {
     position = 0x50
   }
@@ -11,6 +12,7 @@ layout_size = 1366x768
 
 \slide {
   \text "Second Slide"
+
   \text "Press <b>Backspace</b> to return to the previous slide" {
     position = 0x30
     width = 200
