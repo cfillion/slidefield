@@ -28,4 +28,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'awesome_print', '~> 1.2'
   spec.add_runtime_dependency 'gosu', '~> 0.8'
   spec.add_runtime_dependency 'parslet', '~> 1.6'
+  spec.add_runtime_dependency 'colorize', '~> 0.7'
+
+  spec.required_ruby_version = '>= 2.0'
 end
