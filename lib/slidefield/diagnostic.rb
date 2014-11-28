@@ -8,15 +8,7 @@ class SlideField::Diagnostic
 
   def to_s
     str = "%s: %s: %s" % [@location.to_s, @level, @message]
-
-    if @enable_colors
-      str.gsub! /<native code>:?/, '\0'.bold
-      str.gsub! /[^\s:]+:\d+:\d+:?/, '\0'.bold
-
-      str.gsub! /error:?/, '\0'.bold.red
-      str.gsub! /warning:?/, '\0'.bold.yellow
-      str.gsub! /debug:?/, '\0'.cyan
-    end
+    highlight str if @enable_colors
 
     unless @location.native?
       code_excerpt, caret = excerpt
@@ -31,6 +23,15 @@ class SlideField::Diagnostic
   alias :inspect :to_s
 
 private
+  def highlight(str)
+    str.gsub! /<native code>:?/, '\0'.bold
+    str.gsub! /[^\s:]+:\d+:\d+:?/, '\0'.bold
+
+    str.gsub! /error:?/, '\0'.bold.red
+    str.gsub! /warning:?/, '\0'.bold.yellow
+    str.gsub! /debug:?/, '\0'.cyan
+  end
+
   def excerpt
     line_index = @location.line - 1
     column_index = @location.column - 1
