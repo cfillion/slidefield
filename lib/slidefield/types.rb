@@ -67,8 +67,10 @@ module SlideField::ArrayType
     define_method operator do |other|
       raise TypeError unless other.class == self.class
 
-      self.class.new *[self.to_a, other.to_a].
-        transpose.map {|x| x.reduce operator }
+      combined = [self.to_a, other.to_a].transpose
+      result = combined.map {|x| x.reduce operator }
+
+      self.class.new *result
     end
   }
 end
