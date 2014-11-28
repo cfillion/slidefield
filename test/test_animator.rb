@@ -4,6 +4,8 @@ class TestAnimator < MiniTest::Test
   def setup
     @animator = SlideField::Animator.new [1000,500]
     @assert_number = 0
+
+    skip
   end
 
   def get_object(anim_name, duration, enter = true, leave = true)

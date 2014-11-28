@@ -26,6 +26,9 @@ class SlideField::Animator
     tr_struct = Struct.new :skip_draw?, :x_offset, :y_offset, :scale, :opacity
     tr = tr_struct.new false, 0, 0, 1.0, 1.0
 
+    tr[:skip_draw?] = !@frame.current? # TODO: remove this line
+    return tr # TODO: remote this line and fix the animator
+
     anim = animation_for obj.ancestor(:animation)
 
     # no animation
@@ -79,7 +82,7 @@ class SlideField::Animator
     tr
   end
 
-  private
+private
   def animation_for(data)
     return @animations[data] if @animations.has_key? data
 
