@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+Signal.trap('INT') { abort }
+
 require 'slidefield'
 require 'optparse'
 
@@ -13,10 +15,6 @@ def parse_opts
 
     opts.on '-c', '--check', 'Check input only' do
       options << :check
-    end
-
-    opts.on '-d', '--debug', 'Enable debug messages' do
-      options << :debug
     end
 
     opts.on_tail '-v', '--version', 'Show version number and copyright' do
@@ -47,42 +45,31 @@ GPL
 end
 
 begin
-  begin
-    options = parse_opts
-  rescue OptionParser::InvalidOption => e
-    raise SlideField::Error, e
-  end
-
-  if options.include? :debug
-    SlideField.log.level = Logger::DEBUG
-  end
-
-  files = ARGV
-
-  # read from standard input by default
-  files << '-' if files.empty?
-
-  SlideField.log.debug "Options: #{options}"
-  SlideField.log.debug "File List: #{files}"
-
-  files.each {|file|
-    interpreter = SlideField::Interpreter.new
-    if '-' == file
-      interpreter.run_string STDIN.read
-    else
-      path = File.absolute_path file
-      interpreter.run_file path
-    end
-
-    next if options.include? :check
-
-    project_root = interpreter.root
-    viewer = SlideField::Viewer.new project_root
-    viewer.caption = project_root.context
-    viewer.show
-  }
-rescue SlideField::Error => e
-  warn "#{e.class}: #{e}"
-rescue Interrupt
-  puts
+  options = parse_opts
+rescue OptionParser::InvalidOption => e
+  raise SlideField::Error, e
 end
+
+files = ARGV
+
+# read from standard input by default
+files << '-' if files.empty?
+
+files.each {|file|
+  interpreter = SlideField::Interpreter.new
+  interpreter.print_diagnostics = true
+
+  if '-' == file
+    interpreter.run_string STDIN.read
+  else
+    path = File.absolute_path file
+    interpreter.run_file path
+  end
+
+  next if interpreter.failed? || options.include?(:check)
+
+  project_root = interpreter.root
+
+  viewer = SlideField::Viewer.new project_root
+  viewer.show
+}

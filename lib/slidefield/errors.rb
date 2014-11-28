@@ -1,7 +1,13 @@
 module SlideField
-  Error            = Class.new RuntimeError
+  Error = Class.new StandardError
 
-  ParseError       = Class.new Error
-  InterpreterError = Class.new Error
-  RuntimeError     = Class.new Error
+  AlreadyAdoptedError    = Class.new Error
+  AmbiguousValueError    = Class.new Error
+  ColorOutOfBoundsError  = Class.new Error
+  ForeignValueError      = Class.new Error
+  IncompatibleValueError = Class.new Error
+  InvalidObjectError     = Class.new Error
+  UnauthorizedChildError = Class.new Error
+  UndefinedObjectError   = Class.new Error
+  VariableNotFoundError  = Class.new Error
 end

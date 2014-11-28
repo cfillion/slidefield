@@ -1,1816 +1,627 @@
 require File.expand_path '../helper', __FILE__
 
-module SlideField::ObjectRules
-  class Parent < Base
-    def rules
-      child :child
-      child :value
-      child :aaaa
-    end
-  end
+SF::Object.define :permissiveRoot do
+  allow_children :level1
+  allow_children :level2
+  allow_children :answer
+end
 
-  class Child < Base
-  end
+SF::Object.define :restrictiveRoot do
+  allow_children :level1, min: 2, max: 2
+end
 
-  class Type < Base
-    def rules
-      property :test, :point, [0,0]
-    end
-  end
+SF::Object.define :level1 do
+  transparentize!
+  allow_children :level2
+end
 
-  class Value < Base
-    def rules
-      property :num, :integer, 0
-      property :num2, :integer, 0
-      property :bool, :boolean, false
-      property :str, :string, ""
-    end
-  end
+SF::Object.define :level2 do end
 
-  class Picky < Base
-    def rules
-      property :king_name, :string
-      child :minOne, 1
-      child :minTwo, 2
-      child :maxOne, 1, 1
-    end
-  end
+SF::Object.define :answer do
+  set_variable :the_answer, Fixnum
+end
+
+SF::Object.define :collection do
+  set_variable :first, SF::Boolean
+  set_variable :second, SF::Boolean
 end
 
 class TestInterpreter < MiniTest::Test
   def setup
-    @col_cache = []
-    @interpreter = SlideField::Interpreter.new
+    @interpreter = SF::Interpreter.new
+
     @resources_path = File.expand_path '../resources', __FILE__
-    @examples_path = File.expand_path '../../examples', __FILE__
   end
 
-  def slice(val, line)
-    @col_cache[line] = 0 unless @col_cache[line]
-    col = @col_cache[line] += 1
-
-    line_cache = Class.new
-    line_cache.define_singleton_method :line_and_column do |pos|
-      [line, col]
-    end
-
-    pos = Parslet::Position.new val, 0
-    Parslet::Slice.new pos, val, line_cache
-  end
-
-  def test_excerpt_parse_error
-    error = assert_raises SlideField::ParseError do
-      @interpreter.run_string '"'
-    end
-
-    assert_match /\A\[input\] /, error.message
-    refute_match /\A\[input\] \[input\]/, error.message
-    assert_match /\n\t"\n\t\^\Z/, error.message
-  end
-
-  def test_excerpt_interpreter_error
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.run_string "\\object\n"
-    end
-
-    assert_match /\A\[input\] /, error.message
-    assert_match /\n\t\\object\n\t \^\Z/, error.message
-  end
-
-  def test_strip_excerpt
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.run_string "\t\t\t\t       \t       \\object"
-    end
-
-    assert_match /\A\[input\] /, error.message
-    assert_match /\n\t\\object\n\t \^\Z/, error.message
-  end
-
-  def test_run_interpreter_validation
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.run_string "% nothing\n"
-    end
-
-    assert_match /\A\[input\] /, error.message
-    assert_match /line 0 char 0\Z/, error.message
-  end
-
-  def test_empty_tree
-    o = SlideField::ObjectData.new :parent, 'loc'
-    @interpreter.interpret_tree "", o
-  end
-
-  def test_unsupported_object
-    tokens = [
-      {:object=>{:type=>slice('aaaa', 1)}},
-    ]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    error = assert_raises RuntimeError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Unsupported object 'aaaa'", error.message
-  end
-
-  def test_unsupported_statement
-    tokens = [
-      {:hello_world=>{}},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    error = assert_raises RuntimeError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Unsupported statement 'hello_world'", error.message
-  end
-
-  def test_unsupported_type
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{:filters=>[], :dog_food=>slice('yum', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    error = assert_raises RuntimeError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Unsupported type 'dog_food' at line 1 char 3", error.message
-  end
-
-  def test_unsupported_operator
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('baconize', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    error = assert_raises RuntimeError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Unsupported operator 'baconize' at line 1 char 2", error.message
-  end
-
-  def test_set_already_defined
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 1
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Variable 'var' is already defined at line 1 char 1", error.message
-  end
-
-  def test_set_integer
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal 42, o.get(:var)
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_set_point
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{:filters=>[], :point=>slice('12x34', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal [12,34], o.get(:var)
-    assert_equal :point, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_set_string
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{:filters=>[], :string=>slice('"hello"', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal 'hello', o.get(:var)
-    assert_equal :string, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_set_color
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{:filters=>[], :color=>slice('#C0FF33FF', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal [192, 255, 51, 255], o.get(:var)
-    assert_equal :color, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_set_boolean
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{:filters=>[], :boolean=>slice(':true', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal true, o.get(:var)
-    assert_equal :boolean, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_set_object
-    object = {
-      :type=>slice('type', 2),
-      :value=>{:filters=>[], :point=>slice('42x42', 2)}
-    }
-
-    tokens = [{
-      :assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{:filters=>[], :object=>object}
-      }
-    }]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.include_path = 'include/path/'
-    o.context = 'the/file.sfp'
-
-    @interpreter.interpret_tree tokens, o
-    val = o.get(:var)
-
-    assert_equal object, o.get(:var)
-    assert_equal :object, o.var_type(:var)
-    assert_equal 'line 2 char 1', o.var_loc(:var)
-  end
-
-  def test_set_identifier
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{:filters=>[], :identifier=>slice('test', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :test, 'hello', 'loc', :string
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 'hello', o.get(:var)
-    assert_equal :string, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_set_undefined_identifier
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{:filters=>[], :identifier=>slice('test', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Undefined variable 'test' at line 1 char 3", error.message
-  end
-
-
-  def test_set_wrong_type
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('test', 1),
-        :operator=>slice('=', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :type, 'loc'
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Unexpected 'integer', expecting 'point' for property 'test' at line 1 char 3", error.message
-  end
-
-  def test_add_undefined
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('+=', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Undefined variable 'var' at line 1 char 1", error.message
-  end
-
-  def test_add_incompatible
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('+=', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 'test', 'loc', :string
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Unexpected 'integer', expecting 'string' for variable or property 'var' at line 1 char 3", error.message
-  end
-
-  def test_add_integer
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('+=', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 42, 'loc', :integer
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 84, o.get(:var)
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_add_point
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('+=', 1),
-        :value=>{:filters=>[], :point=>slice('42x42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [42,42], 'loc', :point
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal [84,84], o.get(:var)
-    assert_equal :point, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_add_string
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('+=', 1),
-        :value=>{:filters=>[], :string=>slice('" world"', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 'hello', 'loc', :string
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 'hello world', o.get(:var)
-    assert_equal :string, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_add_color
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('+=', 1),
-        :value=>{:filters=>[], :color=>slice('#01010101', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [0, 0, 0, 0], 'loc', :color
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal [1, 1, 1, 1], o.get(:var)
-    assert_equal :color, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_add_color_overflow
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('+=', 1),
-        :value=>{:filters=>[], :color=>slice('#01010101', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [255, 255, 255, 255], 'loc', :color
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal [255, 255, 255, 255], o.get(:var)
-    assert_equal :color, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_add_boolean
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('+=', 1),
-        :value=>{:filters=>[], :boolean=>slice(':true', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, true, 'loc', :boolean
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Invalid operator '+=' for type 'boolean' at line 1 char 2", error.message
-  end
-
-  def test_add_identifier
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('+=', 1),
-        :value=>{:filters=>[], :identifier=>slice('test', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 'hello', 'loc', :string
-    o.set :test, ' world', 'loc', :string
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 'hello world', o.get(:var)
-    assert_equal :string, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_sub_undefined
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('-=', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Undefined variable 'var' at line 1 char 1", error.message
-  end
-
-  def test_sub_incompatible
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('-=', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 'test', 'loc', :string
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Unexpected 'integer', expecting 'string' for variable or property 'var' at line 1 char 3", error.message
-  end
-
-  def test_sub_integer
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('-=', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 44, 'loc', :integer
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 2, o.get(:var)
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_sub_point
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('-=', 1),
-        :value=>{:filters=>[], :point=>slice('42x42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [46,44], 'loc', :point
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal [4,2], o.get(:var)
-    assert_equal :point, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_sub_string
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('-=', 1),
-        :value=>{:filters=>[], :string=>slice('" world"', 1)}
-      }},
-      {:assignment=>{
-        :variable=>slice('var', 2),
-        :operator=>slice('-=', 2),
-        :value=>{:filters=>[], :string=>slice('"test"', 2)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 'hello world world', 'loc', :string
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 'hello', o.get(:var)
-    assert_equal :string, o.var_type(:var)
-    assert_equal 'line 2 char 3', o.var_loc(:var)
-  end
-
-  def test_sub_color
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('-=', 1),
-        :value=>{:filters=>[], :color=>slice('#01010101', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [1, 1, 1, 1], 'loc', :color
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal [0, 0, 0, 0], o.get(:var)
-    assert_equal :color, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_sub_color_underflow
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('-=', 1),
-        :value=>{:filters=>[], :color=>slice('#01010101', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [0, 0, 0, 0], 'loc', :color
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal [0, 0, 0, 0], o.get(:var)
-    assert_equal :color, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_sub_boolean
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('-=', 1),
-        :value=>{:filters=>[], :boolean=>slice(':true', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, true, 'loc', :boolean
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Invalid operator '-=' for type 'boolean' at line 1 char 2", error.message
-  end
-
-  def test_sub_identifier
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('-=', 1),
-        :value=>{:filters=>[], :identifier=>slice('test', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 3, 'loc', :integer
-    o.set :test, 2, 'loc', :integer
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 1, o.get(:var)
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_mul_undefined
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('*=', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Undefined variable 'var' at line 1 char 1", error.message
-  end
-
-  def test_mul_incompatible
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('*=', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 'test', 'loc', :string
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Unexpected 'integer', expecting 'string' for variable or property 'var' at line 1 char 3", error.message
-  end
-
-  def test_mul_integer
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('*=', 1),
-        :value=>{:filters=>[], :integer=>slice('4', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 4, 'loc', :integer
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 16, o.get(:var)
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_mul_point
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('*=', 1),
-        :value=>{:filters=>[], :point=>slice('4x2', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [4,2], 'loc', :point
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal [16,4], o.get(:var)
-    assert_equal :point, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_mul_string
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('*=', 1),
-        :value=>{:filters=>[], :string=>slice('"3"', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 'test', 'loc', :string
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 'testtesttest', o.get(:var)
-    assert_equal :string, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_mul_string_invalid
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('*=', 1),
-        :value=>{:filters=>[], :string=>slice('"aaaa"', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 'test', 'loc', :string
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Invalid string multiplier 'aaaa', integer > 0 required at line 1 char 3", error.message
-  end
-
-  def test_mul_color
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('*=', 1),
-        :value=>{:filters=>[], :color=>slice('#02020202', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [4, 4, 4, 4], 'loc', :color
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Invalid operator '*=' for type 'color' at line 1 char 2", error.message
-  end
-
-  def test_mul_boolean
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('*=', 1),
-        :value=>{:filters=>[], :boolean=>slice(':true', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, true, 'loc', :boolean
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Invalid operator '*=' for type 'boolean' at line 1 char 2", error.message
-  end
-
-  def test_mul_identifier
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('*=', 1),
-        :value=>{:filters=>[], :identifier=>slice('test', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 3, 'loc', :integer
-    o.set :test, 2, 'loc', :integer
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 6, o.get(:var)
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_div_undefined
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('/=', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Undefined variable 'var' at line 1 char 1", error.message
-  end
-
-  def test_div_incompatible
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('/=', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 'test', 'loc', :string
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Unexpected 'integer', expecting 'string' for variable or property 'var' at line 1 char 3", error.message
-  end
-
-  def test_div_integer
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('/=', 1),
-        :value=>{:filters=>[], :integer=>slice('2', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 7, 'loc', :integer
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 3, o.get(:var)
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_div_integer_by_zero
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('/=', 1),
-        :value=>{:filters=>[], :integer=>slice('0', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 42, 'loc', :integer
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "divided by zero at line 1 char 3", error.message
-  end
-
-  def test_div_point
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('/=', 1),
-        :value=>{:filters=>[], :point=>slice('2x3', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [7,42], 'loc', :point
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal [3,14], o.get(:var)
-    assert_equal :point, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_div_point_by_zero
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('/=', 1),
-        :value=>{:filters=>[], :point=>slice('2x0', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [42,42], 'loc', :point
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "divided by zero at line 1 char 3", error.message
-  end
-
-  def test_div_string
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('/=', 1),
-        :value=>{:filters=>[], :string=>slice('" world"', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 'hello world', 'loc', :string
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Invalid operator '/=' for type 'string' at line 1 char 2", error.message
-  end
-
-  def test_div_color
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('/=', 1),
-        :value=>{:filters=>[], :color=>slice('#02020202', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, [4, 4, 4, 4], 'loc', :color
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Invalid operator '/=' for type 'color' at line 1 char 2", error.message
-  end
-
-  def test_div_boolean
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('/=', 1),
-        :value=>{:filters=>[], :boolean=>slice(':true', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, true, 'loc', :boolean
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Invalid operator '/=' for type 'boolean' at line 1 char 2", error.message
-  end
-
-  def test_div_identifier
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('/=', 1),
-        :value=>{:filters=>[], :identifier=>slice('test', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :var, 6, 'loc', :integer
-    o.set :test, 2, 'loc', :integer
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 3, o.get(:var)
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_children
-    tokens = [
-      {:object=>{:type=>slice('child', 1), :body=>[
-        {:assignment=>{
-          :variable=>slice('var', 1),
-          :operator=>slice('=', 1),
-          :value=>{:filters=>[], :identifier=>slice('parent_var', 1)}
-        }},
-      ]}},
-    ]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :parent_var, 'hello', 'loc', :string
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 1, o.children.count
-    assert_equal 'hello', o[:child][0].get(:var)
-  end
-
-  def test_object_value
-    tokens = [
-      {:object=>{
-        :type=>slice('value', 1),
-        :value=>{:filters=>[], :integer=>slice('42', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 1, o.children.count
-    assert_equal 42, o[:value][0].get(:num)
-  end
-
-  def test_object_identifier_value
-    tokens = [
-      {:object=>{
-        :type=>slice('value', 1),
-        :value=>{:filters=>[], :identifier=>slice('test', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :test, 42, 'loc', :integer
-
-    @interpreter.interpret_tree tokens, o
-    assert_equal 1, o.children.count
-    assert_equal 42, o[:value][0].get(:num)
-  end
-
-  def test_object_invalid_value
-    tokens = [
-      {:object=>{
-        :type=>slice('value', 1),
-        :value=>{:filters=>[], :point=>slice('12x3', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Unexpected 'point', expecting one of [:integer, :boolean, :string] at line 1 char 2", error.message
-  end
-
-  def test_unknown_object
-    tokens = [
-      {:object=>{:type=>slice('qwfpgjluy', 1)}},
-    ]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Unexpected object 'qwfpgjluy', expecting one of [:aaaa, :child, :value] at line 1 char 1", error.message
-  end
-
-  def test_missing_variable
-    o = SlideField::ObjectData.new :picky, 'location'
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree [], o
-    end
-
-    assert_equal "Missing property 'king_name' for object 'picky' at location", error.message
-  end
-
-  def test_missing_child
-    o = SlideField::ObjectData.new :picky, 'location'
-    o.set :king_name, 'value', 'var loc', :string
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree [], o
-    end
-
-    assert_equal "Object 'picky' must have at least 1 'minOne', 0 found at location", error.message
-
-    c1 = SlideField::ObjectData.new :minOne, 'location'
-    o << c1
-
-    c2 = SlideField::ObjectData.new :minTwo, 'location'
-    o << c2
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree [], o
-    end
-
-    assert_equal "Object 'picky' must have at least 2 'minTwo', 1 found at location", error.message
-  end
-
-  def test_child_overdose
-    o = SlideField::ObjectData.new :picky, 'location'
-    o.set :king_name, 'value', 'var loc', :string
-
-    c1 = SlideField::ObjectData.new :minOne, 'location'
-    o << c1
-
-    c2 = SlideField::ObjectData.new :minTwo, 'location'
-    o << c2
-    o << c2
-
-    c3 = SlideField::ObjectData.new :maxOne, 'location'
-    o << c3
-    o << c3
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree [], o
-    end
-
-    assert_equal "Object 'picky' can not have more than 1 'maxOne', 2 found at location", error.message
-  end
-
-  def test_file_not_found
-    i = @interpreter
-    error = assert_raises SlideField::InterpreterError do
-      i.run_file 'no.entry'
-    end
-
-    assert_match /\ANo such file or directory(?: @ rb_sysopen)? - no\.entry\Z/, error.message
-  end
-
-  def test_include_not_found
-    i = @interpreter
-    error = assert_raises SlideField::InterpreterError do
-      i.run_string '\\include "/hello"'
-    end
-
-    assert_match /\A\[input\] No such file or directory(?: @ rb_sysopen)? - \/hello\Z/, error.message
-  end
-
-  def test_escape_sequence
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{:filters=>[], :string=>slice('"\\\\ \\"\\n\\s"', 1)}
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal "\\ \"\ns", o.get(:var)
-    assert_equal :string, o.var_type(:var)
-    assert_equal 'line 1 char 3', o.var_loc(:var)
-  end
-
-  def test_default_value
-    o = SlideField::ObjectData.new :type, 'loc'
-    @interpreter.interpret_tree [], o
-
-    assert_equal [0,0], o.get(:test)
-    assert_equal :point, o.var_type(:test)
-    assert_equal 'default', o.var_loc(:test)
-  end
-
-  def test_default_value_parent
-    p = SlideField::ObjectData.new :type, 'loc'
-    p.set :test, [1,1], 'loc', :point
-
-    o = SlideField::ObjectData.new :type, 'loc'
-    o.parent = p
-
-    @interpreter.interpret_tree [], o
-
-    assert_equal [1,1], o.get(:test)
-    assert_equal :point, o.var_type(:test)
-    assert_equal 'loc', o.var_loc(:test)
-  end
-
-  def test_template
-    tokens = [{
-      :object=>{:template=>slice('&', 1), :type=>slice('var_name', 1)}
-    }]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :var_name, {:type=>slice('child', 2)}, 'loc', :object
-
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal 1, o[:child].count
-    assert_equal 'line 1 char 2', o[:child].first.loc
-  end
-
-  def test_template_upstream_body
-    template = {
-      :type=>slice('child', 1),
-      :body=>[
-        {:assignment=>{
-          :variable=>slice('var', 1),
-          :operator=>slice('=', 1),
-          :value=>{:filters=>[], :integer=>slice('42', 1)}
-        }},
-      ]
-    }
-
-    tokens = [{
-      :object=>{
-        :template=>slice('&', 2),
-        :type=>slice('var_name', 2),
-      }
-    }]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :var_name, template, 'loc', :object
-
-    @interpreter.interpret_tree tokens, o
-    copy = o[:child].first
-
-    assert_equal 42, copy.get(:var)
-    assert_equal :integer, copy.var_type(:var)
-    assert_equal 'line 2 char 1', copy.var_loc(:var)
-  end
-
-  def test_template_downstream_body
-    template = {
-      :type=>slice('child', 1),
-    }
-
-    tokens = [{
-      :object=>{
-        :template=>slice('&', 2),
-        :type=>slice('var_name', 2),
-        :body=>[
-          {:assignment=>{
-            :variable=>slice('var', 3),
-            :operator=>slice('=', 3),
-            :value=>{:filters=>[], :integer=>slice('42', 3)}
-          }},
-        ]
-      }
-    }]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :var_name, template, 'loc', :object
-
-    @interpreter.interpret_tree tokens, o
-    copy = o[:child].first
-
-    assert_equal 42, copy.get(:var)
-    assert_equal :integer, copy.var_type(:var)
-    assert_equal 'line 3 char 3', copy.var_loc(:var)
-  end
-
-  def test_template_merge_bodies
-    template = {
-      :type=>slice('child', 1),
-      :body=>[
-        {:assignment=>{
-          :variable=>slice('var', 1),
-          :operator=>slice('+=', 1),
-          :value=>{:filters=>[], :integer=>slice('2', 1)}
-        }},
-      ]
-    }
-
-    tokens = [{
-      :object=>{
-        :template=>slice('&', 2),
-        :type=>slice('var_name', 2),
-        :body=>[
-          {:assignment=>{
-            :variable=>slice('var', 3),
-            :operator=>slice('=', 3),
-            :value=>{:filters=>[], :integer=>slice('42', 3)}
-          }},
-        ]
-      }
-    }]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :var_name, template, 'loc', :object
-
-    @interpreter.interpret_tree tokens, o
-    copy = o[:child].first
-
-    assert_equal 44, copy.get(:var)
-    assert_equal :integer, copy.var_type(:var)
-    assert_equal 'line 2 char 1', copy.var_loc(:var)
-  end
-
-  def test_template_upstream_value
-    template = {
-      :type=>slice('value', 1),
-      :value=>{:filters=>[], :integer=>slice('42', 1)}
-    }
-
-    tokens = [{
-      :object=>{
-        :template=>slice('&', 2),
-        :type=>slice('var_name', 2),
-      }
-    }]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :var_name, template, 'loc', :object
-
-    @interpreter.interpret_tree tokens, o
-    copy = o[:value].first
-
-    assert_equal 42, copy.get(:num)
-    assert_equal :integer, copy.var_type(:num)
-    assert_equal 'line 2 char 1', copy.var_loc(:num)
-  end
-
-  def test_template_downstream_value
-    template = {
-      :type=>slice('value', 1),
-    }
-
-    tokens = [{
-      :object=>{
-        :template=>slice('&', 2),
-        :type=>slice('var_name', 2),
-        :value=>{:filters=>[], :integer=>slice('42', 2)}
-      }
-    }]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :var_name, template, 'loc', :object
-
-    @interpreter.interpret_tree tokens, o
-    copy = o[:value].first
-
-    assert_equal 42, copy.get(:num)
-    assert_equal :integer, copy.var_type(:num)
-    assert_equal 'line 2 char 3', copy.var_loc(:num)
-  end
-
-  def test_template_double_value
-    template = {
-      :type=>slice('value', 1),
-      :value=>{:filters=>[], :integer=>slice('42', 1)}
-    }
-
-    tokens = [{
-      :object=>{
-        :template=>slice('&', 2),
-        :type=>slice('var_name', 2),
-        :value=>{:filters=>[], :integer=>slice('42', 2)}
-      }
-    }]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :var_name, template, 'loc', :object
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Variable 'num' is already defined at line 2 char 1", error.message
-  end
-
-  def test_template_of_template
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('alias', 1),
-        :operator=>slice('=', 1),
-        :value=>{
-          :filters=>[],
-          :object=>{:template=>slice('&', 1), :type=>slice('template', 1)}
-        }
-      }},
-      {:object=>{:template=>slice('&', 2), :type=>slice('alias', 2)}}
-    ]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :template, {:type=>slice('child', 3)}, 'loc', :object
-
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal 1, o[:child].count
-    assert_equal 'line 2 char 2', o[:child].first.loc
-  end
-
-  def test_template_triple_value
-    template = {
-      :type=>slice('value', 1),
-      :value=>{:filters=>[], :integer=>slice('42', 1)}
-    }
-
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('alias', 2),
-        :operator=>slice('=', 2),
-        :value=>{
-          :filters=>[],
-          :object=>{
-            :template=>slice('&', 2),
-          :value=>{:filters=>[], :string=>slice('"test"', 2)},
-            :type=>slice('template', 2)
-          }
-        }
-      }},
-      {:object=>{
-        :template=>slice('&', 3),
-        :value=>{:filters=>[], :boolean=>slice(':true', 3)},
-        :type=>slice('alias', 3)}
-      }
-    ]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :template, template, 'loc', :object
-
-    @interpreter.interpret_tree tokens, o
-    copy = o[:value].first
-
-    assert_equal 42, copy.get(:num)
-    assert_equal :integer, copy.var_type(:num)
-    assert_equal 'line 3 char 1', copy.var_loc(:num)
-
-    assert_equal 'test', copy.get(:str)
-    assert_equal :string, copy.var_type(:str)
-    assert_equal 'line 3 char 1', copy.var_loc(:str)
-
-    assert_equal true, copy.get(:bool)
-    assert_equal :boolean, copy.var_type(:bool)
-    assert_equal 'line 3 char 2', copy.var_loc(:bool)
-  end
-
-  def test_undefined_template
-    tokens = [{
-      :object=>{:template=>slice('&', 1), :type=>slice('var_name', 1)}
-    }]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Undefined variable 'var_name' at line 1 char 2", error.message
-  end
-
-  def test_invalid_template
-    tokens = [{
-      :object=>{:template=>slice('&', 1), :type=>slice('var_name', 1)}
-    }]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :var_name, 42, 'loc', :integer
-
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Unexpected 'integer', expecting 'object' at line 1 char 2", error.message
-  end
-
-  def test_filter_point_x
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{
-          :filters=>[{:name=>slice('x', 1)}],
-          :point=>slice('12x34', 1)
-        }
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 12, o.get(:var)
-    assert_equal 'line 1 char 4', o.var_loc(:var)
-  end
-
-  def test_filter_point_y
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{
-          :filters=>[{:name=>slice('y', 1)}],
-          :point=>slice('12x34', 1)
-        }
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 34, o.get(:var)
-    assert_equal 'line 1 char 4', o.var_loc(:var)
-  end
-
-  def test_filter_integer_x
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{
-          :filters=>[{:name=>slice('x', 1)}],
-          :integer=>slice('1', 1)
-        }
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal :point, o.var_type(:var)
-    assert_equal [1,0], o.get(:var)
-    assert_equal 'line 1 char 4', o.var_loc(:var)
-  end
-
-  def test_filter_integer_y
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{
-          :filters=>[{:name=>slice('y', 1)}],
-          :integer=>slice('1', 1)
-        }
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal :point, o.var_type(:var)
-    assert_equal [0,1], o.get(:var)
-    assert_equal 'line 1 char 4', o.var_loc(:var)
-  end
-
-  def test_filter_string_lines
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{
-          :filters=>[{:name=>slice('lines', 1)}],
-          :string=>slice('first\\nsecond', 1)
-        }
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 2, o.get(:var)
-    assert_equal 'line 1 char 4', o.var_loc(:var)
-  end
-
-  def test_filters_order
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{
-          :filters=>[
-            {:name=>slice('y', 1)},
-            {:name=>slice('x', 1)}
-          ],
-          :point=>slice('42x24', 1)
-        }
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal :point, o.var_type(:var)
-    assert_equal [0,42], o.get(:var)
-    assert_equal 'line 1 char 5', o.var_loc(:var)
-  end
-
-  def test_filter_identifier
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{
-          :filters=>[{:name=>slice('x', 1)}],
-          :identifier=>slice('test', 1)
-        }
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.set :test, [12,21], 'loc', :point
-
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal :integer, o.var_type(:var)
-    assert_equal 12, o.get(:var)
-    assert_equal 'line 1 char 4', o.var_loc(:var)
-  end
-
-  def test_unknown_filter
-    tokens = [
-      {:assignment=>{
-        :variable=>slice('var', 1),
-        :operator=>slice('=', 1),
-        :value=>{
-          :filters=>[{:name=>slice('aaaa', 1)}],
-          :integer=>slice('1', 1)
-        }
-      }},
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.interpret_tree tokens, o
-    end
-
-    assert_equal "Invalid filter 'aaaa' for type 'integer' at line 1 char 3", error.message
-  end
-
-  def test_filter_lost_in_template
-    template = {
-      :type=>slice('child', 1),
-      :body=>[
-        {:assignment=>{
-          :variable=>slice('var', 1),
-          :operator=>slice('=', 1),
-          :value=>{
-            :filters=>[{:name=>slice('x', 1)}],
-            :point=>slice('1x1', 1)
-          }
-        }},
-      ]
-    }
-
-    tokens = [
-      {:object=>{
-        :template=>slice('&', 2),
-        :type=>slice('var_name', 2),
-      }},
-      {:object=>{
-        :template=>slice('&', 3),
-        :type=>slice('var_name', 3),
-      }}
-    ]
-
-    o = SlideField::ObjectData.new :parent, 'loc'
-    o.set :var_name, template, 'loc', :object
-
-    @interpreter.interpret_tree tokens, o
-
-    assert_equal 2, o[:child].count
-
-    first = o[:child][0]
-    second = o[:child][1]
-
-    assert_equal :integer, first.var_type(:var)
-    assert_equal 1, first.get(:var)
-    assert_equal 'line 2 char 1', first.var_loc(:var)
-
-    assert_equal :integer, second.var_type(:var)
-    assert_equal 1, second.get(:var)
-    assert_equal 'line 3 char 1', second.var_loc(:var)
-  end
-
-  def test_debug
-    tokens = [
-      {:object=>{
-        :type=>slice('debug', 1),
-        :value=>{:filters=>[], :string=>slice('"i haz bugs"', 1)}
-      }}
-    ]
-
-    o = SlideField::ObjectData.new :child, 'loc'
-    o.context = 'parent context'
-
-    pretty, err = capture_io do
-      ap :type=>:string, :value=>'i haz bugs'
-    end
-
-    assert_output "DEBUG in local context at line 1 char 1:\n#{pretty}\n" do
-      @interpreter.interpret_tree tokens, o, nil, 'local context'
-    end
-
-    assert_empty o[:debug]
+  def teardown
+    # ensure we have captured every messages
+    assert_empty @interpreter.diagnostics
   end
 
   def test_parse_error
-    error = assert_raises SlideField::ParseError do
-      @interpreter.run_file File.join(@resources_path, 'parse_error.sfp')
-    end
+    @interpreter.run_string 'a = \\&b'
 
-    assert_match /\A\[parse_error.sfp\] /, error.message
+    assert @interpreter.failed?
+    bag = @interpreter.diagnostics
+    error = bag.shift
+
+    assert_equal :error, error.level
+    assert_equal 'failed to match [a-zA-Z_]', error.message
+    refute error.location.native?
+    assert_equal [1, 6], error.location.line_and_column
   end
 
-  def test_include_relative
-    @interpreter.run_string '\\include "../../examples/minimal/main.sfp"', @resources_path
+  def test_empty_tree
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string "% nothing\n"
   end
 
-  def test_include_absolute
-    @interpreter.run_string '\\include "' + File.join(@examples_path, 'minimal/main.sfp') + '"'
+  def test_object
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string '\level1'
+
+    bag = @interpreter.root.children
+    first_child = bag.shift
+    assert_empty bag
+
+    assert_instance_of SF::Object, first_child
+    assert_equal :level1, first_child.type
+    assert_equal [1, 2], first_child.location.line_and_column
+
+    assert first_child.location.context.frozen?
+    assert_equal 'input', first_child.location.context.label
+    assert_equal Dir.pwd, first_child.location.context.include_path
+    assert_equal @interpreter.root, first_child.location.context.object
+    assert_equal '\level1', first_child.location.context.source
   end
 
-  def test_include_parse_error
-    error = assert_raises SlideField::ParseError do
-      @interpreter.run_string '\\include "parse_error.sfp"', @resources_path
-    end
+  def test_subobject_flatten
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string '\level1 { \level1; }'
 
-    assert_match /\A\[input\] \[parse_error.sfp\] /, error.message
-    refute_match /\\include/, error.message
+    bag = @interpreter.root.children
+    first_child = bag.shift
+    second_child = bag.shift
+    assert_empty bag
+
+    assert_equal :level1, first_child.type
+    assert_equal @interpreter.root, first_child.location.context.object
+
+    assert_equal :level1, second_child.type
+    assert_equal first_child, second_child.location.context.object
   end
 
-  def test_reparse
-    file_path = File.join @examples_path, 'minimal/main.sfp'
+  def test_unknown_object
+    @interpreter.run_string '\aaaa'
 
-    @interpreter.run_file file_path
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
 
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.run_file file_path
-    end
-
-    assert_equal "File already interpreted: '#{file_path}'", error.message
+    assert_equal :error, error.level
+    assert_equal "unknown object name 'aaaa'", error.message
+    assert_equal [1, 2], error.location.line_and_column
   end
 
-  def test_recursive_include
-    file_path = File.join @resources_path, 'recursive_include.sfp'
+  def test_forbidden_object
+    @interpreter.run_string '\\permissiveRoot'
 
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.run_file file_path
-    end
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
 
-    assert_equal "[recursive_include.sfp] File already interpreted: '#{file_path}'", error.message
+    assert_equal "object 'permissiveRoot' is not allowed in this context", error.message
+    assert_equal [1, 2], error.location.line_and_column
   end
 
-  def test_include_parent_folder
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.run_file File.join(@resources_path, 'sub/include_parent.sfp')
-    end
+  def test_object_value
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string '\answer 42'
 
-    assert_match /\A\[include_parent.sfp\] \[..\/unknown_object.sfp\] /, error.message
+    bag = @interpreter.root.children
+    answer = bag.shift
+    assert_empty bag
 
-    error = assert_raises SlideField::ParseError do
-      @interpreter.run_file File.join(@resources_path, 'parse_error.sfp')
-    end
-
-    assert_match /\A\[parse_error.sfp\] /, error.message
+    the_answer = answer.get_variable :the_answer
+    assert_equal 42, the_answer.value
+    assert_equal [1, 9], the_answer.location.line_and_column
+    assert_equal @interpreter.root, the_answer.location.context.object
   end
 
-  def test_include_subfolder
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.run_file File.join(@resources_path, 'include_sub.sfp')
-    end
+  def test_object_value_mismatch
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string '\answer "The Ultimate Question of Life, the Universe, and Everything"'
 
-    assert_match /\A\[include_sub.sfp\] \[sub\/include_parent.sfp\] \[unknown_object.sfp\] /, error.message
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal "object 'answer' has no uninitialized variable compatible with 'string'", error.message
+    assert_equal [1, 9], error.location.line_and_column
   end
 
-  def test_include_wrong_template
-    error = assert_raises SlideField::InterpreterError do
-      @interpreter.run_string '\\include "wrong_template.sfp"; \\&wrong_template', @resources_path
-    end
+  def test_object_value_ambiguous
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string '\\collection :true'
 
-    assert_match /&wrong_template/, error.message
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal 'value is ambiguous', error.message
+    assert_equal [1, 13], error.location.line_and_column
   end
 
-  def test_include_unclosed_object
-    assert_raises SlideField::ParseError do
-      @interpreter.run_string '\\include "unclosed_object.sfp"', @resources_path
+  def test_variables
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string <<-INPUT
+    i = 42
+    s = "hello"
+    p = 4x2
+    c = #C0FF33FF
+    bt = :true
+    bf = :false
+    INPUT
+
+    i = @interpreter.root.get_variable :i
+    assert_instance_of Fixnum, i.value
+    assert_equal 42, i.value
+    assert_equal [1, 9], i.location.line_and_column
+
+    s = @interpreter.root.get_variable :s
+    assert_instance_of String, s.value
+    assert_equal "hello", s.value
+    assert_equal [2, 9], s.location.line_and_column
+
+    p = @interpreter.root.get_variable :p
+    assert_instance_of SF::Point, p.value
+    assert_equal SF::Point.new(4, 2), p.value
+    assert_equal [3, 9], p.location.line_and_column
+
+    c = @interpreter.root.get_variable :c
+    assert_instance_of SF::Color, c.value
+    assert_equal SF::Color.new(192, 255, 51, 255), c.value
+    assert_equal [4, 9], c.location.line_and_column
+
+    bt = @interpreter.root.get_variable :bt
+    assert_instance_of SF::Boolean, bt.value
+    assert_equal SF::Boolean.new(true), bt.value
+    assert_equal [5, 10], bt.location.line_and_column
+
+    bf = @interpreter.root.get_variable :bf
+    assert_instance_of SF::Boolean, bf.value
+    assert_equal SF::Boolean.new(false), bf.value
+    assert_equal [6, 10], bf.location.line_and_column
+  end
+
+  def test_object_in_variable
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string <<-INPUT
+    inherited = "hello"
+
+    obj = \\level1 {
+      \\level2
+    }
+    INPUT
+
+    obj = @interpreter.root.get_variable :obj
+    assert_instance_of SF::Object, obj.value
+    assert_equal :level1, obj.value.type
+    assert_equal 'hello', obj.value.value_of(:inherited)
+    assert_equal [3, 12], obj.location.line_and_column
+
+    assert_empty @interpreter.root.children, 'Root is not empty'
+  end
+
+  def test_copy_variable
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string <<-INPUT
+    original = "hello world"
+    copy = original
+    INPUT
+
+    copy = @interpreter.root.get_variable :copy
+
+    assert_equal 'hello world', copy.value
+    assert_equal [2, 12], copy.location.line_and_column
+  end
+
+  def test_copy_variable_not_found
+    @interpreter.run_string 'copy = fail'
+
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal "undefined variable 'fail'", error.message
+    assert_equal [1, 8], error.location.line_and_column
+  end
+
+  def test_copy_uninitialized
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string '\answer { copy = the_answer; }'
+
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal "use of uninitialized variable 'the_answer'", error.message
+    assert_equal [1, 18], error.location.line_and_column
+
+    skip # TODO: validation should not occur when the object's subtree failed
+  end
+
+  def test_incompatible_reassignation
+    @interpreter.run_string <<-INPUT
+    var = 1
+    var = 4x2
+    INPUT
+
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal "incompatible assignation ('integer' to 'point')", error.message
+    assert_equal [2, 11], error.location.line_and_column
+  end
+
+  def test_operators
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string <<-INPUT
+    var = 1
+    var *= 80
+    var += 4
+    var /= 2
+    INPUT
+
+    var = @interpreter.root.get_variable :var
+    assert_equal 42, var.value
+    assert_equal [4, 12], var.location.line_and_column
+  end
+
+  def test_operator_type_mismatch
+    @interpreter.run_string <<-INPUT
+    var = "string"
+    var += :true
+    INPUT
+
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal "incompatible operands ('string' + 'boolean')", error.message
+    assert_equal [2, 12], error.location.line_and_column
+  end
+
+  def test_incompatible_operator
+    @interpreter.run_string <<-INPUT
+    var = "string"
+    var /= "string"
+    INPUT
+
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal "invalid operator '/=' for type 'string'", error.message
+    assert_equal [2, 9], error.location.line_and_column
+  end
+
+  def test_division_by_zero
+    @interpreter.run_string <<-INPUT
+    var = 1
+    var /= 0
+    INPUT
+
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal 'divison by zero (evaluating 1 / 0)', error.message
+    assert_equal [2, 12], error.location.line_and_column
+  end
+
+  def test_color_out_of_bounds
+    @interpreter.run_string <<-INPUT
+    var = #FFFFFFAA
+    var += #FFFFFFBB
+    INPUT
+
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal 'color is out of bounds (evaluating #FFFFFFAA + #FFFFFFBB)', error.message
+    assert_equal [2, 12], error.location.line_and_column
+  end
+
+  def test_invalid_operation
+    @interpreter.run_string <<-INPUT
+    var = "hello"
+    var *= -1
+    INPUT
+
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal 'invalid operation (negative argument)', error.message
+    assert_equal [2, 12], error.location.line_and_column
+  end
+
+  def test_escape_sequences
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string 'var = "\\\\hello\nworl\d"'
+
+    assert_equal "\\hello\nworld", @interpreter.root.value_of(:var)
+  end
+
+  def test_filter
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string 'var = (x)4x2'
+
+    var = @interpreter.root.get_variable :var
+    assert_instance_of Fixnum, var.value
+    assert_equal 4, var.value
+    assert_equal [1, 10], var.location.line_and_column
+  end
+
+  def test_filter_order
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string 'var = (x)(x)(lines)"hello"'
+
+    var = @interpreter.root.get_variable :var
+    assert_instance_of Fixnum, var.value
+    assert_equal 1, var.value
+    assert_equal [1, 20], var.location.line_and_column
+  end
+
+  def test_invalid_filter
+    @interpreter.run_string 'var = (bad_filter)4x2'
+
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal "unknown filter 'bad_filter' for type 'point'", error.message
+    assert_equal [1, 8], error.location.line_and_column
+  end
+
+  def test_include
+    path = File.join @resources_path, 'define_variable.sfi'
+
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string '\include "' + path + '"'
+
+    assert_empty @interpreter.root.children
+
+    var = @interpreter.root.get_variable :var
+    assert_equal 42, var.value
+    assert_equal [1, 7], var.location.line_and_column
+
+    assert_equal path.sub(Dir.pwd + '/', ''), var.location.context.label
+    assert_equal @resources_path, var.location.context.include_path
+    assert_equal @interpreter.root, var.location.context.object
+    assert_equal "var = 42\n", var.location.context.source
+  end
+
+  def test_dynamic_template
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string <<-INPUT
+    template = {
+      var += 1
+    }
+
+    var = 1
+    \\&template
+    \\&template
+    INPUT
+
+    tpl = @interpreter.root.get_variable :template
+    assert_instance_of SF::Template, tpl.value
+    assert_equal [1, 5], tpl.location.line_and_column
+
+    var = @interpreter.root.get_variable :var
+    assert_equal 3, var.value
+    assert_equal [2, 14], var.location.line_and_column
+  end
+
+  def test_static_template
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string <<-INPUT
+    template = \\level1
+
+    \\&template
+    \\&template
+    INPUT
+
+    obj = @interpreter.root.get_variable :template
+    assert_equal :level1, obj.value.type
+    assert_equal [1, 17], obj.location.line_and_column
+
+    bag = @interpreter.root.children
+
+    first = bag.shift
+    assert_equal :level1, first.type
+    assert_equal [3, 7], first.location.line_and_column
+
+    first = bag.shift
+    assert_equal :level1, first.type
+    assert_equal [4, 7], first.location.line_and_column
+
+    assert_empty bag
+  end
+
+  def test_included_template_context
+    path = File.join @resources_path, 'template.sfi'
+
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string <<-INPUT
+    \\include "#{path}"
+
+    \\level1 {
+      str = "hello"
+      \\&template
+    }
+    INPUT
+
+    level1 = @interpreter.root.first_child :level1
+
+    str = level1.get_variable :str
+    assert_equal 'hello world', str.value
+
+    # local context values:
+    assert_equal level1, str.location.context.object
+
+    # external context values:
+    assert_equal path.sub(Dir.pwd + '/', ''), str.location.context.label
+    assert_equal @resources_path, str.location.context.include_path
+    assert_equal File.read(path), str.location.context.source
+    assert_equal [2, 10], str.location.line_and_column
+  end
+
+  def test_undefined_template
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string <<-INPUT
+    \\&test
+    INPUT
+
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal "undefined variable 'test'", error.message
+    assert_equal [1, 7], error.location.line_and_column
+  end
+
+  def test_not_a_template
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string <<-INPUT
+    test = 1
+    \\&test
+    INPUT
+
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal 'not a template or an object (see definition at input:1:12)', error.message
+    assert_equal [2, 7], error.location.line_and_column
+  end
+
+  def test_deep_context_limit
+    path = File.join @resources_path, 'recursive_include.sfi'
+
+    @interpreter.run_string '\include "' + path + '"'
+
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal 'context level exceeded maximum depth of 50', error.message
+    assert_equal [1, 10], error.location.line_and_column
+  end
+
+  def test_print_diagnostics
+    refute @interpreter.print_diagnostics
+    @interpreter.print_diagnostics = true
+    assert @interpreter.print_diagnostics
+
+    stdout, stderr = capture_io do
+      @interpreter.run_string '"'
     end
+
+    error = @interpreter.diagnostics.shift
+
+    assert_empty stdout
+    assert_equal error.to_s + "\n", stderr
+  end
+
+  def test_continue_on_error
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string <<-INPUT
+    top_level = 4
+    \\level1 {
+      sublevel = #00000000
+      sublevel += \\level1
+      \\not_executed1
+    }
+    top_level *= 4
+    top_level = "hello"
+    \\not_executed2
+    INPUT
+
+    assert @interpreter.failed?
+    assert_equal 16, @interpreter.root.value_of(:top_level)
+    assert_equal SF::Color.new(0,0,0,0), @interpreter.root.first_child(:level1).value_of(:sublevel)
+
+    error = @interpreter.diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal "incompatible operands ('color' + '\\level1')", error.message
+    assert_equal [4, 20], error.location.line_and_column
+
+    error = @interpreter.diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal "incompatible assignation ('integer' to 'string')", error.message
+    assert_equal [8, 17], error.location.line_and_column
+  end
+
+  def test_file_not_found
+    @interpreter.run_file '404'
+
+    assert @interpreter.failed?
+
+    error = @interpreter.diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal 'no such file or directory - 404', error.message
+    assert error.location.native?
+  end
+
+  def test_include_read_error
+    @interpreter.run_string <<-INPUT
+    \\include "404"
+    \\not_executed
+    INPUT
+
+    assert @interpreter.failed?
+
+    error = @interpreter.diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal "no such file or directory - #{File.join Dir.pwd, '404'}", error.message
+    assert_equal [1, 14], error.location.line_and_column
+  end
+
+  def test_file_is_directory
+    @interpreter.run_file '.'
+
+    assert @interpreter.failed?
+
+    error = @interpreter.diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal 'unreadable file - .', error.message
+    assert error.location.native?
+  end
+
+  def test_object_validation
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string '\\answer'
+
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal "object 'answer' has one or more uninitialized variables", error.message
+    assert_equal [1, 2], error.location.line_and_column
+  end
+
+  def test_root_validation
+    @interpreter.root = SF::Object.new :restrictiveRoot
+    @interpreter.run_string '\\level1'
+
+    assert @interpreter.failed?
+    error = @interpreter.diagnostics.shift
+
+    assert_equal :error, error.level
+    assert_equal "object 'restrictiveRoot' must have at least 2 'level1', got 1", error.message
+    assert error.location.native?
+    assert_equal [0, 0], error.location.line_and_column
   end
 end

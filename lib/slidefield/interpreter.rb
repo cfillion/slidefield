@@ -1,360 +1,244 @@
 class SlideField::Interpreter
-  attr_accessor :root
+  attr_accessor :root, :print_diagnostics
+  attr_reader :diagnostics
+
+  ESCAPE_SEQUENCES = {
+    'n'=>"\n"
+  }.freeze
+
+  MAX_LEVEL = 50
 
   def initialize
-    @files = []
-    @parser = SlideField::Parser.new
-    @root = SlideField::ObjectData.new(:ROOT, 'line 0 char 0')
+    @parser = SF::Parser.new
+    @reporter = Parslet::ErrorReporter::Deepest.new
+
+    @root = SF::Object.new :root
+    @context_level = 0
+
+    @diagnostics = []
+    @failed = false
+    @print_diagnostics = false
   end
 
-  def run_file(path, parent_obj = nil)
-    if @files.include? path
-      raise SlideField::InterpreterError,
-        "File already interpreted: '#{path}'"
-    else
-      @files << path
-    end
+  def run_file(path)
+    catch(:jump_out) { internal_run_file path }
+  end
 
+  def run_string(input)
+    catch(:jump_out) { internal_run_string input }
+  end
+
+  def failed?
+    @failed
+  end
+
+private
+  def internal_run_file(path)
     file = Pathname.new path
+
+    unless file.exist?
+      error_at last_location,
+        'no such file or directory - %s' % file
+    end
 
     begin
       input = file.read
-    rescue => e
-      raise SlideField::InterpreterError, e.message
+    rescue
+      error_at last_location,
+        'unreadable file - %s' % file
     end
 
-    include_path = file.dirname.to_s
-    @rootpath = Pathname.new(include_path) if parent_obj.nil? || @rootpath.nil?
-    context = file.relative_path_from(@rootpath).to_s
+    include_path = file.dirname
+    rootpath = @rootpath || include_path
+    label = file.relative_path_from(rootpath).to_s
 
-    run_string input, include_path, context, parent_obj
+    run input, label, include_path.to_s
   end
 
-  def run_string(input, include_path = '.', context = 'input', parent_obj = nil)
-    SlideField.log.debug('interpreter') { "Parsing #{context}..." }
+  def internal_run_string(input)
+    run input, 'input', Dir.pwd
+  end
 
-    include_path = File.absolute_path include_path
+  def with(context)
+    context_backup = @context
 
-    object = parent_obj || @root
-    object.include_path = include_path unless object.include_path
-    object.context = context unless object.context
+    @context = context.freeze
+    @context_level += 1
 
-    close = parent_obj.nil?
+    if @context_level > MAX_LEVEL
+      error_at last_location,
+        'context level exceeded maximum depth of %i' % MAX_LEVEL
+    end
+
+    @rootpath = Pathname.new @context.include_path if @rootpath.nil?
+
+    yield
+  ensure
+    @context = context_backup
+    @context_level -= 1
+  end
+
+  def locate(token)
+    location_at *token.line_and_column
+  end
+
+  def location_at(line, column)
+    @last_location = SF::Location.new @context, line, column
+  end
+
+  def last_location
+    @last_location ||= SF::Location.new
+  end
+
+  def run(input, label, include_path)
+    object = @context ? @context.object : @root
+    context = SF::Context.new label, include_path, object, input
+
+    with(context) {
+      tree = parse input
+      evaluate tree
+    }
 
     begin
-      tree = @parser.parse input, reporter: Parslet::ErrorReporter::Deepest.new
-    rescue Parslet::ParseFailed => error
-      cause = error.cause
-      reason = nil
-
-      while cause
-        reason = cause.to_s
-        cause = cause.children.last
-      end
-
-      raise SlideField::ParseError, reason
+      @root.validate if !failed? && @context.nil?
+    rescue SF::InvalidObjectError => e
+      error_at @root.location, e.message
     end
-
-    interpret_tree tree, object, include_path, context, close
-  rescue SlideField::Error => error
-    message = error.message
-
-    if !message.start_with?('[') && message =~ /line (\d+) char (\d+)/
-      line = $1.to_i - 1
-      column = $2.to_i - 1
-
-      if line > -1 && source = input.lines[line]
-        excerpt = source.strip
-        column -= source.index excerpt
-        arrow = "#{"\x20" * column}^"
-
-        message += "\n\t#{excerpt}\n\t#{arrow}"
-      end
-    end
-
-    raise error.class, "[#{context}] #{message}"
   end
 
-  def interpret_tree(tree, object, child_path = nil, child_context = nil, close_object = true)
-    tree.respond_to? :each and tree.each {|stmt|
-      if stmt_data = stmt[:assignment]
-        interpret_assignment stmt_data, object
-      elsif stmt_data = stmt[:object]
-        interpret_object stmt_data, object, child_path, child_context
-      else
-        # we got strange data from the parser?!
-        raise "Unsupported statement '#{stmt.keys.first}'"
-      end
-    }
+  def parse(input)
+    @parser.parse input, reporter: @reporter
+  rescue Parslet::ParseFailed => error
+    cause = error.cause
 
-    if close_object
-      # finalize the object once all its content has been processed
+    while next_cause = cause.children.last
+      cause = next_cause
+    end
 
-      rules = object.rules
-      rules.required_properties.each {|name|
-        unless object.get name
-          raise SlideField::InterpreterError,
-            "Missing property '#{name}' for object '#{object.type}' at #{object.loc}"
-        end
-      }
+    message = Array(cause.message).map { |o| 
+      o.respond_to?(:to_slice) ? o.str.inspect : o.to_s
+    }.join
 
-      rules.optional_properties.each {|name|
-        next unless object.get(name).nil?
+    message[0] = message[0].downcase
 
-        default = rules.default_value name
-        type = rules.type_of_property name
+    location = location_at *cause.source.line_and_column(cause.pos)
+    error_at location, message
+  end
 
-        object.set name, default, 'default', type
-      }
+  def evaluate(tree)
+    catch :jump_out do
+      tree.respond_to? :each and tree.each {|stmt|
+        type, tokens = stmt.to_a[0]
 
-      rules.accepted_children.each {|type|
-        min, max = rules.requirements_of_child type
-        count = object[type].count
-
-        if count < min
-          raise SlideField::InterpreterError,
-            "Object '#{object.type}' must have at least #{min} '#{type}', #{count} found at #{object.loc}"
-        end
-
-        if max > 0 && count > max
-          raise SlideField::InterpreterError,
-            "Object '#{object.type}' can not have more than #{max} '#{type}', #{count} found at #{object.loc}"
+        case type
+        when :assignment
+          eval_assignment tokens
+        when :object
+          add_object eval_object(tokens)
+        when :template
+          eval_template tokens
         end
       }
     end
-
-    object
   end
 
-  private
-  def interpret_assignment(stmt_data, object)
-    var_name_t = stmt_data[:variable]
+  def eval_assignment(tokens)
+    var_name_t = tokens[:variable]
     var_name = var_name_t.to_sym
 
-    operator_t = stmt_data[:operator]
+    operator_t = tokens[:operator]
     operator = operator_t.to_s
-    
-    var_type, var_value_t, var_value = extract_value stmt_data[:value], object
 
-    case operator
-    when '='
-      if object.has? var_name
-        raise SlideField::InterpreterError,
-          "Variable '#{var_name}' is already defined at #{get_loc var_name_t}"
-      end
-
-      if valid_type = object.rules.type_of_property(var_name)
-        if var_type != valid_type
-          raise SlideField::InterpreterError,
-            "Unexpected '#{var_type}', expecting '#{valid_type}' for property '#{var_name}' at #{get_loc var_value_t}"
-        end
-      end
-
-      object.set var_name, var_value, get_loc(var_value_t), var_type
-    when '+=', '-=', '*=', '/='
-      origin_val = object.get var_name
-      unless origin_val
-        raise SlideField::InterpreterError,
-          "Undefined variable '#{var_name}' at #{get_loc var_name_t}"
-      end
-      origin_type = object.var_type var_name
-
-      method = operator[0]
-
-      if var_type != origin_type
-        raise SlideField::InterpreterError,
-          "Unexpected '#{var_type}', expecting '#{origin_type}' for variable or property '#{var_name}' at #{get_loc var_value_t}"
-      end
-
-      value = nil
-
-      case origin_type
-      when :integer
-        value = origin_val.send method, var_value
-      when :point, :color
-        if origin_type != :color || ['+=', '-='].include?(operator)
-          value = origin_val.collect.with_index {|v, i| v.send method, var_value[i] }
-
-          if origin_type == :color
-            # normalize
-            value.collect! {|v|
-              v = 0 if v < 0
-              v = 255 if v > 255
-              v
-            }
-          end
-        end
-      when :string
-        case operator
-        when '+='
-          value = origin_val + var_value
-        when '-='
-          copy = origin_val.dup
-          copy[var_value] = '' while copy.include? var_value
-          value = copy
-        when '*='
-          multiplier = var_value.to_i
-          unless multiplier > 0
-            raise SlideField::InterpreterError,
-              "Invalid string multiplier '#{var_value}', integer > 0 required at #{get_loc var_value_t}"
-          end
-          value = origin_val * multiplier
-        end
-      end
-
-      unless value
-        raise SlideField::InterpreterError,
-          "Invalid operator '#{operator}' for type '#{origin_type}' at #{get_loc operator_t}"
-      end
-
-      object.set var_name, value, get_loc(var_value_t)
+    if tokens.has_key? :value
+      right_location, right_value = eval_value tokens[:value]
     else
-      # the parser gave us strange data?!
-      raise "Unsupported operator '#{operator}' at #{get_loc operator_t}"
-    end
-  rescue ZeroDivisionError
-    raise SlideField::InterpreterError,
-      "divided by zero at #{get_loc var_value_t}"
-  end
-
-  def interpret_object(stmt_data, object, include_path, context)
-    type_t = stmt_data[:type]
-    type = type_t.to_sym
-    body = stmt_data[:body] || []
-
-    anon_values = []
-    anon_values << stmt_data[:value] if stmt_data[:value]
-
-    template_t = stmt_data[:template]
-    template = stmt_data
-
-    while template[:template]
-      template = object.get type
-      unless template
-        raise SlideField::InterpreterError,
-          "Undefined variable '#{type}' at #{get_loc type_t}"
-      end
-
-      unless :object == tpl_type = object.var_type(type)
-        raise SlideField::InterpreterError,
-          "Unexpected '#{tpl_type}', expecting 'object' at #{get_loc type_t}"
-      end
-
-      type = template[:type].to_sym
-
-      if template[:value]
-        tpl_value = rebind_tokens template[:value], template_t
-        anon_values << tpl_value
-      end
-
-      if template[:body]
-        tpl_body = rebind_tokens template[:body], template_t
-        body += tpl_body
-      end
+      right_location = locate var_name_t
+      right_value = SF::Template.new @context, tokens[:statements]
     end
 
-    unless object.rules.accepted_children.include?(type)
-      raise SlideField::InterpreterError,
-        "Unexpected object '#{type}', expecting one of #{object.rules.accepted_children.sort} at #{get_loc type_t}"
-    end
-
-    child = SlideField::ObjectData.new type, get_loc(type_t)
-    child.include_path = include_path
-    child.context = context
-    child.parent = object # enable variable inheritance
-
-    unless child.rules
-      # the object was allowed but we don't know anything about it?!
-      raise "Unsupported object '#{child.type}'"
-    end
-
-    anon_values.each {|value_data|
-      interpret_anon_value value_data, child
-    }
-    interpret_tree body, child || [], include_path, context
-
-    # process special objects
-    case child.type
-    when :include
-      source = File.expand_path child.get(:source), include_path
-      run_file source, object
-    when :debug
-      debug_infos = {
-        :type=>child.var_type(:thing),
-        :value=>child.get(:thing)
-      }
-
-      puts "DEBUG in #{child.context} at #{child.loc}:"
-      ap debug_infos
-      puts
+    if operator == '='
+      new_value = right_value
     else
-      object << child
+      left_var = @context.object.get_variable var_name
+
+      begin
+        new_value = left_var.value.send operator[0], right_value
+      rescue NoMethodError
+        error_at locate(operator_t),
+          "invalid operator '%s' for type '%s'" %
+          [operator, left_var.type]
+      rescue ArgumentError => e
+        error_at right_location,
+          'invalid operation (%s)' %
+          e.message
+      rescue TypeError
+        error_at right_location,
+          "incompatible operands ('%s' %s '%s')" %
+          [left_var.type, operator[0], SF::Variable.type_of(right_value)]
+      rescue ZeroDivisionError
+        error_at right_location,
+          'divison by zero (evaluating %p %s %p)' %
+          [left_var.value, operator[0], right_value]
+      rescue SF::ColorOutOfBoundsError
+        error_at right_location,
+          'color is out of bounds (evaluating %p %s %p)' %
+          [left_var.value, operator[0], right_value]
+      end
     end
+
+    @context.object.set_variable var_name, new_value, right_location
+  rescue SF::IncompatibleValueError => e
+    error_at right_location, e.message
   end
 
-  def interpret_anon_value(value_data, object)
-    val_type, value_t, value = extract_value value_data, object
-    var_name = object.rules.matching_properties(val_type).first # guess variable name
+  def eval_value(tokens)
+    tokens = tokens.clone
+    filters = tokens.delete :filters
 
-    unless var_name
-      raise SlideField::InterpreterError,
-        "Unexpected '#{val_type}', expecting one of #{object.rules.properties_types} at #{get_loc value_t}"
-    end
+    type, data_t = tokens.to_a[0]
+    value = transform_value type, data_t
 
-    if object.has? var_name
-      raise SlideField::InterpreterError,
-        "Variable '#{var_name}' is already defined at #{get_loc value_t}"
-    end
+    filters.reverse_each {|a|
+      filter_t = a[:name]
+      filter_method = "filter_#{filter_t}"
 
-    object.set var_name, value, get_loc(value_t), val_type
-  end
-
-  def get_loc(token)
-    pos = token.line_and_column
-    "line #{pos.first} char #{pos.last}"
-  end
-
-  def extract_value(data, object)
-    filters = data.delete :filters
-    value_data = data.first
-    type = value_data[0]
-    token = value_data[1]
-    value = convert type, token
-
-    if type == :identifier
-      if id_value = object.get(value.to_sym)
-        type = object.var_type value.to_sym
-        value = id_value
+      if value.respond_to? filter_method
+        value = value.send filter_method
       else
-        raise SlideField::InterpreterError,
-          "Undefined variable '#{value}' at #{get_loc token}"
+        error_at locate(filter_t),
+          "unknown filter '%s' for type '%s'" %
+          [filter_t, SF::Variable.type_of(value)]
       end
-    elsif type == :object
-      token = token[:type]
-    end
-
-    filters.reverse_each {|filter_token|
-      type, value = filter filter_token, type, value
     }
-
-    return type, token, value
+    
+    location = type == :object ? value.location : locate(data_t)
+    [location, value]
   end
 
-  def convert(type, token)
+  def transform_value(type, token)
     case type
-    when :identifier, :object
-      token
+    when :identifier
+      var_name = token.to_sym
+
+      begin
+        value = @context.object.value_of var_name
+      rescue SF::VariableNotFoundError => e
+        error_at locate(token), e.message
+      end
+
+      if value.nil?
+        error_at locate(token),
+          "use of uninitialized variable '%s'" % var_name
+      end
+
+      value
     when :integer
       token.to_i
     when :point
-      token.to_s.split('x').collect &:to_i
+      SF::Point.new *token.to_s.split('x').map(&:to_i)
     when :string
-      escape_sequences = {
-        'n'=>"\n"
-      }
-
       token.to_s[1..-2].gsub(/\\(.)/) {
-        escape_sequences[$1] || $1
+        ESCAPE_SEQUENCES[$1] || $1
       }
     when :color
       int = token.to_s[1..-1].hex
@@ -363,52 +247,114 @@ class SlideField::Interpreter
       g = (int >> 16) & 255
       b = (int >> 8) & 255
       a = (int) & 255
-      [r, g, b, a]
+
+      SF::Color.new r, g, b, a
     when :boolean
-      token == ':true'
-    else
-      # the parser gave us strange data?!
-      raise "Unsupported type '#{type}' at #{get_loc token}"
+      SF::Boolean.new token == ':true'
+    when :object
+      eval_object token, true
     end
   end
 
-  def filter(token, type, value)
-    name_t = token[:name]
+  def eval_object(tokens, is_inline = false)
+    type_t = tokens[:type]
+    type = type_t.to_sym
+
+    location = locate type_t
+
+    begin
+      object = SF::Object.new type, location
+    rescue SF::UndefinedObjectError => e
+      error_at location, e.message
+    end
+
+    if is_inline
+      # prevent this object from being adopted with the subobjects
+      object.block_auto_adopt!
+    end
+
+    if value_t = tokens[:value]
+      value_location, new_value = eval_value value_t
+
+      begin
+        var_name = object.guess_variable new_value
+      rescue SF::IncompatibleValueError, SF::AmbiguousValueError => e
+        error_at value_location, e.message
+      end
+
+      object.set_variable var_name, new_value, value_location
+    end
+
+    if subtree = tokens[:statements]
+      context = @context.dup
+      context.object = object
+
+      with(context) { evaluate subtree }
+    end
+
+    begin
+      object.validate
+    rescue SF::InvalidObjectError => e
+      error_at location, e.message
+    end
+
+    object
+  end
+
+  def add_object(object)
+    if object.type == :include
+      path = File.expand_path object.value_of(:file), @context.include_path
+      internal_run_file path
+      return
+    end
+
+    begin
+      object.auto_adopt
+    rescue SF::UnauthorizedChildError => e
+      error_at object.location, e.message
+    end
+  end
+
+  def eval_template(tokens)
+    name_t = tokens[:name]
     name = name_t.to_sym
 
-    case [type, name]
-    when [:point, :x]
-      type = :integer
-      value = value[0]
-    when [:point, :y]
-      type = :integer
-      value = value[1]
-    when [:integer, :x]
-      type = :point
-      value = [value, 0]
-    when [:integer, :y]
-      type = :point
-      value = [0, value]
-    when [:string, :lines]
-      type = :integer
-      value = value.lines.count
-    else
-      raise SlideField::InterpreterError,
-        "Invalid filter '#{name}' for type '#{type}' at #{get_loc name_t}"
+    location = locate name_t
+
+    begin
+      variable = @context.object.get_variable name
+    rescue SF::VariableNotFoundError => e
+      error_at location, e.message
     end
 
-    return type, value
+    template = variable.value
+
+    case template
+    when SF::Template
+      context = template.context.dup
+      context.object = @context.object
+
+      with(context) { evaluate template.statements }
+    when SF::Object
+      add_object template.copy(location)
+    else
+      error_at location,
+        'not a template or an object (see definition at %s)' %
+        variable.location
+    end
   end
 
-  def rebind_tokens(tree, dest)
-    case tree
-    when Array
-      tree.collect {|h| rebind_tokens h, dest }
-    when Hash
-      tree = tree.dup
-      tree.each {|k, v| tree[k] = rebind_tokens v, dest }
-    when Parslet::Slice
-      Parslet::Slice.new dest.position, tree.str, dest.line_cache
-    end
+  def error_at(location, message)
+    @failed = true
+
+    diagnose SF::Diagnostic.new(:error, message, location)
+
+    throw :jump_out
+  end
+
+  def diagnose(diagnostic)
+    @diagnostics << diagnostic
+
+    warn diagnostic.to_s if @print_diagnostics
   end
 end
