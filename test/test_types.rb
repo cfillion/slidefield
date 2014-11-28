@@ -64,12 +64,12 @@ class TestTypes < MiniTest::Test
 
   def test_point_operators
     left = SF::Point.new 4, 2
-    right = SF::Point.new 2, 3
+    right = SF::Point.new 4, 3
 
-    assert_equal SF::Point.new(6, 5), left + right
-    assert_equal SF::Point.new(2, -1), left - right
-    assert_equal SF::Point.new(8, 6), left * right
-    assert_equal SF::Point.new(2, 0), left / right
+    assert_equal SF::Point.new(8, 5), left + right
+    assert_equal SF::Point.new(0, -1), left - right
+    assert_equal SF::Point.new(16, 6), left * right
+    assert_equal SF::Point.new(1, 0), left / right
   end
 
   def test_color_operand_mismatch

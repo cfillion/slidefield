@@ -58,7 +58,24 @@ class SlideField::Boolean
   alias :inspect :to_s
 end
 
+module SlideField::ArrayType
+  def ==(other)
+    other.respond_to?(:to_a) && self.to_a == other.to_a
+  end
+
+  [:+, :-, :*, :/].each { |operator|
+    define_method operator do |other|
+      raise TypeError unless other.class == self.class
+
+      self.class.new *[self.to_a, other.to_a].
+        transpose.map {|x| x.reduce operator }
+    end
+  }
+end
+
 class SlideField::Point
+  include SF::ArrayType
+
   attr_reader :x, :y
 
   def self.zero
@@ -76,29 +93,6 @@ class SlideField::Point
     [@x, @y]
   end
 
-  def ==(other)
-    other.respond_to?(:to_a) && self.to_a == other.to_a
-  end
-
-  def +(other)
-    raise TypeError unless other.class == self.class
-    self.class.new @x + other.x, @y + other.y
-  end
-
-  def -(other)
-    raise TypeError unless other.class == self.class
-    self.class.new @x - other.x, @y - other.y
-  end
-
-  def *(other)
-    raise TypeError unless other.class == self.class
-    self.class.new @x * other.x, @y * other.y
-  end
-
-  def /(other)
-    raise TypeError unless other.class == self.class
-    self.class.new @x / other.x, @y / other.y
-  end
 
   def to_s
     '%dx%d' % to_a
@@ -108,9 +102,11 @@ class SlideField::Point
 end
 
 class SlideField::Color
-  VALID_RANGE = (0..255).freeze
+  include SF::ArrayType
 
   attr_reader :r, :g, :b, :a
+
+  VALID_RANGE = (0..255).freeze
 
   def self.white
     new 255, 255, 255, 255
@@ -135,30 +131,6 @@ class SlideField::Color
 
   def to_a
     [@r, @g, @b, @a]
-  end
-
-  def ==(other)
-    other.respond_to?(:to_a) && self.to_a == other.to_a
-  end
-
-  def +(other)
-    raise TypeError unless other.class == self.class
-    self.class.new @r + other.r, @g + other.g, @b + other.b, @a + other.a
-  end
-
-  def -(other)
-    raise TypeError unless other.class == self.class
-    self.class.new @r - other.r, @g - other.g, @b - other.b, @a - other.a
-  end
-
-  def *(other)
-    raise TypeError unless other.class == self.class
-    self.class.new @r * other.r, @g * other.g, @b * other.b, @a * other.a
-  end
-
-  def /(other)
-    raise TypeError unless other.class == self.class
-    self.class.new @r / other.r, @g / other.g, @b / other.b, @a / other.a
   end
 
   def to_s
