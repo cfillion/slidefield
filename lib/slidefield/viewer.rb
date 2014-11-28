@@ -4,20 +4,16 @@ class SlideField::Viewer < Gosu::Window
   LOAD_DELAY = 1000
 
   def initialize(project)
-    layout = project[:layout].first
-    layout_size = layout.get :size
-    fullscreen = layout.get :fullscreen
+    layout = project.first_child :layout
+    layout_size = layout.value_of :size
+    fullscreen = layout.value_of :fullscreen
 
-    super *layout_size, fullscreen
+    super *layout_size, fullscreen.to_bool
 
     @time = 0
     @animator = SlideField::Animator.new layout_size
 
-    @slides = []
-    project[:slide].each {|slide_data|
-      manager = SlideField::ObjectManager.new slide_data, self
-      @slides << manager
-    }
+    @slides = project.children :slide
 
     change_slide 0
   end
@@ -97,15 +93,13 @@ class SlideField::Viewer < Gosu::Window
       @forward = true
     end
 
-    @slides[@current].load unless @slides[@current].loaded?
+    @slides[@current].preload self unless @slides[@current].loaded?
     @slides[@current].activate
     @animator.reset
   end
 
-  private
+private
   def smart_loader
-    SlideField.log.debug('viewer') { "(Un)loading resources..." }
-
     ahead = LOAD_AROUND / 2
     behind = -ahead
 
@@ -114,7 +108,7 @@ class SlideField::Viewer < Gosu::Window
       keep = rel_index >= behind && rel_index <= ahead
 
       if keep && !manager.loaded?
-        manager.load
+        manager.preload self
       elsif !keep && manager.loaded?
         manager.unload
       end
