@@ -93,7 +93,6 @@ class SlideField::Point
     [@x, @y]
   end
 
-
   def to_s
     '%dx%d' % to_a
   end
