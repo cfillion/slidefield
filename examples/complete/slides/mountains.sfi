@@ -1,4 +1,4 @@
-\&slide_tpl {
+mount_everest = \slide {
   title = "Mount Everest"
 
   infos  = "<b>Country:</b> Nepal\n"
@@ -7,11 +7,13 @@
   infos += "<b>Easiest route:</b> South Col\n"
   infos += "<b>Notes:</b> Earth's highest mountain"
 
-  background_src  = "../assets/mount_everest.jpg"
+  background_src  = "assets/mount_everest.jpg"
   background_link = "https://en.wikipedia.org/wiki/File:Mount_Everest_as_seen_from_Drukair2_PLW_edit.jpg"
+
+  \&demo_template
 }
 
-\&slide_tpl {
+k2 = \slide {
   title = "K2"
 
   infos  = "<b>Country:</b> Pakistan\n"
@@ -20,6 +22,8 @@
   infos += "<b>Easiest route:</b> Abruzzi Spur\n"
   infos += "<b>Notes:</b> The mountain was first\nsurveyed by a European team in 1856"
 
-  background_src  = "../assets/K2.jpg"
+  background_src  = "assets/K2.jpg"
   background_link = "https://en.wikipedia.org/wiki/File:K2_2006b.jpg"
+
+  \&demo_template
 }

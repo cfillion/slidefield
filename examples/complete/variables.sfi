@@ -1,6 +1,0 @@
-% ---- LAYOUT ---- %
-layout_size = 1920x1080
-
-% ---- SLIDES ---- %
-title_font = "URW Bookman L"
-info_font = "monospace"

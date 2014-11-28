@@ -1,7 +1,17 @@
-\include "variables.sfi"
+% ---- LAYOUT ---- %
+LAYOUT_SIZE = 1920x1080
+\layout LAYOUT_SIZE
+
+% ---- SLIDES ---- %
+TITLE_FONT = "URW Bookman L"
+INFO_FONT = "monospace"
+
 \include "templates.sfi"
 
-\layout layout_size
-
 \include "slides/mountains.sfi"
+\&mount_everest
+\&k2
+
 \include "slides/deserts.sfi"
+\&sahara
+\&gobi

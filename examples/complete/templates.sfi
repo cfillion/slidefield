@@ -1,10 +1,29 @@
-background_tpl = \image {
-  size = layout_size
+background = {
+  \image background_src {
+    size = LAYOUT_SIZE
+  }
+
+  \text {
+    content = "<b>Photo Credit:</b> "
+    content += background_link
+
+    position = 10x-30
+    position += (y)(y)LAYOUT_SIZE
+
+    color = #FFFFFFFF
+    z_order = 1
+
+    \text {
+      position += 1x1
+      color = #000000FF
+      z_order -= 1
+    }
+  }
 }
 
-title_tpl = \text {
+title_tpl = {
   color = #FFFFFFFF
-  font = title_font
+  font = TITLE_FONT
   height = 100
   position = 100x70
   z_order = 1
@@ -12,84 +31,65 @@ title_tpl = \text {
   % support alignment
   x = (x)position
   x *= 2
-  width = (x)layout_size
+  width = (x)LAYOUT_SIZE
   width -= x
 
   % shadow
-  \text #00000099 {
+  \text {
+    color = #00000099
     position += 2x2
     z_order -= 1
   }
 }
 
-infobox_tpl = \rect {
-  padding = 10
-  text_height = 40
-  z_order = 1
+infobox = {
+  \rect {
+    padding = 10
+    text_height = 40
+    z_order = 1
 
-  box_height = (lines)content
-  box_height *= text_height
-  box_height += padding
+    box_height = (lines)infos
+    box_height *= text_height
+    box_height += padding
 
-  size = 650x0
-  size += (y)box_height
+    size = 650x0
+    size += (y)box_height
 
-  position = layout_size
-  position -= size
-  position /= 2x1
-  position -= 0x100
+    position = LAYOUT_SIZE
+    position -= size
+    position /= 2x1
+    position -= 0x100
 
-  fill = #FFFFFF69
+    fill = #FFFFFF69
 
-  \text {
-    position += (x)padding
-    position += (y)padding
+    \text infos {
+      position += (x)padding
+      position += (y)padding
 
-    height = text_height
-    color = #011010FF
-    font = info_font
+      height = text_height
+      color = #011010FF
+      font = INFO_FONT
 
-    % shadow
-    \text {
-      position += 1x1
-      color = #FFFFFF99
-      z_order -= 1
+      % shadow
+      \text {
+        position += 1x1
+        color = #FFFFFF99
+        z_order -= 1
+      }
     }
   }
 }
 
-credit_tpl = \text {
-  position = 10x-30
-  position += (y)(y)layout_size
-
-  color = #FFFFFFFF
-  z_order = 1
+demo_template = {
+  \&background
 
   \text {
-    position += 1x1
-    color = #000000FF
-    z_order -= 1
-  }
-}
-
-slide_tpl = \slide {
-  \animation "fade" {
-    \&background_tpl background_src
-  }
-
-  \&title_tpl {
     content = "<b>"
     content += title
+
+    \&title_tpl
   }
 
-  \animation "slide left" {
-    \&infobox_tpl {
-      content = infos
-    }
-  }
-
-  \&credit_tpl {
-    content = "<b>Photo Credit:</b> "
-    content += background_link
-  }
+%  \animation "slide left" {
+  \&infobox
 }
