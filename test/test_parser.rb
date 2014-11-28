@@ -1,6 +1,8 @@
 require File.expand_path '../helper', __FILE__
 
 class TestParser < MiniTest::Test
+  make_my_diffs_pretty!
+
   def expect(input, tokens)
     assert_equal tokens, parse(input)
   end
@@ -185,7 +187,7 @@ class TestParser < MiniTest::Test
       :assignment=>{
         :variable=>'var',
         :operator=>'=',
-        :value=>{:filters=>[], :object=>{:type=>'test', :body=>[]}}
+        :value=>{:filters=>[], :object=>{:type=>'test', :statements=>[]}}
       }
     ]
 
@@ -195,7 +197,7 @@ class TestParser < MiniTest::Test
         :operator=>'=',
         :value=>{
           :filters=>[],
-          :object=>{:type=>'test', :body=>[
+          :object=>{:type=>'test', :statements=>[
             {:assignment=>{
               :variable=>'var',
               :operator=>'=',
@@ -203,6 +205,16 @@ class TestParser < MiniTest::Test
             }
           ]}
         }
+      }
+    ]
+  end
+
+  def test_var_block
+    expect 'var={}', [
+      :assignment=>{
+        :variable=>'var',
+        :operator=>'=',
+        :statements=>[]
       }
     ]
   end
@@ -263,7 +275,7 @@ class TestParser < MiniTest::Test
     ]
 
     tokens = [
-      {:object=>{:type=>'test', :body=>[]}}
+      {:object=>{:type=>'test', :statements=>[]}}
     ]
 
     expect '\\test{}', tokens
@@ -340,7 +352,7 @@ class TestParser < MiniTest::Test
 
   def test_object_body
     expect '\\test{\\child;}', [
-      {:object=>{:type=>'test', :body=>[
+      {:object=>{:type=>'test', :statements=>[
         {:object=>{:type=>'child'}}
       ]}}
     ]
@@ -350,21 +362,21 @@ class TestParser < MiniTest::Test
     end
 
     expect "\\test{\n\t\\child\n}", [
-      {:object=>{:type=>'test', :body=>[
+      {:object=>{:type=>'test', :statements=>[
         {:object=>{:type=>'child'}}
       ]}}
     ]
 
     expect "\\test{\n\t\\child { \\subchild; }\n}", [
-      {:object=>{:type=>'test', :body=>[
-        {:object=>{:type=>'child', :body=>[
+      {:object=>{:type=>'test', :statements=>[
+        {:object=>{:type=>'child', :statements=>[
           {:object=>{:type=>'subchild'}}
         ]}}
       ]}}
     ]
 
     expect "\\test{var=val;}", [
-      {:object=>{:type=>'test', :body=>[
+      {:object=>{:type=>'test', :statements=>[
         {:assignment=>{
           :variable=>'var',
           :operator=>'=',
@@ -379,8 +391,8 @@ class TestParser < MiniTest::Test
   end
 
   def test_template
-    expect '\\&test', [
-      {:object=>{:template=>'&', :type=>'test'}}
+    expect "\\&test", [
+      {:template=>{:name=>'test'}}
     ]
   end
 

@@ -2,17 +2,17 @@ class SlideField::Parser < Parslet::Parser
   rule(:space) { match["\x20\t"] }
   rule(:spaces?) { space.repeat }
   rule(:inline_spaces?) { (space | any_comment).repeat }
-  rule(:multi_spaces?) { (match('\s') | any_comment).repeat }
+  rule(:multiline_spaces?) { (match('\s') | any_comment).repeat }
 
   rule(:eof) { any.absent? }
   rule(:crlf) { match['\r\n'].repeat(1) }
   rule(:separator) { str(';') | crlf | eof }
-  rule(:line_comment) { str('%') >> str('{').absent? >> (crlf.absent? >> any).repeat }
-  rule(:multi_comment) { str('%{') >> (str('%}').absent? >> any).repeat >> str('%}') }
-  rule(:any_comment) { multi_comment | line_comment }
+  rule(:singleline_comment) { str('%') >> str('{').absent? >> (crlf.absent? >> any).repeat }
+  rule(:multiline_comment) { str('%{') >> (str('%}').absent? >> any).repeat >> str('%}') }
+  rule(:any_comment) { multiline_comment | singleline_comment }
 
-  rule(:open) { multi_spaces? >> str('{') >> multi_spaces? }
-  rule(:close) { multi_spaces? >> str('}') }
+  rule(:open) { multiline_spaces? >> str('{') >> multiline_spaces? }
+  rule(:close) { multiline_spaces? >> str('}') }
 
   rule(:assign) { str('=') }
   rule(:add) { str('+=') }
@@ -42,6 +42,11 @@ class SlideField::Parser < Parslet::Parser
     ).repeat >>
     str('"')
   }
+  rule(:block) {
+    open >>
+    lines.as(:statements) >>
+    close
+  }
 
   rule(:filter) {
     str('(') >> spaces? >> (
@@ -50,6 +55,7 @@ class SlideField::Parser < Parslet::Parser
     spaces? >> str(')') >>
     inline_spaces?
   }
+
   rule(:value) {
     filter.repeat.as(:filters) >>
     (
@@ -63,37 +69,47 @@ class SlideField::Parser < Parslet::Parser
     )
   }
 
-  rule(:assignment) { identifier.as(:variable) >> operator >> value.as(:value) }
+  rule(:assignment) {
+    identifier.as(:variable) >>
+    operator >>
+    (
+      value.as(:value) |
+      block
+    )
+  }
+
   rule(:object) {
     str('\\') >>
-    str('&').as(:template).maybe >>
     identifier.as(:type) >>
     inline_spaces? >>
     value.as(:value).maybe >>
-    (
-      open >>
-      statements.as(:body) >>
-      close
-    ).maybe
+    block.maybe
   }
 
-  rule(:expression) {
+  rule(:template) {
+    str('\\&') >>
+    identifier.as(:name)
+  }
+
+  rule(:statement) {
     (
       object.as(:object) |
-      assignment.as(:assignment)
+      assignment.as(:assignment) |
+      template.as(:template)
     ) >>
     inline_spaces? >>
     separator
   }
-  rule(:statement) {
+
+  rule(:line) {
     spaces? >>
     (
-      expression |
+      statement |
       any_comment |
       crlf
     )
   }
-  rule(:statements) { statement.repeat }
+  rule(:lines) { line.repeat }
 
-  root(:statements)
+  root :lines
 end
