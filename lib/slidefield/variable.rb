@@ -1,4 +1,4 @@
-class SlideField::Variable
+class SlideField::Variable < SlideField::Token
   include SF::Doctor
 
   attr_reader :value, :location
@@ -44,15 +44,16 @@ class SlideField::Variable
         "cannot store '%s' in a variable" % @type
     end
 
-    location ||= SF::Location.new
-    @value, @location = value.freeze, location
+    super
   end
 
-  def compatible_with?(other_value)
+  def compatible_with?(other)
+    other = SF::Variable[other]
+
     if @type.is_a?(Symbol) # validate object
-      other_value.is_a?(SF::Object) && other_value.type == @type
+      other.value.is_a?(SF::Object) && other.value.type == @type
     else
-      other_value.class == @type
+      other.value.class == @type
     end
   end
 
@@ -61,7 +62,8 @@ class SlideField::Variable
   end
 
   def apply(operator, other)
-    new_value = @value.send operator, other.value
+    method = operator.to_s[0]
+    new_value = @value.send method, other.value
 
     self.class.new new_value, other.location
   rescue => e
@@ -74,13 +76,13 @@ class SlideField::Variable
         'invalid operation (%s)' % e.message
       when TypeError
         "incompatible operands ('%s' %s '%s')" %
-          [type, operator, other.type]
+          [type, method, other.type]
       when ZeroDivisionError
         'divison by zero (evaluating %p %s %p)' %
-          [@value, operator, other.value]
+          [@value, method, other.value]
       when SF::ColorOutOfBoundsError
         'color is out of bounds (evaluating %p %s %p)' %
-          [@value, operator, other.value]
+          [@value, method, other.value]
       else
         raise
       end

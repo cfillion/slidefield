@@ -19,6 +19,7 @@ class SlideField::Interpreter
     @context_level = 0
 
     @failed = false
+    @last_location = SF::Location.new
   end
 
   def run_file(path)
@@ -38,18 +39,14 @@ private
     file = Pathname.new path
 
     unless file.exist?
-      error_at last_location,
-        'no such file or directory - %s' % file
-
+      error_at @last_location, 'no such file or directory - %s' % file
       failure
     end
 
     begin
       input = file.read
     rescue
-      error_at last_location,
-        'unreadable file - %s' % file
-
+      error_at @last_location, 'unreadable file - %s' % file
       failure
     end
 
@@ -85,7 +82,7 @@ private
     @context_level += 1
 
     if @context_level > MAX_LEVEL
-      error_at last_location,
+      error_at @last_location,
         'context level exceeded maximum depth of %i' % MAX_LEVEL
 
       failure
@@ -114,7 +111,8 @@ private
 
     message[0] = message[0].downcase
 
-    location = location_at *cause.source.line_and_column(cause.pos)
+    line, column = *cause.source.line_and_column(cause.pos)
+    location = SF::Location.new @context, line, column
     error_at location, message
 
     failure
@@ -140,70 +138,59 @@ private
   end
 
   def eval_assignment(tokens)
-    var_name_t = tokens[:variable]
-    var_name = var_name_t.to_sym
+    var_name = tokenize tokens[:variable]
+    operator = tokenize tokens[:operator]
 
-    operator_t = tokens[:operator]
-    operator = operator_t.to_s
-
-    if value_t = tokens[:value]
-      right_location, right_value = eval_value value_t
+    if value = tokens[:value]
+      right_location, right_value = eval_value value
     elsif stmts_t = tokens[:statements]
-      right_location = locate var_name_t
+      right_location = var_name.location
       right_value = SF::Template.new @context, stmts_t
     end
 
     right_var = SF::Variable.new right_value, right_location
 
     if operator != '='
-      begin
-        left_var = @context.object.get_variable var_name
-      rescue SF::VariableNotFoundError => e
-        error_at locate(var_name_t), e.message
-
-        failure
-      end
-
-      right_var = left_var.apply(operator[0], right_var) or failure
+      left_var = @context.object.get_variable(var_name) or failure
+      right_var = left_var.apply(operator, right_var) or failure
     end
 
-    @context.object.set_variable var_name, right_var
-  rescue SF::IncompatibleValueError => e
-    error_at right_location, e.message
-
-    failure
+    @context.object.set_variable var_name, right_var or failure
   end
 
   def eval_value(tokens)
     tokens = tokens.clone
     filters = tokens.delete :filters
 
-    type, data_t = tokens.to_a[0]
-    value = transform_value type, data_t
+    type, data = tokens.to_a[0]
+    value = transform_value type, data
 
-    filters.reverse_each {|a|
-      filter_t = a[:name]
-      filter_method = "filter_#{filter_t}"
+    filters.reverse_each {|t|
+      filter = tokenize t[:name]
+      filter_method = "filter_#{filter}"
 
       if value.respond_to? filter_method
         value = value.send filter_method
       else
-        error_at locate(filter_t),
+        error_at filter.location,
           "unknown filter '%s' for type '%s'" %
-          [filter_t, SF::Variable.type_of(value)]
+          [filter, SF::Variable.type_of(value)]
 
         failure
       end
     }
     
-    location = type == :object ? value.location : locate(data_t)
-    [location, value]
+    if type == :object
+      [value.location, value]
+    else
+      [tokenize(data).location, value]
+    end
   end
 
   def transform_value(type, token)
     case type
     when :identifier
-      resolve_identifier token
+      @context.object.value_of token.to_sym or failure
     when :integer
       token.to_i
     when :point
@@ -224,42 +211,20 @@ private
     when :boolean
       SF::Boolean.new token == ':true'
     when :object
-      eval_object token, true
+      eval_object token, inline: true
     end
   end
 
-  def resolve_identifier(token)
-    begin
-      value = @context.object.value_of token.to_sym
-    rescue SF::VariableNotFoundError => e
-      error_at locate(token), e.message
-
-      failure
-    end
-
-    if value.nil?
-      error_at locate(token),
-        "use of uninitialized variable '%s'" % token
-
-      failure
-    end
-
-    value
-  end
-
-  def eval_object(tokens, is_inline = false)
-    type_t = tokens[:type]
-    type = type_t.to_sym
-
-    location = locate type_t
+  def eval_object(tokens, inline: false)
+    type = tokenize tokens[:type]
 
     begin
-      object = SF::Object.new type, location
-    rescue SF::UndefinedObjectError => e
+      object = SF::Object.new type.to_sym, type.location
+    rescue SF::UndefinedObjectError
       failure
     end
 
-    if is_inline
+    if inline
       # prevent this object from being adopted with the subobjects
       object.block_auto_adopt!
     end
@@ -282,16 +247,10 @@ private
 
   def assign_value(token, object)
     value_location, new_value = eval_value token
+    variable = SF::Variable.new new_value, value_location # TODO: remove
 
-    begin
-      var_name = object.guess_variable new_value
-    rescue SF::IncompatibleValueError, SF::AmbiguousValueError => e
-      error_at value_location, e.message
-
-      failure
-    end
-
-    object.set_variable var_name, new_value, value_location
+    var_name = object.guess_variable(variable) or failure
+    object.set_variable var_name, variable
   end
 
   def add_object(object)
@@ -309,19 +268,9 @@ private
   end
 
   def eval_template(tokens)
-    name_t = tokens[:name]
-    name = name_t.to_sym
+    name = tokenize tokens[:name]
 
-    location = locate name_t
-
-    begin
-      variable = @context.object.get_variable name
-    rescue SF::VariableNotFoundError => e
-      error_at location, e.message
-
-      failure
-    end
-
+    variable = @context.object.get_variable(name) or failure
     template = variable.value
 
     case template
@@ -331,9 +280,9 @@ private
 
       with(context) { enter_in template.statements }
     when SF::Object
-      add_object template.copy(location)
+      add_object template.copy(name.location)
     else
-      error_at location,
+      error_at name.location,
         'not a template or an object (see definition at %s)' %
         variable.location
 
@@ -347,15 +296,9 @@ private
     throw EFAIL
   end
 
-  def locate(token)
-    location_at *token.line_and_column
-  end
+  def tokenize(slice)
+    @last_location = SF::Location.new @context, *slice.line_and_column
 
-  def location_at(line, column)
-    @last_location = SF::Location.new @context, line, column
-  end
-
-  def last_location
-    @last_location ||= SF::Location.new
+    SF::Token.new slice, @last_location
   end
 end

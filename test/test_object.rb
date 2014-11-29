@@ -66,6 +66,13 @@ class TestObject < MiniTest::Test
     assert_equal 24, arstdhnei.value
   end
 
+  def test_set_variable_with_token
+    first = SF::Object.new :first
+    first.set_variable SF::Token.new(:qwfpgjluy), 42
+
+    assert_equal 42, first.get_variable(:qwfpgjluy)
+  end
+
   def test_reset_variable
     first = SF::Object.new :first
 
@@ -75,24 +82,31 @@ class TestObject < MiniTest::Test
 
   def test_reset_variable_incompatible
     first = SF::Object.new :first
-
     first.set_variable :qwfpgjluy, 42
 
-    error = assert_raises SF::IncompatibleValueError do
-      first.set_variable :qwfpgjluy, "hello"
-    end
+    var = SF::Variable.new 'hello'
+    retval = first.set_variable :qwfpgjluy, var
+    assert_equal false, retval
 
+    error = diagnostics.shift
+    assert_equal :error, error.level
     assert_equal "incompatible assignation ('integer' to 'string')", error.message
+    assert_same var.location, error.location
   end
 
   def test_get_variable_undefined
     first = SF::Object.new :first
 
-    error = assert_raises SF::VariableNotFoundError do
-      first.get_variable :qwfpgjluy
-    end
+    token = SF::Token.new :qwfpgjluy
+    assert_equal false, first.get_variable(token)
+    assert_equal false, first.get_variable(:qwfpgjluy)
 
+    error = diagnostics.shift
+    assert_equal :error, error.level
     assert_equal "undefined variable 'qwfpgjluy'", error.message
+    assert_same token.location, error.location
+
+    assert_equal error.message, diagnostics.shift.message
   end
 
   def test_value_of
@@ -100,6 +114,23 @@ class TestObject < MiniTest::Test
     first.set_variable :qwfpgjluy, 42
 
     assert_equal 42, first.value_of(:qwfpgjluy)
+    assert_equal 42, first.value_of(SF::Token.new(:qwfpgjluy))
+  end
+
+  def test_value_of_uninitialized
+    first = SF::Object.new :first
+    first.set_variable :qwfpgjluy, Fixnum
+
+    token = SF::Token.new :qwfpgjluy
+    assert_equal false, first.value_of(token)
+    assert_equal false, first.value_of(:qwfpgjluy)
+
+    error = diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal "use of uninitialized variable 'qwfpgjluy'", error.message
+    assert_same token.location, error.location
+
+    assert_equal error.message, diagnostics.shift.message
   end
 
   def test_guess_variable
@@ -108,25 +139,32 @@ class TestObject < MiniTest::Test
     first.set_variable :arstdhnei, String
 
     assert_equal :arstdhnei, first.guess_variable("hello world")
+    assert_equal :arstdhnei, first.guess_variable(SF::Variable.new("hello world"))
   end
 
   def test_guess_variable_fail
     first = SF::Object.new :first
 
-    error = assert_raises SF::IncompatibleValueError do
-      first.guess_variable 42
-    end
+    var = SF::Variable.new 42
+    assert_equal false, first.guess_variable(var)
+    assert_equal false, first.guess_variable(42)
 
+    error = diagnostics.shift
+    assert_equal :error, error.level
     assert_equal "object 'first' has no uninitialized variable compatible with 'integer'", error.message
+    assert_same var.location, error.location
+
+    assert_equal error.message, diagnostics.shift.message
   end
 
   def test_guess_initialized_variable
     first = SF::Object.new :first
     first.set_variable :qwfpgjluy, 42
 
-    assert_raises SF::IncompatibleValueError do
-      first.guess_variable 42
-    end
+    assert_equal false, first.guess_variable(42)
+
+    error = diagnostics.shift
+    assert_equal "object 'first' has no uninitialized variable compatible with 'integer'", error.message
   end
 
   def test_guess_variable_ambiguous
@@ -134,11 +172,16 @@ class TestObject < MiniTest::Test
     first.set_variable :qwfpgjluy, Fixnum
     first.set_variable :arstdhnei, Fixnum
 
-    error = assert_raises SF::AmbiguousValueError do
-      first.guess_variable 42
-    end
+    var = SF::Variable.new 42
+    assert_equal false, first.guess_variable(var)
+    assert_equal false, first.guess_variable(42)
 
+    error = diagnostics.shift
+    assert_equal :error, error.level
     assert_equal 'value is ambiguous', error.message
+    assert_same var.location, error.location
+
+    assert_equal error.message, diagnostics.shift.message
   end
 
   def test_guess_variable_ignore_non_native
@@ -393,7 +436,7 @@ class TestObject < MiniTest::Test
     refute_same copy.location, original.location
     assert_same loc, copy.location
 
-    assert copy.opaque?
+    assert_equal true, copy.opaque?
 
     assert_equal 'world', copy.value_of(:hello)
     assert_equal copy.children, original.children
@@ -401,13 +444,13 @@ class TestObject < MiniTest::Test
 
   def test_is_root
     root = SF::Object.new :first
-    assert root.root?
+    assert_equal true, root.root?
 
     context = SF::Context.new
     context.object = root
 
     branch = SF::Object.new :second, SF::Location.new(context)
-    refute branch.root?
+    assert_equal false, branch.root?
   end
 
   def test_validate_children
@@ -418,7 +461,7 @@ class TestObject < MiniTest::Test
 
     first.allow_children :third, min: 1
 
-    refute first.valid?
+    assert_equal false, first.valid?
 
     dia = diagnostics.shift
     assert_equal :error, dia.level
@@ -435,7 +478,7 @@ class TestObject < MiniTest::Test
     first = SF::Object.new :first
     first.set_variable :qwfpgjluy, String, var_loc
 
-    refute first.valid?
+    assert_equal false, first.valid?
 
     dia = diagnostics.shift
     assert_equal :warning, dia.level

@@ -58,47 +58,54 @@ class SlideField::Object
   end
 
   def set_variable(name, variable, location = nil)
-    unless variable.is_a? SF::Variable
-      variable = SF::Variable.new variable, location
-    end
+    name = name.to_sym
+    variable = SF::Variable[variable, location]
 
-    unless compatible? name, variable.value
-      raise SF::IncompatibleValueError,
+    if compatible? name, variable.value
+      @variables[name] = variable
+    else
+      !error_at variable.location,
         "incompatible assignation ('%s' to '%s')" %
         [@variables[name].type, variable.type]
     end
-
-    @variables[name] = variable
   end
 
   def get_variable(name)
-    unless has_variable? name
-      raise SF::VariableNotFoundError,
-        "undefined variable '%s'" % name
-    end
+    token = SF::Token[name]
+    address = token.to_sym
 
-    @variables[name]
+    if has_variable? address
+      @variables[address]
+    else
+      !error_at token.location, "undefined variable '%s'" % address
+    end
   end
 
   def value_of(name)
-    get_variable(name).value
+    name = SF::Token[name]
+
+    if variable = get_variable(name)
+      variable.value or !error_at name.location,
+        "use of uninitialized variable '%s'" % name
+    end
   end
 
-  def guess_variable(value)
+  def guess_variable(var)
+    var = SF::Variable[var]
+
     matches = @variables.select {|k,v|
-      v.location.native? && v.value.nil? && v.compatible_with?(value)
+      v.location.native? && v.value.nil? && v.compatible_with?(var)
     }.keys
 
     case matches.length
     when 0
-      raise SF::IncompatibleValueError,
+      !error_at var.location,
         "object '%s' has no uninitialized variable compatible with '%s'" %
-        [@type, SF::Variable.type_of(value)]
+        [@type, var.type]
     when 1
       matches.first
     else
-      raise SF::AmbiguousValueError,
-        'value is ambiguous'
+      !error_at var.location, 'value is ambiguous'
     end
   end
 

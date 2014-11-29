@@ -35,16 +35,24 @@ class TestInterpreter < MiniTest::Test
 
   def setup
     @interpreter = SF::Interpreter.new
+    @should_fail = false
 
     @resources_path = File.expand_path '../resources', __FILE__
   end
 
+  def should_fail; @should_fail = true end
+
+  def teardown
+    assert_equal @should_fail, @interpreter.failed?,
+      'The interpreter is not in the expected success/failure state'
+  end
+
   def test_parse_error
+    should_fail
+
     @interpreter.run_string 'a = \\&b'
 
-    assert @interpreter.failed?
     error = diagnostics.shift
-
     assert_equal :error, error.level
     assert_equal 'failed to match [a-zA-Z_]', error.message
     refute error.location.native?
@@ -92,15 +100,15 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_unknown_object
-    @interpreter.run_string '\aaaa'
+    should_fail
 
-    assert @interpreter.failed?
+    @interpreter.run_string '\\aaaa'
   end
 
   def test_forbidden_object
-    @interpreter.run_string '\\permissiveRoot'
+    should_fail
 
-    assert @interpreter.failed?
+    @interpreter.run_string '\\permissiveRoot'
   end
 
   def test_object_value
@@ -118,27 +126,17 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_object_value_mismatch
+    should_fail
+
     @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string '\answer "The Ultimate Question of Life, the Universe, and Everything"'
-
-    assert @interpreter.failed?
-    error = diagnostics.shift
-
-    assert_equal :error, error.level
-    assert_equal "object 'answer' has no uninitialized variable compatible with 'string'", error.message
-    assert_equal [1, 9], error.location.line_and_column
   end
 
   def test_object_value_ambiguous
+    should_fail
+
     @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string '\\collection :true'
-
-    assert @interpreter.failed?
-    error = diagnostics.shift
-
-    assert_equal :error, error.level
-    assert_equal 'value is ambiguous', error.message
-    assert_equal [1, 13], error.location.line_and_column
   end
 
   def test_variables
@@ -216,42 +214,25 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_copy_variable_not_found
+    should_fail
+
     @interpreter.run_string 'copy = fail'
-
-    assert @interpreter.failed?
-    error = diagnostics.shift
-
-    assert_equal :error, error.level
-    assert_equal "undefined variable 'fail'", error.message
-    assert_equal [1, 8], error.location.line_and_column
   end
 
   def test_copy_uninitialized
+    should_fail
+
     @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string '\answer { copy = the_answer; }'
-
-    assert @interpreter.failed?
-    error = diagnostics.shift
-
-    assert_equal :error, error.level
-    assert_equal "use of uninitialized variable 'the_answer'", error.message
-    assert_equal [1, 18], error.location.line_and_column
-
-    skip # TODO: validation should not occur when the object's subtree failed
   end
 
   def test_incompatible_reassignation
+    should_fail
+
     @interpreter.run_string <<-INPUT
     var = 1
     var = 4x2
     INPUT
-
-    assert @interpreter.failed?
-    error = diagnostics.shift
-
-    assert_equal :error, error.level
-    assert_equal "incompatible assignation ('integer' to 'point')", error.message
-    assert_equal [2, 11], error.location.line_and_column
   end
 
   def test_operators
@@ -269,15 +250,12 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_change_undefined
+    should_fail
+
     @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string 'var += 1'
 
     assert_equal true, @interpreter.failed?
-
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "undefined variable 'var'", error.message
-    assert_equal [1, 1], error.location.line_and_column
   end
 
   def test_escape_sequences
@@ -308,11 +286,11 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_invalid_filter
+    should_fail
+
     @interpreter.run_string 'var = (bad_filter)4x2'
 
-    assert @interpreter.failed?
     error = diagnostics.shift
-
     assert_equal :error, error.level
     assert_equal "unknown filter 'bad_filter' for type 'point'", error.message
     assert_equal [1, 8], error.location.line_and_column
@@ -412,48 +390,44 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_undefined_template
+    should_fail
+
     @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     \\&test
     INPUT
-
-    assert @interpreter.failed?
-    error = diagnostics.shift
-
-    assert_equal :error, error.level
-    assert_equal "undefined variable 'test'", error.message
-    assert_equal [1, 7], error.location.line_and_column
   end
 
   def test_not_a_template
+    should_fail
+
     @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     test = 1
     \\&test
     INPUT
 
-    assert @interpreter.failed?
     error = diagnostics.shift
-
     assert_equal :error, error.level
     assert_equal 'not a template or an object (see definition at input:1:12)', error.message
     assert_equal [2, 7], error.location.line_and_column
   end
 
   def test_deep_context_limit
-    path = File.join @resources_path, 'recursive_include.sfi'
+    should_fail
 
+    path = File.join @resources_path, 'recursive_include.sfi'
     @interpreter.run_string '\include "' + path + '"'
 
-    assert @interpreter.failed?
     error = diagnostics.shift
-
     assert_equal :error, error.level
     assert_equal 'context level exceeded maximum depth of 50', error.message
     assert_equal [1, 10], error.location.line_and_column
   end
 
   def test_continue_on_error
+    should_fail
+
     @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     top_level = 4
@@ -467,21 +441,14 @@ class TestInterpreter < MiniTest::Test
     \\not_executed2
     INPUT
 
-    assert_equal true, @interpreter.failed?
-
     assert_equal 16, @interpreter.root.value_of(:top_level)
     assert_equal SF::Color.new(0,0,0,0), @interpreter.root.first_child(:level1).value_of(:sublevel)
-
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "incompatible assignation ('integer' to 'string')", error.message
-    assert_equal [8, 17], error.location.line_and_column
   end
 
   def test_file_not_found
-    @interpreter.run_file '404'
+    should_fail
 
-    assert @interpreter.failed?
+    @interpreter.run_file '404'
 
     error = diagnostics.shift
     assert_equal :error, error.level
@@ -490,12 +457,12 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_include_read_error
+    should_fail
+
     @interpreter.run_string <<-INPUT
     \\include "404"
     \\not_executed
     INPUT
-
-    assert @interpreter.failed?
 
     error = diagnostics.shift
     assert_equal :error, error.level
@@ -504,9 +471,9 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_file_is_directory
-    @interpreter.run_file '.'
+    should_fail
 
-    assert @interpreter.failed?
+    @interpreter.run_file '.'
 
     error = diagnostics.shift
     assert_equal :error, error.level
@@ -515,16 +482,16 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_object_validation
+    should_fail
+
     @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string '\\answer'
-
-    assert @interpreter.failed?
   end
 
   def test_root_validation
+    should_fail
+
     @interpreter.root = SF::Object.new :restrictiveRoot
     @interpreter.run_string '\\level1'
-
-    assert @interpreter.failed?
   end
 end
