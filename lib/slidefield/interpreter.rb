@@ -39,7 +39,7 @@ private
       error_at last_location,
         'no such file or directory - %s' % file
 
-      failed
+      failure
     end
 
     begin
@@ -48,7 +48,7 @@ private
       error_at last_location,
         'unreadable file - %s' % file
 
-      failed
+      failure
     end
 
     include_path = file.dirname
@@ -72,7 +72,7 @@ private
       error_at last_location,
         'context level exceeded maximum depth of %i' % MAX_LEVEL
 
-      failed
+      failure
     end
 
     @rootpath = Pathname.new @context.include_path if @rootpath.nil?
@@ -105,7 +105,7 @@ private
     }
 
     if !failed? && @context.nil?
-      failed unless @root.valid?
+      failure unless @root.valid?
     end
   end
 
@@ -126,7 +126,8 @@ private
 
     location = location_at *cause.source.line_and_column(cause.pos)
     error_at location, message
-    failed
+
+    failure
   end
 
   def evaluate(tree)
@@ -172,37 +173,37 @@ private
           "invalid operator '%s' for type '%s'" %
           [operator, left_var.type]
 
-        failed
+        failure
       rescue ArgumentError => e
         error_at right_location,
           'invalid operation (%s)' % e.message
 
-        failed
+        failure
       rescue TypeError
         error_at right_location,
           "incompatible operands ('%s' %s '%s')" %
           [left_var.type, operator[0], SF::Variable.type_of(right_value)]
 
-        failed
+        failure
       rescue ZeroDivisionError
         error_at right_location,
           'divison by zero (evaluating %p %s %p)' %
           [left_var.value, operator[0], right_value]
 
-        failed
+        failure
       rescue SF::ColorOutOfBoundsError
         error_at right_location,
           'color is out of bounds (evaluating %p %s %p)' %
           [left_var.value, operator[0], right_value]
 
-        failed
+        failure
       end
     end
 
     @context.object.set_variable var_name, new_value, right_location
   rescue SF::IncompatibleValueError => e
     error_at right_location, e.message
-    failed
+    failure
   end
 
   def eval_value(tokens)
@@ -223,7 +224,7 @@ private
           "unknown filter '%s' for type '%s'" %
           [filter_t, SF::Variable.type_of(value)]
 
-        failed
+        failure
       end
     }
     
@@ -241,14 +242,14 @@ private
       rescue SF::VariableNotFoundError => e
         error_at locate(token), e.message
 
-        failed
+        failure
       end
 
       if value.nil?
         error_at locate(token),
           "use of uninitialized variable '%s'" % var_name
 
-        failed
+        failure
       end
 
       value
@@ -285,7 +286,7 @@ private
     begin
       object = SF::Object.new type, location
     rescue SF::UndefinedObjectError => e
-      failed
+      failure
     end
 
     if is_inline
@@ -301,7 +302,7 @@ private
       rescue SF::IncompatibleValueError, SF::AmbiguousValueError => e
         error_at value_location, e.message
 
-        failed
+        failure
       end
 
       object.set_variable var_name, new_value, value_location
@@ -314,7 +315,7 @@ private
       with(context) { evaluate subtree }
     end
 
-    failed unless object.valid?
+    failure unless object.valid?
 
     object
   end
@@ -329,7 +330,7 @@ private
     begin
       object.auto_adopt
     rescue SF::UnauthorizedChildError
-      failed
+      failure
     end
   end
 
@@ -344,7 +345,7 @@ private
     rescue SF::VariableNotFoundError => e
       error_at location, e.message
 
-      failed
+      failure
     end
 
     template = variable.value
@@ -362,11 +363,11 @@ private
         'not a template or an object (see definition at %s)' %
         variable.location
 
-      failed
+      failure
     end
   end
 
-  def failed
+  def failure
     @failed = true
 
     throw :jump_out

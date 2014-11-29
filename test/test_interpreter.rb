@@ -43,8 +43,7 @@ class TestInterpreter < MiniTest::Test
     @interpreter.run_string 'a = \\&b'
 
     assert @interpreter.failed?
-    bag = diagnostics
-    error = bag.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal 'failed to match [a-zA-Z_]', error.message
