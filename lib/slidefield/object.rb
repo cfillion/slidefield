@@ -169,6 +169,10 @@ class SlideField::Object
     children(type).first
   end
 
+  def count(type = nil)
+    children(type).count
+  end
+
   def valid?
     validate_children && validate_variables
   end
@@ -183,23 +187,16 @@ private
   end
 
   def validate_children
-    @children_rules.each {|type, range|
-      how_many_we_have = children(type).count
-      lower_limit = range.min
-
-      if how_many_we_have < lower_limit
-        error_at(@location,
-          "object '%s' must have at least %d '%s', got %d" %
-          [@type, lower_limit, type, how_many_we_have]
-        )
-
-        return false
-      end
+    @children_rules.select {|type, range|
+      size = count type
 
       # the upper limit case is handled in the parent's #adopt method
-    }
 
-    true
+      error_at(@location,
+        "object '%s' must have at least %d '%s', got %d" %
+        [@type, range.min, type, size]
+      ) if size < range.min
+    }.empty?
   end
 
   def validate_variables

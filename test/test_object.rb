@@ -387,12 +387,17 @@ class TestObject < MiniTest::Test
     first.allow_children :second, min: 2
     first.adopt SF::Object.new(:second)
 
+    first.allow_children :third, min: 1
+
     refute first.valid?
 
     dia = diagnostics.shift
     assert_equal :error, dia.level
     assert_equal "object 'first' must have at least 2 'second', got 1", dia.message
     assert_same first.location, dia.location
+
+    dia = diagnostics.shift
+    assert_equal "object 'first' must have at least 1 'third', got 0", dia.message
   end
 
   def test_validate_uninitialized
