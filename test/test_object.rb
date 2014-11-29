@@ -141,7 +141,7 @@ class TestObject < MiniTest::Test
     first.allow_children :second
 
     second = SF::Object.new :second
-    assert first.can_adopt? second
+    assert first.knows? second
     assert_empty first.children
 
     first.adopt second
@@ -177,7 +177,7 @@ class TestObject < MiniTest::Test
     first = SF::Object.new :first
     second = SF::Object.new :second
 
-    refute first.can_adopt? second
+    refute first.knows? second
 
     error = assert_raises SF::UnauthorizedChildError do
       first.adopt second
@@ -346,6 +346,22 @@ class TestObject < MiniTest::Test
 
     assert_same first_second, first.first_child(:second)
     assert_nil first.first_child(:qwfpgjluy)
+  end
+
+  def test_count
+    first = SF::Object.new :first
+    first.allow_children :second
+    first.allow_children :third
+
+    assert_equal 0, first.count
+
+    first.adopt SF::Object.new(:second)
+    assert_equal 1, first.count
+    assert_equal 1, first.count(:second)
+
+    first.adopt SF::Object.new(:third)
+    assert_equal 2, first.count
+    assert_equal 1, first.count(:third)
   end
 
   def test_copy

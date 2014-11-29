@@ -102,7 +102,7 @@ class SlideField::Object
     @children_rules[type] = Range.new(min, max)
   end
 
-  def can_adopt?(child)
+  def knows?(child)
     @children_rules.has_key? child.type
   end
 
@@ -111,18 +111,17 @@ class SlideField::Object
   end
 
   def adopt(object)
-    unless can_adopt? object
+    unless knows? object
       raise SF::UnauthorizedChildError, error_at(object.location,
         "object '%s' cannot have '%s'" % [@type, object.type]
       )
     end
     
-    upper_limit = @children_rules[object.type].max
-
-    unless children(object.type).count < upper_limit
+    maximum = @children_rules[object.type].max
+    if count(object.type) >= maximum
       raise SF::UnauthorizedChildError, error_at(object.location,
         "object '%s' cannot have more than %d '%s'" %
-        [@type, upper_limit, object.type]
+        [@type, maximum, object.type]
       )
     end
 
@@ -142,7 +141,7 @@ class SlideField::Object
       next_try = @context_parent
 
       while next_try
-        throw :found_parent, next_try if next_try.can_adopt? self
+        throw :found_parent, next_try if next_try.knows? self
         next_try = next_try.opaque? ? nil : next_try.context_parent
       end
     }
@@ -192,26 +191,25 @@ private
 
       # the upper limit case is handled in the parent's #adopt method
 
-      error_at(@location,
-        "object '%s' must have at least %d '%s', got %d" %
-        [@type, range.min, type, size]
-      ) if size < range.min
+      if size < range.min
+        error_at @location,
+          "object '%s' must have at least %d '%s', got %d" %
+          [@type, range.min, type, size]
+      end
     }.empty?
   end
 
   def validate_variables
-    nil_vars = @variables.select {|name, var| var.value.nil? }
-    return true if nil_vars.empty?
-
-    nil_vars.each {|name, var|
-      warning_at var.location, "'%s' is uninitialized" % name
+    nil_vars = @variables.select {|name, var|
+      if var.value.nil?
+        warning_at var.location, "'%s' is uninitialized" % name
+      end
     }
 
-    error_at(@location,
-      "object '%s' has one or more uninitialized variables" % @type
-    )
+    return true if nil_vars.empty?
 
-    false
+    !error_at @location,
+      "object '%s' has one or more uninitialized variables" % @type
   end
 
 protected
