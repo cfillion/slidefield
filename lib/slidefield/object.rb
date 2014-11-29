@@ -57,14 +57,18 @@ class SlideField::Object
     @variables.has_key? name
   end
 
-  def set_variable(name, value, location = nil)
-    unless compatible? name, value
-      raise SF::IncompatibleValueError,
-        "incompatible assignation ('%s' to '%s')" %
-        [@variables[name].type, SF::Variable.type_of(value)]
+  def set_variable(name, variable, location = nil)
+    unless variable.is_a? SF::Variable
+      variable = SF::Variable.new variable, location
     end
 
-    @variables[name] = SF::Variable.new value, location
+    unless compatible? name, variable.value
+      raise SF::IncompatibleValueError,
+        "incompatible assignation ('%s' to '%s')" %
+        [@variables[name].type, variable.type]
+    end
+
+    @variables[name] = variable
   end
 
   def get_variable(name)

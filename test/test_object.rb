@@ -42,15 +42,28 @@ class TestObject < MiniTest::Test
 
   def test_set_variable
     first = SF::Object.new :first
-    loc = SF::Location.new
+    var = SF::Variable.new 42
 
     refute first.has_variable? :qwfpgjluy
-    first.set_variable :qwfpgjluy, 42, loc
+    first.set_variable :qwfpgjluy, var
     assert first.has_variable? :qwfpgjluy
 
-    var = first.get_variable :qwfpgjluy
-    assert_equal 42, var.value
-    assert_same loc, var.location
+    assert_same var, first.get_variable(:qwfpgjluy)
+  end
+
+  def test_set_value
+    first = SF::Object.new :first
+    loc = SF::Location.new
+
+    first.set_variable :qwfpgjluy, 42, loc
+    first.set_variable :arstdhnei, 24
+
+    qwfpgjluy = first.get_variable :qwfpgjluy
+    assert_equal 42, qwfpgjluy.value
+    assert_same loc, qwfpgjluy.location
+
+    arstdhnei = first.get_variable :arstdhnei
+    assert_equal 24, arstdhnei.value
   end
 
   def test_reset_variable
