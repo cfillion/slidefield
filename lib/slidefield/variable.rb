@@ -38,7 +38,8 @@ class SlideField::Variable
     end
 
     unless @type.is_a?(Symbol) || VALUE_CLASSES.include?(@type)
-      raise SF::ForeignValueError
+      raise SF::ForeignValueError,
+        "cannot store '%s' in a variable" % @type
     end
 
     location ||= SF::Location.new

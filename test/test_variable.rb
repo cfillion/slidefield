@@ -75,13 +75,15 @@ class TestVariable < MiniTest::Test
   end
 
   def test_reject_foreign_values
-    assert_raises SF::ForeignValueError do
+    error = assert_raises SF::ForeignValueError do
       SF::Variable.new Hash.new
     end
+    assert_equal "cannot store 'Hash' in a variable", error.message
 
-    assert_raises SF::ForeignValueError do
+    error = assert_raises SF::ForeignValueError do
       SF::Variable.new Hash
     end
+    assert_equal "cannot store 'Hash' in a variable", error.message
   end
 
   def test_type_of
