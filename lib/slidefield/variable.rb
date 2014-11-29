@@ -1,4 +1,6 @@
 class SlideField::Variable
+  include SF::Doctor
+
   attr_reader :value, :location
 
   VALUE_CLASSES = [
@@ -56,5 +58,30 @@ class SlideField::Variable
 
   def type
     self.class.type_of @value
+  end
+
+  def apply(operator, other)
+    new_value = @value.send operator, other.value
+
+    self.class.new new_value, other.location
+  rescue NoMethodError
+    !error_at other.location,
+      "invalid operator '%s=' for type '%s'" %
+      [operator, type]
+  rescue ArgumentError => e
+    !error_at other.location,
+      'invalid operation (%s)' % e.message
+  rescue TypeError
+    !error_at other.location,
+      "incompatible operands ('%s' %s '%s')" %
+      [type, operator, other.type]
+  rescue ZeroDivisionError
+    !error_at other.location,
+      'divison by zero (evaluating %p %s %p)' %
+      [@value, operator, other.value]
+  rescue SF::ColorOutOfBoundsError
+    !error_at other.location,
+      'color is out of bounds (evaluating %p %s %p)' %
+      [@value, operator, other.value]
   end
 end

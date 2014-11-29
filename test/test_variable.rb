@@ -4,6 +4,12 @@ SF::Object.define :type1 do end
 SF::Object.define :type2 do end
 
 class TestVariable < MiniTest::Test
+  include DoctorHelper
+
+  def diagnostics
+    SF::Doctor.bag SF::Variable
+  end
+
   def test_create
     loc = SF::Location.new
     var = SF::Variable.new 1, loc
@@ -98,5 +104,70 @@ class TestVariable < MiniTest::Test
 
   def test_type
     assert_equal 'integer', SF::Variable.new(42).type
+  end
+
+  def test_wrong_type
+    left = SF::Variable.new "string"
+    right = SF::Variable.new SF::Boolean.true
+
+    retval = left.apply :+, right
+    assert_equal false, retval
+
+    error = diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal "incompatible operands ('string' + 'boolean')", error.message
+    assert_equal right.location, error.location
+  end
+
+  def test_invalid_operator
+    left = SF::Variable.new "hello"
+    right = SF::Variable.new "world"
+
+    retval = left.apply :/, right
+    assert_equal false, retval
+
+    error = diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal "invalid operator '/=' for type 'string'", error.message
+    assert_same right.location, error.location
+  end
+
+  def test_negative_string_multiplication
+    left = SF::Variable.new "hello world"
+    right = SF::Variable.new -1
+
+    retval = left.apply :*, right
+    assert_equal false, retval
+
+    error = diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal 'invalid operation (negative argument)', error.message
+    assert_same right.location, error.location
+  end
+
+  def test_color_out_of_bounds
+    left = SF::Variable.new SF::Color.new(255, 255, 255, 170)
+    right = SF::Variable.new SF::Color.new(255, 255, 255, 187)
+
+    retval = left.apply :+, right
+    assert_equal false, retval
+
+    error = diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal 'color is out of bounds (evaluating #FFFFFFAA + #FFFFFFBB)', error.message
+    assert_same right.location, error.location
+  end
+
+  def test_division_by_zero
+    left = SF::Variable.new 1
+    right = SF::Variable.new 0
+
+    retval = left.apply :/, right
+    assert_equal false, retval
+
+    error = diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal 'divison by zero (evaluating 1 / 0)', error.message
+    assert_same right.location, error.location
   end
 end

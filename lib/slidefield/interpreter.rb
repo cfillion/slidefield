@@ -146,53 +146,28 @@ private
     operator_t = tokens[:operator]
     operator = operator_t.to_s
 
-    if tokens.has_key? :value
-      right_location, right_value = eval_value tokens[:value]
-    else
+    if value_t = tokens[:value]
+      right_location, right_value = eval_value value_t
+    elsif stmts_t = tokens[:statements]
       right_location = locate var_name_t
-      right_value = SF::Template.new @context, tokens[:statements]
+      right_value = SF::Template.new @context, stmts_t
     end
 
-    if operator == '='
-      new_value = right_value
-    else
-      left_var = @context.object.get_variable var_name
+    right_var = SF::Variable.new right_value, right_location
 
+    if operator != '='
       begin
-        new_value = left_var.value.send operator[0], right_value
-      rescue NoMethodError
-        error_at locate(operator_t),
-          "invalid operator '%s' for type '%s'" %
-          [operator, left_var.type]
-
-        failure
-      rescue ArgumentError => e
-        error_at right_location,
-          'invalid operation (%s)' % e.message
-
-        failure
-      rescue TypeError
-        error_at right_location,
-          "incompatible operands ('%s' %s '%s')" %
-          [left_var.type, operator[0], SF::Variable.type_of(right_value)]
-
-        failure
-      rescue ZeroDivisionError
-        error_at right_location,
-          'divison by zero (evaluating %p %s %p)' %
-          [left_var.value, operator[0], right_value]
-
-        failure
-      rescue SF::ColorOutOfBoundsError
-        error_at right_location,
-          'color is out of bounds (evaluating %p %s %p)' %
-          [left_var.value, operator[0], right_value]
+        left_var = @context.object.get_variable var_name
+      rescue SF::VariableNotFoundError => e
+        error_at locate(var_name_t), e.message
 
         failure
       end
+
+      right_var = left_var.apply(operator[0], right_var) or failure
     end
 
-    @context.object.set_variable var_name, new_value, right_location
+    @context.object.set_variable var_name, right_var
   rescue SF::IncompatibleValueError => e
     error_at right_location, e.message
 

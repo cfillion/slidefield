@@ -268,74 +268,16 @@ class TestInterpreter < MiniTest::Test
     assert_equal [4, 12], var.location.line_and_column
   end
 
-  def test_operator_type_mismatch
-    @interpreter.run_string <<-INPUT
-    var = "string"
-    var += :true
-    INPUT
+  def test_change_undefined
+    @interpreter.root = SF::Object.new :permissiveRoot
+    @interpreter.run_string 'var += 1'
 
-    assert @interpreter.failed?
+    assert_equal true, @interpreter.failed?
+
     error = diagnostics.shift
-
     assert_equal :error, error.level
-    assert_equal "incompatible operands ('string' + 'boolean')", error.message
-    assert_equal [2, 12], error.location.line_and_column
-  end
-
-  def test_incompatible_operator
-    @interpreter.run_string <<-INPUT
-    var = "string"
-    var /= "string"
-    INPUT
-
-    assert @interpreter.failed?
-    error = diagnostics.shift
-
-    assert_equal :error, error.level
-    assert_equal "invalid operator '/=' for type 'string'", error.message
-    assert_equal [2, 9], error.location.line_and_column
-  end
-
-  def test_division_by_zero
-    @interpreter.run_string <<-INPUT
-    var = 1
-    var /= 0
-    INPUT
-
-    assert @interpreter.failed?
-    error = diagnostics.shift
-
-    assert_equal :error, error.level
-    assert_equal 'divison by zero (evaluating 1 / 0)', error.message
-    assert_equal [2, 12], error.location.line_and_column
-  end
-
-  def test_color_out_of_bounds
-    @interpreter.run_string <<-INPUT
-    var = #FFFFFFAA
-    var += #FFFFFFBB
-    INPUT
-
-    assert @interpreter.failed?
-    error = diagnostics.shift
-
-    assert_equal :error, error.level
-    assert_equal 'color is out of bounds (evaluating #FFFFFFAA + #FFFFFFBB)', error.message
-    assert_equal [2, 12], error.location.line_and_column
-  end
-
-  def test_invalid_operation
-    @interpreter.run_string <<-INPUT
-    var = "hello"
-    var *= -1
-    INPUT
-
-    assert @interpreter.failed?
-    error = diagnostics.shift
-
-    assert_equal :error, error.level
-    assert_equal 'invalid operation (negative argument)', error.message
-    assert_equal [2, 12], error.location.line_and_column
+    assert_equal "undefined variable 'var'", error.message
+    assert_equal [1, 1], error.location.line_and_column
   end
 
   def test_escape_sequences
@@ -525,14 +467,10 @@ class TestInterpreter < MiniTest::Test
     \\not_executed2
     INPUT
 
-    assert @interpreter.failed?
+    assert_equal true, @interpreter.failed?
+
     assert_equal 16, @interpreter.root.value_of(:top_level)
     assert_equal SF::Color.new(0,0,0,0), @interpreter.root.first_child(:level1).value_of(:sublevel)
-
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "incompatible operands ('color' + '\\level1')", error.message
-    assert_equal [4, 20], error.location.line_and_column
 
     error = diagnostics.shift
     assert_equal :error, error.level
