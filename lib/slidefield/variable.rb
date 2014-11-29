@@ -64,24 +64,26 @@ class SlideField::Variable
     new_value = @value.send operator, other.value
 
     self.class.new new_value, other.location
-  rescue NoMethodError
-    !error_at other.location,
-      "invalid operator '%s=' for type '%s'" %
-      [operator, type]
-  rescue ArgumentError => e
-    !error_at other.location,
-      'invalid operation (%s)' % e.message
-  rescue TypeError
-    !error_at other.location,
-      "incompatible operands ('%s' %s '%s')" %
-      [type, operator, other.type]
-  rescue ZeroDivisionError
-    !error_at other.location,
-      'divison by zero (evaluating %p %s %p)' %
-      [@value, operator, other.value]
-  rescue SF::ColorOutOfBoundsError
-    !error_at other.location,
-      'color is out of bounds (evaluating %p %s %p)' %
-      [@value, operator, other.value]
+  rescue => e
+    !error_at(other.location,
+      case e
+      when NoMethodError
+        "invalid operator '%s=' for type '%s'" %
+          [operator, type]
+      when ArgumentError
+        'invalid operation (%s)' % e.message
+      when TypeError
+        "incompatible operands ('%s' %s '%s')" %
+          [type, operator, other.type]
+      when ZeroDivisionError
+        'divison by zero (evaluating %p %s %p)' %
+          [@value, operator, other.value]
+      when SF::ColorOutOfBoundsError
+        'color is out of bounds (evaluating %p %s %p)' %
+          [@value, operator, other.value]
+      else
+        raise
+      end
+    )
   end
 end

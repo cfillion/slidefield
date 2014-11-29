@@ -106,6 +106,15 @@ class TestVariable < MiniTest::Test
     assert_equal 'integer', SF::Variable.new(42).type
   end
 
+  def test_apply_operator
+    left = SF::Variable.new 32
+    right = SF::Variable.new 64
+
+    retval = left.apply :+, right
+    assert_equal 96, retval.value
+    assert_same right.location, retval.location
+  end
+
   def test_wrong_type
     left = SF::Variable.new "string"
     right = SF::Variable.new SF::Boolean.true
@@ -169,5 +178,17 @@ class TestVariable < MiniTest::Test
     assert_equal :error, error.level
     assert_equal 'divison by zero (evaluating 1 / 0)', error.message
     assert_same right.location, error.location
+  end
+
+  def test_runtime_error
+    hello = 'hello'
+    def hello.+(other) raise RuntimeError end
+
+    left = SF::Variable.new hello
+    right = SF::Variable.new 'world'
+
+    assert_raises RuntimeError do
+      left.apply :+, right
+    end
   end
 end
