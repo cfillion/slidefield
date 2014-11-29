@@ -14,5 +14,18 @@ SimpleCov.start {
 }
 
 require 'minitest/autorun'
-
 require 'slidefield'
+
+module DoctorHelper
+  def diagnostics
+    # default implementation
+    SF::Doctor.bag
+  end
+
+  def after_teardown
+    assert_empty diagnostics
+    super
+  ensure
+    SF::Doctor.bag.clear
+  end
+end

@@ -10,6 +10,7 @@ SF = SlideField
 
 require 'slidefield/animator'
 require 'slidefield/diagnostic'
+require 'slidefield/doctor'
 require 'slidefield/errors'
 require 'slidefield/interpreter'
 require 'slidefield/location'

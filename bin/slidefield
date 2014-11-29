@@ -50,6 +50,8 @@ rescue OptionParser::InvalidOption => e
   raise SlideField::Error, e
 end
 
+SF::Doctor.output = STDERR
+
 files = ARGV
 
 # read from standard input by default
@@ -57,7 +59,6 @@ files << '-' if files.empty?
 
 files.each {|file|
   interpreter = SlideField::Interpreter.new
-  interpreter.print_diagnostics = true
 
   if '-' == file
     interpreter.run_string STDIN.read

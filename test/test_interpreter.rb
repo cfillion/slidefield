@@ -27,22 +27,23 @@ SF::Object.define :collection do
 end
 
 class TestInterpreter < MiniTest::Test
+  include DoctorHelper
+
+  def diagnostics
+    SF::Doctor.bag SF::Interpreter
+  end
+
   def setup
     @interpreter = SF::Interpreter.new
 
     @resources_path = File.expand_path '../resources', __FILE__
   end
 
-  def teardown
-    # ensure we have captured every messages
-    assert_empty @interpreter.diagnostics
-  end
-
   def test_parse_error
     @interpreter.run_string 'a = \\&b'
 
     assert @interpreter.failed?
-    bag = @interpreter.diagnostics
+    bag = diagnostics
     error = bag.shift
 
     assert_equal :error, error.level
@@ -95,21 +96,12 @@ class TestInterpreter < MiniTest::Test
     @interpreter.run_string '\aaaa'
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
-
-    assert_equal :error, error.level
-    assert_equal "unknown object name 'aaaa'", error.message
-    assert_equal [1, 2], error.location.line_and_column
   end
 
   def test_forbidden_object
     @interpreter.run_string '\\permissiveRoot'
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
-
-    assert_equal "object 'permissiveRoot' is not allowed in this context", error.message
-    assert_equal [1, 2], error.location.line_and_column
   end
 
   def test_object_value
@@ -131,7 +123,7 @@ class TestInterpreter < MiniTest::Test
     @interpreter.run_string '\answer "The Ultimate Question of Life, the Universe, and Everything"'
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal "object 'answer' has no uninitialized variable compatible with 'string'", error.message
@@ -143,7 +135,7 @@ class TestInterpreter < MiniTest::Test
     @interpreter.run_string '\\collection :true'
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal 'value is ambiguous', error.message
@@ -228,7 +220,7 @@ class TestInterpreter < MiniTest::Test
     @interpreter.run_string 'copy = fail'
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal "undefined variable 'fail'", error.message
@@ -240,7 +232,7 @@ class TestInterpreter < MiniTest::Test
     @interpreter.run_string '\answer { copy = the_answer; }'
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal "use of uninitialized variable 'the_answer'", error.message
@@ -256,7 +248,7 @@ class TestInterpreter < MiniTest::Test
     INPUT
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal "incompatible assignation ('integer' to 'point')", error.message
@@ -284,7 +276,7 @@ class TestInterpreter < MiniTest::Test
     INPUT
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal "incompatible operands ('string' + 'boolean')", error.message
@@ -298,7 +290,7 @@ class TestInterpreter < MiniTest::Test
     INPUT
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal "invalid operator '/=' for type 'string'", error.message
@@ -312,7 +304,7 @@ class TestInterpreter < MiniTest::Test
     INPUT
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal 'divison by zero (evaluating 1 / 0)', error.message
@@ -326,7 +318,7 @@ class TestInterpreter < MiniTest::Test
     INPUT
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal 'color is out of bounds (evaluating #FFFFFFAA + #FFFFFFBB)', error.message
@@ -340,7 +332,7 @@ class TestInterpreter < MiniTest::Test
     INPUT
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal 'invalid operation (negative argument)', error.message
@@ -378,7 +370,7 @@ class TestInterpreter < MiniTest::Test
     @interpreter.run_string 'var = (bad_filter)4x2'
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal "unknown filter 'bad_filter' for type 'point'", error.message
@@ -485,7 +477,7 @@ class TestInterpreter < MiniTest::Test
     INPUT
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal "undefined variable 'test'", error.message
@@ -500,7 +492,7 @@ class TestInterpreter < MiniTest::Test
     INPUT
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal 'not a template or an object (see definition at input:1:12)', error.message
@@ -513,26 +505,11 @@ class TestInterpreter < MiniTest::Test
     @interpreter.run_string '\include "' + path + '"'
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
 
     assert_equal :error, error.level
     assert_equal 'context level exceeded maximum depth of 50', error.message
     assert_equal [1, 10], error.location.line_and_column
-  end
-
-  def test_print_diagnostics
-    refute @interpreter.print_diagnostics
-    @interpreter.print_diagnostics = true
-    assert @interpreter.print_diagnostics
-
-    stdout, stderr = capture_io do
-      @interpreter.run_string '"'
-    end
-
-    error = @interpreter.diagnostics.shift
-
-    assert_empty stdout
-    assert_equal error.to_s + "\n", stderr
   end
 
   def test_continue_on_error
@@ -553,12 +530,12 @@ class TestInterpreter < MiniTest::Test
     assert_equal 16, @interpreter.root.value_of(:top_level)
     assert_equal SF::Color.new(0,0,0,0), @interpreter.root.first_child(:level1).value_of(:sublevel)
 
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
     assert_equal :error, error.level
     assert_equal "incompatible operands ('color' + '\\level1')", error.message
     assert_equal [4, 20], error.location.line_and_column
 
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
     assert_equal :error, error.level
     assert_equal "incompatible assignation ('integer' to 'string')", error.message
     assert_equal [8, 17], error.location.line_and_column
@@ -569,7 +546,7 @@ class TestInterpreter < MiniTest::Test
 
     assert @interpreter.failed?
 
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
     assert_equal :error, error.level
     assert_equal 'no such file or directory - 404', error.message
     assert error.location.native?
@@ -583,7 +560,7 @@ class TestInterpreter < MiniTest::Test
 
     assert @interpreter.failed?
 
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
     assert_equal :error, error.level
     assert_equal "no such file or directory - #{File.join Dir.pwd, '404'}", error.message
     assert_equal [1, 14], error.location.line_and_column
@@ -594,7 +571,7 @@ class TestInterpreter < MiniTest::Test
 
     assert @interpreter.failed?
 
-    error = @interpreter.diagnostics.shift
+    error = diagnostics.shift
     assert_equal :error, error.level
     assert_equal 'unreadable file - .', error.message
     assert error.location.native?
@@ -605,11 +582,6 @@ class TestInterpreter < MiniTest::Test
     @interpreter.run_string '\\answer'
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
-
-    assert_equal :error, error.level
-    assert_equal "object 'answer' has one or more uninitialized variables", error.message
-    assert_equal [1, 2], error.location.line_and_column
   end
 
   def test_root_validation
@@ -617,11 +589,5 @@ class TestInterpreter < MiniTest::Test
     @interpreter.run_string '\\level1'
 
     assert @interpreter.failed?
-    error = @interpreter.diagnostics.shift
-
-    assert_equal :error, error.level
-    assert_equal "object 'restrictiveRoot' must have at least 2 'level1', got 1", error.message
-    assert error.location.native?
-    assert_equal [0, 0], error.location.line_and_column
   end
 end

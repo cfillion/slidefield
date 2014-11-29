@@ -7,6 +7,12 @@ end
 SF::Object.define :third do end
 
 class TestObject < MiniTest::Test
+  include DoctorHelper
+
+  def diagnostics
+    SF::Doctor.bag SF::Object
+  end
+
   def test_infinity
     assert_equal Float::INFINITY, SF::Object::Infinity
   end
@@ -20,11 +26,18 @@ class TestObject < MiniTest::Test
   end
 
   def test_create_unknown
+    loc = SF::Location.new
+
     error = assert_raises SF::UndefinedObjectError do
-      SF::Object.new :qwfpgjluy
+      SF::Object.new :qwfpgjluy, loc
     end
 
-    assert_equal "unknown object name 'qwfpgjluy'", error.message
+    dia = diagnostics.shift
+    assert_equal :error, dia.level
+    assert_equal "unknown object name 'qwfpgjluy'", dia.message
+    assert_same loc, dia.location
+
+    assert_equal dia.to_s, error.message
   end
 
   def test_set_variable
@@ -147,11 +160,17 @@ class TestObject < MiniTest::Test
     first.adopt SF::Object.new(:second)
     first.adopt SF::Object.new(:second)
 
+    extra = SF::Object.new(:second)
     error = assert_raises SF::UnauthorizedChildError do
-      first.adopt SF::Object.new(:second)
+      first.adopt extra
     end
 
-    assert_equal "object 'first' cannot have more than 2 'second'", error.message
+    dia = diagnostics.shift
+    assert_equal :error, dia.level
+    assert_equal "object 'first' cannot have more than 2 'second'", dia.message
+    assert_same extra.location, dia.location
+
+    assert_equal dia.to_s, error.message
   end
 
   def test_adopt_unwanted
@@ -164,7 +183,12 @@ class TestObject < MiniTest::Test
       first.adopt second
     end
 
-    assert_equal "object 'first' cannot have 'second'", error.message
+    dia = diagnostics.shift
+    assert_equal :error, dia.level
+    assert_equal "object 'first' cannot have 'second'", dia.message
+    assert_same second.location, dia.location
+
+    assert_equal dia.to_s, error.message
   end
 
   def test_readopt
@@ -213,6 +237,8 @@ class TestObject < MiniTest::Test
     end
 
     assert_equal [second], first.children
+
+    diagnostics.shift
   end
 
   def test_auto_adopt_through_transparent
@@ -242,7 +268,13 @@ class TestObject < MiniTest::Test
       first.auto_adopt
     end
 
-    assert_equal "object 'first' is not allowed in this context", error.message
+    dia = diagnostics.shift
+
+    assert_equal :error, dia.level
+    assert_equal "object 'first' is not allowed in this context", dia.message
+    assert_same first.location, dia.location
+
+    assert_equal dia.to_s, error.message
   end
 
   def test_block_auto_adopt
@@ -358,7 +390,12 @@ class TestObject < MiniTest::Test
       first.validate
     end
 
-    assert_equal "object 'first' must have at least 2 'second', got 1", error.message
+    dia = diagnostics.shift
+    assert_equal :error, dia.level
+    assert_equal "object 'first' must have at least 2 'second', got 1", dia.message
+    assert_same first.location, dia.location
+
+    assert_equal dia.to_s, error.message
   end
 
   def test_validate_uninitialized
@@ -369,7 +406,12 @@ class TestObject < MiniTest::Test
       first.validate
     end
 
-    assert_equal "object 'first' has one or more uninitialized variables", error.message
+    dia1 = diagnostics.shift
+    assert_equal :error, dia1.level
+    assert_equal "object 'first' has one or more uninitialized variables", dia1.message
+    assert_same first.location, dia1.location
+
+    assert_equal dia1.to_s, error.to_s
   end
 
   def test_inspect

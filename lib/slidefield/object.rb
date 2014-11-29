@@ -1,4 +1,6 @@
 class SlideField::Object
+  include SF::Doctor
+
   Infinity = Float::INFINITY
 
   @@initializers = {}
@@ -23,8 +25,9 @@ class SlideField::Object
     @opaque = true
 
     unless @@initializers.has_key? type
-      raise SF::UndefinedObjectError,
+      raise SF::UndefinedObjectError, error_at(@location,
         "unknown object name '%s'" % type
+      )
     end
 
     instance_eval &@@initializers[type]
@@ -109,16 +112,18 @@ class SlideField::Object
 
   def adopt(object)
     unless can_adopt? object
-      raise SF::UnauthorizedChildError,
+      raise SF::UnauthorizedChildError, error_at(object.location,
         "object '%s' cannot have '%s'" % [@type, object.type]
+      )
     end
     
     upper_limit = @children_rules[object.type].max
 
     unless children(object.type).count < upper_limit
-      raise SF::UnauthorizedChildError,
+      raise SF::UnauthorizedChildError, error_at(object.location,
         "object '%s' cannot have more than %d '%s'" %
         [@type, upper_limit, object.type]
+      )
     end
 
     object.parent = self
@@ -143,8 +148,9 @@ class SlideField::Object
     }
 
     unless parent
-      raise SF::UnauthorizedChildError,
+      raise SF::UnauthorizedChildError, error_at(@location,
         "object '%s' is not allowed in this context" % @type
+      )
     end
 
     parent.adopt self
@@ -169,9 +175,10 @@ class SlideField::Object
       lower_limit = range.min
 
       if how_many_we_have < lower_limit
-        raise SF::InvalidObjectError,
+        raise SF::InvalidObjectError, error_at(@location,
           "object '%s' must have at least %d '%s', got %d" %
           [@type, lower_limit, type, how_many_we_have]
+        )
       end
 
       # the upper limit case is handled in the parent's #adopt method
@@ -179,8 +186,9 @@ class SlideField::Object
 
     @variables.each {|name, variable|
       if variable.value.nil?
-        raise SF::InvalidObjectError,
+        raise SF::InvalidObjectError, error_at(@location,
           "object '%s' has one or more uninitialized variables" % @type
+        )
         # TODO: enumerate them
       end
     }

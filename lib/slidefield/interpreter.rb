@@ -1,6 +1,7 @@
 class SlideField::Interpreter
-  attr_accessor :root, :print_diagnostics
-  attr_reader :diagnostics
+  include SF::Doctor
+
+  attr_accessor :root
 
   ESCAPE_SEQUENCES = {
     'n'=>"\n"
@@ -15,9 +16,7 @@ class SlideField::Interpreter
     @root = SF::Object.new :root
     @context_level = 0
 
-    @diagnostics = []
     @failed = false
-    @print_diagnostics = false
   end
 
   def run_file(path)
@@ -39,6 +38,8 @@ private
     unless file.exist?
       error_at last_location,
         'no such file or directory - %s' % file
+
+      failed
     end
 
     begin
@@ -46,6 +47,8 @@ private
     rescue
       error_at last_location,
         'unreadable file - %s' % file
+
+      failed
     end
 
     include_path = file.dirname
@@ -68,6 +71,8 @@ private
     if @context_level > MAX_LEVEL
       error_at last_location,
         'context level exceeded maximum depth of %i' % MAX_LEVEL
+
+      failed
     end
 
     @rootpath = Pathname.new @context.include_path if @rootpath.nil?
@@ -101,8 +106,8 @@ private
 
     begin
       @root.validate if !failed? && @context.nil?
-    rescue SF::InvalidObjectError => e
-      error_at @root.location, e.message
+    rescue SF::InvalidObjectError
+      failed
     end
   end
 
@@ -123,6 +128,7 @@ private
 
     location = location_at *cause.source.line_and_column(cause.pos)
     error_at location, message
+    failed
   end
 
   def evaluate(tree)
@@ -167,28 +173,38 @@ private
         error_at locate(operator_t),
           "invalid operator '%s' for type '%s'" %
           [operator, left_var.type]
+
+        failed
       rescue ArgumentError => e
         error_at right_location,
-          'invalid operation (%s)' %
-          e.message
+          'invalid operation (%s)' % e.message
+
+        failed
       rescue TypeError
         error_at right_location,
           "incompatible operands ('%s' %s '%s')" %
           [left_var.type, operator[0], SF::Variable.type_of(right_value)]
+
+        failed
       rescue ZeroDivisionError
         error_at right_location,
           'divison by zero (evaluating %p %s %p)' %
           [left_var.value, operator[0], right_value]
+
+        failed
       rescue SF::ColorOutOfBoundsError
         error_at right_location,
           'color is out of bounds (evaluating %p %s %p)' %
           [left_var.value, operator[0], right_value]
+
+        failed
       end
     end
 
     @context.object.set_variable var_name, new_value, right_location
   rescue SF::IncompatibleValueError => e
     error_at right_location, e.message
+    failed
   end
 
   def eval_value(tokens)
@@ -208,6 +224,8 @@ private
         error_at locate(filter_t),
           "unknown filter '%s' for type '%s'" %
           [filter_t, SF::Variable.type_of(value)]
+
+        failed
       end
     }
     
@@ -224,11 +242,15 @@ private
         value = @context.object.value_of var_name
       rescue SF::VariableNotFoundError => e
         error_at locate(token), e.message
+
+        failed
       end
 
       if value.nil?
         error_at locate(token),
           "use of uninitialized variable '%s'" % var_name
+
+        failed
       end
 
       value
@@ -265,7 +287,7 @@ private
     begin
       object = SF::Object.new type, location
     rescue SF::UndefinedObjectError => e
-      error_at location, e.message
+      failed
     end
 
     if is_inline
@@ -280,6 +302,8 @@ private
         var_name = object.guess_variable new_value
       rescue SF::IncompatibleValueError, SF::AmbiguousValueError => e
         error_at value_location, e.message
+
+        failed
       end
 
       object.set_variable var_name, new_value, value_location
@@ -294,8 +318,8 @@ private
 
     begin
       object.validate
-    rescue SF::InvalidObjectError => e
-      error_at location, e.message
+    rescue SF::InvalidObjectError
+      failed
     end
 
     object
@@ -310,8 +334,8 @@ private
 
     begin
       object.auto_adopt
-    rescue SF::UnauthorizedChildError => e
-      error_at object.location, e.message
+    rescue SF::UnauthorizedChildError
+      failed
     end
   end
 
@@ -325,6 +349,8 @@ private
       variable = @context.object.get_variable name
     rescue SF::VariableNotFoundError => e
       error_at location, e.message
+
+      failed
     end
 
     template = variable.value
@@ -341,20 +367,14 @@ private
       error_at location,
         'not a template or an object (see definition at %s)' %
         variable.location
+
+      failed
     end
   end
 
-  def error_at(location, message)
+  def failed
     @failed = true
 
-    diagnose SF::Diagnostic.new(:error, message, location)
-
     throw :jump_out
-  end
-
-  def diagnose(diagnostic)
-    @diagnostics << diagnostic
-
-    warn diagnostic.to_s if @print_diagnostics
   end
 end

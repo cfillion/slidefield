@@ -3,36 +3,37 @@ class SlideField::Diagnostic
 
   def initialize(level, message, location)
     @level, @message, @location = level, message, location
-    @enable_colors = STDOUT.tty?
   end 
 
-  def to_s
-    str = "%s: %s: %s" % [@location.to_s, @level, @message]
-    highlight str if @enable_colors
+  def format(colors: true, excerpt: true)
+    excerpt = false if @location.context.source.nil?
 
-    unless @location.native?
-      code_excerpt, caret = excerpt
-      caret = caret.bold.green if @enable_colors
+    output = "%s: %s: %s" % [@location.to_s, @level, @message]
 
-      str += "\n  %s\n  %s" % [code_excerpt, caret]
+    if excerpt
+      excerpt_parts = make_excerpt
+      excerpt_parts.map! {|s| '  ' + s } # add padding
+
+      output += "\n%s\n%s" % excerpt_parts
     end
 
-    str
+    highlight output if colors
+
+    output
+  end
+
+  def send_to(device)
+    device.puts format colors: device.tty?
+  end
+
+  def to_s
+    format colors: false, excerpt: false
   end
 
   alias :inspect :to_s
 
 private
-  def highlight(str)
-    str.gsub! /<native code>:?/, '\0'.bold
-    str.gsub! /[^\s:]+:\d+:\d+:?/, '\0'.bold
-
-    str.gsub! /error:?/, '\0'.bold.red
-    str.gsub! /warning:?/, '\0'.bold.yellow
-    str.gsub! /debug:?/, '\0'.cyan
-  end
-
-  def excerpt
+  def make_excerpt
     line_index = @location.line - 1
     column_index = @location.column - 1
 
@@ -42,5 +43,16 @@ private
     caret = '%s^' % ["\x20" * column_index]
 
     [code_excerpt, caret]
+  end
+
+  def highlight(str)
+    str.gsub! /<native code>:?/, '\0'.bold
+    str.gsub! /[^\s:]+:\d+:\d+:?/, '\0'.bold
+
+    str.gsub! /error:?/, '\0'.bold.red
+    str.gsub! /warning:?/, '\0'.bold.yellow
+    str.gsub! /debug:?/, '\0'.cyan
+
+    str.gsub! /^\s+\^\z/, '\0'.bold.green
   end
 end
