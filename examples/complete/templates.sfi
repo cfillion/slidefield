@@ -1,4 +1,4 @@
-background = {
+add_background = {
   \image background_src {
     size = LAYOUT_SIZE
   }
@@ -21,28 +21,29 @@ background = {
   }
 }
 
-title_tpl = {
-  color = #FFFFFFFF
-  font = TITLE_FONT
-  height = 100
-  position = 100x70
-  z_order = 1
-
-  % support alignment
-  x = (x)position
-  x *= 2
-  width = (x)LAYOUT_SIZE
-  width -= x
-
-  % shadow
+add_title = {
   \text {
-    color = #00000099
-    position += 2x2
-    z_order -= 1
+    position = 100x70
+    z_order = 1
+
+    content = "<b>"
+    content += title
+
+    color = #FFFFFFFF
+    font = TITLE_FONT
+    height = 100
+
+    \text {
+      position += 2x2
+      z_order -= 1
+
+      % shadow
+      color = #00000099
+    }
   }
 }
 
-infobox = {
+add_infobox = {
   \rect {
     padding = 10
     text_height = 40
@@ -81,15 +82,9 @@ infobox = {
 }
 
 demo_template = {
-  \&background
+  \&add_background
 
-  \text {
-    content = "<b>"
-    content += title
+  \&add_title
 
-    \&title_tpl
-  }
-
-%  \animation "slide left" {
-  \&infobox
+  \&add_infobox
 }
