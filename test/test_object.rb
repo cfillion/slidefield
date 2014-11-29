@@ -371,4 +371,10 @@ class TestObject < MiniTest::Test
 
     assert_equal "object 'first' has one or more uninitialized variables", error.message
   end
+
+  def test_inspect
+    first = SF::Object.new :first
+
+    assert_equal 'first@<native code>', first.inspect
+  end
 end

@@ -186,6 +186,10 @@ class SlideField::Object
     }
   end
 
+  def inspect
+    '%s@%s' % [@type, @location]
+  end
+
 protected
   attr_reader :context_parent
   attr_accessor :variables
