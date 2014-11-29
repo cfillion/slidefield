@@ -3,6 +3,8 @@ class SlideField::Interpreter
 
   attr_accessor :root
 
+  EFAIL = Object.new.freeze
+
   ESCAPE_SEQUENCES = {
     'n'=>"\n"
   }.freeze
@@ -20,11 +22,11 @@ class SlideField::Interpreter
   end
 
   def run_file(path)
-    catch(:jump_out) { internal_run_file path }
+    catch(EFAIL) { internal_run_file path }
   end
 
   def run_string(input)
-    catch(:jump_out) { internal_run_string input }
+    catch(EFAIL) { internal_run_string input }
   end
 
   def failed?
@@ -62,6 +64,20 @@ private
     run input, 'input', Dir.pwd
   end
 
+  def run(input, label, include_path)
+    object = @context ? @context.object : @root
+    context = SF::Context.new label, include_path, object, input
+
+    with(context) {
+      tree = parse input
+      enter_in tree
+    }
+
+    if !failed? && @context.nil?
+      failure unless @root.valid?
+    end
+  end
+
   def with(context)
     context_backup = @context
 
@@ -81,32 +97,6 @@ private
   ensure
     @context = context_backup
     @context_level -= 1
-  end
-
-  def locate(token)
-    location_at *token.line_and_column
-  end
-
-  def location_at(line, column)
-    @last_location = SF::Location.new @context, line, column
-  end
-
-  def last_location
-    @last_location ||= SF::Location.new
-  end
-
-  def run(input, label, include_path)
-    object = @context ? @context.object : @root
-    context = SF::Context.new label, include_path, object, input
-
-    with(context) {
-      tree = parse input
-      evaluate tree
-    }
-
-    if !failed? && @context.nil?
-      failure unless @root.valid?
-    end
   end
 
   def parse(input)
@@ -130,20 +120,22 @@ private
     failure
   end
 
-  def evaluate(tree)
-    catch :jump_out do
+  def enter_in(tree)
+    catch EFAIL do
       tree.respond_to? :each and tree.each {|stmt|
-        type, tokens = stmt.to_a[0]
-
-        case type
-        when :assignment
-          eval_assignment tokens
-        when :object
-          add_object eval_object(tokens)
-        when :template
-          eval_template tokens
-        end
+        eval_statement *stmt.to_a[0]
       }
+    end
+  end
+
+  def eval_statement(type, tokens)
+    case type
+    when :assignment
+      eval_assignment tokens
+    when :object
+      add_object eval_object(tokens)
+    when :template
+      eval_template tokens
     end
   end
 
@@ -203,6 +195,7 @@ private
     @context.object.set_variable var_name, new_value, right_location
   rescue SF::IncompatibleValueError => e
     error_at right_location, e.message
+
     failure
   end
 
@@ -235,24 +228,7 @@ private
   def transform_value(type, token)
     case type
     when :identifier
-      var_name = token.to_sym
-
-      begin
-        value = @context.object.value_of var_name
-      rescue SF::VariableNotFoundError => e
-        error_at locate(token), e.message
-
-        failure
-      end
-
-      if value.nil?
-        error_at locate(token),
-          "use of uninitialized variable '%s'" % var_name
-
-        failure
-      end
-
-      value
+      resolve_identifier token
     when :integer
       token.to_i
     when :point
@@ -277,6 +253,25 @@ private
     end
   end
 
+  def resolve_identifier(token)
+    begin
+      value = @context.object.value_of token.to_sym
+    rescue SF::VariableNotFoundError => e
+      error_at locate(token), e.message
+
+      failure
+    end
+
+    if value.nil?
+      error_at locate(token),
+        "use of uninitialized variable '%s'" % token
+
+      failure
+    end
+
+    value
+  end
+
   def eval_object(tokens, is_inline = false)
     type_t = tokens[:type]
     type = type_t.to_sym
@@ -295,29 +290,33 @@ private
     end
 
     if value_t = tokens[:value]
-      value_location, new_value = eval_value value_t
-
-      begin
-        var_name = object.guess_variable new_value
-      rescue SF::IncompatibleValueError, SF::AmbiguousValueError => e
-        error_at value_location, e.message
-
-        failure
-      end
-
-      object.set_variable var_name, new_value, value_location
+      assign_value value_t, object
     end
 
     if subtree = tokens[:statements]
       context = @context.dup
       context.object = object
 
-      with(context) { evaluate subtree }
+      with(context) { enter_in subtree }
     end
 
     failure unless object.valid?
 
     object
+  end
+
+  def assign_value(token, object)
+    value_location, new_value = eval_value token
+
+    begin
+      var_name = object.guess_variable new_value
+    rescue SF::IncompatibleValueError, SF::AmbiguousValueError => e
+      error_at value_location, e.message
+
+      failure
+    end
+
+    object.set_variable var_name, new_value, value_location
   end
 
   def add_object(object)
@@ -355,7 +354,7 @@ private
       context = template.context.dup
       context.object = @context.object
 
-      with(context) { evaluate template.statements }
+      with(context) { enter_in template.statements }
     when SF::Object
       add_object template.copy(location)
     else
@@ -370,6 +369,18 @@ private
   def failure
     @failed = true
 
-    throw :jump_out
+    throw EFAIL
+  end
+
+  def locate(token)
+    location_at *token.line_and_column
+  end
+
+  def location_at(line, column)
+    @last_location = SF::Location.new @context, line, column
+  end
+
+  def last_location
+    @last_location ||= SF::Location.new
   end
 end
