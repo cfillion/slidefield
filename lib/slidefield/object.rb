@@ -169,13 +169,12 @@ class SlideField::Object
     children(type).first
   end
 
-  def validate
-    validate_children
-    validate_variables
+  def valid?
+    validate_children && validate_variables
   end
 
   def inspect
-    '%s@%s' % [@type, @location]
+    '\\%s@%s' % [@type, @location]
   end
 
 private
@@ -188,24 +187,34 @@ private
       how_many_we_have = children(type).count
       lower_limit = range.min
 
-      raise SF::InvalidObjectError, error_at(@location,
-        "object '%s' must have at least %d '%s', got %d" %
-        [@type, lower_limit, type, how_many_we_have]
-      ) if how_many_we_have < lower_limit
+      if how_many_we_have < lower_limit
+        error_at(@location,
+          "object '%s' must have at least %d '%s', got %d" %
+          [@type, lower_limit, type, how_many_we_have]
+        )
+
+        return false
+      end
 
       # the upper limit case is handled in the parent's #adopt method
     }
+
+    true
   end
 
   def validate_variables
     nil_vars = @variables.select {|name, var| var.value.nil? }
+    return true if nil_vars.empty?
+
     nil_vars.each {|name, var|
       warning_at var.location, "'%s' is uninitialized" % name
     }
 
-    raise SF::InvalidObjectError, error_at(@location,
+    error_at(@location,
       "object '%s' has one or more uninitialized variables" % @type
-    ) unless nil_vars.empty?
+    )
+
+    false
   end
 
 protected

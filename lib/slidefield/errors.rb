@@ -6,7 +6,6 @@ module SlideField
   ColorOutOfBoundsError  = Class.new Error
   ForeignValueError      = Class.new Error
   IncompatibleValueError = Class.new Error
-  InvalidObjectError     = Class.new Error
   UnauthorizedChildError = Class.new Error
   UndefinedObjectError   = Class.new Error
   VariableNotFoundError  = Class.new Error

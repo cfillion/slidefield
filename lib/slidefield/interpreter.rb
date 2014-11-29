@@ -104,10 +104,8 @@ private
       evaluate tree
     }
 
-    begin
-      @root.validate if !failed? && @context.nil?
-    rescue SF::InvalidObjectError
-      failed
+    if !failed? && @context.nil?
+      failed unless @root.valid?
     end
   end
 
@@ -316,11 +314,7 @@ private
       with(context) { evaluate subtree }
     end
 
-    begin
-      object.validate
-    rescue SF::InvalidObjectError
-      failed
-    end
+    failed unless object.valid?
 
     object
   end

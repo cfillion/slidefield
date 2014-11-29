@@ -381,21 +381,18 @@ class TestObject < MiniTest::Test
     refute branch.root?
   end
 
-  def test_validate_incomplete
+  def test_validate_children
     first = SF::Object.new :first
+
     first.allow_children :second, min: 2
     first.adopt SF::Object.new(:second)
 
-    error = assert_raises SF::InvalidObjectError do
-      first.validate
-    end
+    refute first.valid?
 
     dia = diagnostics.shift
     assert_equal :error, dia.level
     assert_equal "object 'first' must have at least 2 'second', got 1", dia.message
     assert_same first.location, dia.location
-
-    assert_equal dia.to_s, error.message
   end
 
   def test_validate_uninitialized
@@ -404,26 +401,22 @@ class TestObject < MiniTest::Test
     first = SF::Object.new :first
     first.set_variable :qwfpgjluy, String, var_loc
 
-    error = assert_raises SF::InvalidObjectError do
-      first.validate
-    end
+    refute first.valid?
 
     dia = diagnostics.shift
     assert_equal :warning, dia.level
     assert_equal "'qwfpgjluy' is uninitialized", dia.message
     assert_same var_loc, dia.location
 
-    e_dia = diagnostics.shift
-    assert_equal :error, e_dia.level
-    assert_equal "object 'first' has one or more uninitialized variables", e_dia.message
-    assert_same first.location, e_dia.location
-
-    assert_equal e_dia.to_s, error.to_s
+    dia = diagnostics.shift
+    assert_equal :error, dia.level
+    assert_equal "object 'first' has one or more uninitialized variables", dia.message
+    assert_same first.location, dia.location
   end
 
   def test_inspect
     first = SF::Object.new :first
 
-    assert_equal 'first@<native code>', first.inspect
+    assert_equal '\\first@<native code>', first.inspect
   end
 end
