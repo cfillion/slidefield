@@ -170,32 +170,42 @@ class SlideField::Object
   end
 
   def validate
-    @children_rules.each {|type, range|
-      how_many_we_have = children(type).count
-      lower_limit = range.min
-
-      if how_many_we_have < lower_limit
-        raise SF::InvalidObjectError, error_at(@location,
-          "object '%s' must have at least %d '%s', got %d" %
-          [@type, lower_limit, type, how_many_we_have]
-        )
-      end
-
-      # the upper limit case is handled in the parent's #adopt method
-    }
-
-    @variables.each {|name, variable|
-      if variable.value.nil?
-        raise SF::InvalidObjectError, error_at(@location,
-          "object '%s' has one or more uninitialized variables" % @type
-        )
-        # TODO: enumerate them
-      end
-    }
+    validate_children
+    validate_variables
   end
 
   def inspect
     '%s@%s' % [@type, @location]
+  end
+
+private
+  def compatible?(name, other_value)
+    !has_variable?(name) || @variables[name].compatible_with?(other_value)
+  end
+
+  def validate_children
+    @children_rules.each {|type, range|
+      how_many_we_have = children(type).count
+      lower_limit = range.min
+
+      raise SF::InvalidObjectError, error_at(@location,
+        "object '%s' must have at least %d '%s', got %d" %
+        [@type, lower_limit, type, how_many_we_have]
+      ) if how_many_we_have < lower_limit
+
+      # the upper limit case is handled in the parent's #adopt method
+    }
+  end
+
+  def validate_variables
+    nil_vars = @variables.select {|name, var| var.value.nil? }
+    nil_vars.each {|name, var|
+      warning_at var.location, "'%s' is uninitialized" % name
+    }
+
+    raise SF::InvalidObjectError, error_at(@location,
+      "object '%s' has one or more uninitialized variables" % @type
+    ) unless nil_vars.empty?
   end
 
 protected
@@ -207,9 +217,5 @@ protected
     raise SF::AlreadyAdoptedError if @parent
 
     @parent = new_parent
-  end
-
-  def compatible?(name, other_value)
-    !has_variable?(name) || @variables[name].compatible_with?(other_value)
   end
 end

@@ -399,19 +399,26 @@ class TestObject < MiniTest::Test
   end
 
   def test_validate_uninitialized
+    var_loc = SF::Location.new
+
     first = SF::Object.new :first
-    first.set_variable :test, String
+    first.set_variable :qwfpgjluy, String, var_loc
 
     error = assert_raises SF::InvalidObjectError do
       first.validate
     end
 
-    dia1 = diagnostics.shift
-    assert_equal :error, dia1.level
-    assert_equal "object 'first' has one or more uninitialized variables", dia1.message
-    assert_same first.location, dia1.location
+    dia = diagnostics.shift
+    assert_equal :warning, dia.level
+    assert_equal "'qwfpgjluy' is uninitialized", dia.message
+    assert_same var_loc, dia.location
 
-    assert_equal dia1.to_s, error.to_s
+    e_dia = diagnostics.shift
+    assert_equal :error, e_dia.level
+    assert_equal "object 'first' has one or more uninitialized variables", e_dia.message
+    assert_same first.location, e_dia.location
+
+    assert_equal e_dia.to_s, error.to_s
   end
 
   def test_inspect
