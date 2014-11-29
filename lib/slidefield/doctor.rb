@@ -15,7 +15,7 @@ module SlideField::Doctor
   def self.output=(device) @@output = device end
 
 private
-  [:error, :note].each {|level|
+  [:error, :warning].each {|level|
     define_method('%s_at' % level) do |location, message|
       emit SF::Diagnostic.new(level, message, location)
     end

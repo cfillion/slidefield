@@ -1,7 +1,8 @@
 class SlideField::Diagnostic
   attr_reader :level, :message, :location
 
-  def initialize(level, message, location)
+  def initialize(level, message, location = nil)
+    location ||= SF::Location.new
     @level, @message, @location = level, message, location
   end 
 

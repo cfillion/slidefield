@@ -18,6 +18,12 @@ class TestDiagnostic < MiniTest::Test
     assert_equal :location, dia.location
   end
 
+  def test_default_location
+    dia = SF::Diagnostic.new :error, 'hello world'
+
+    assert_instance_of SF::Location, dia.location
+  end
+
   def test_highlight_native_code
     dia = SF::Diagnostic.new :level, 'test at <native code>', @native_location
 

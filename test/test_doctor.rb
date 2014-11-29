@@ -15,11 +15,11 @@ class TestDoctor < MiniTest::Test
     error = @instance.send :error_at, @loc, 'message'
     assert_equal :error, error.level
 
-    note = @instance.send :note_at, @loc, 'message'
-    assert_equal :note, note.level
+    warning = @instance.send :warning_at, @loc, 'message'
+    assert_equal :warning, warning.level
 
-    assert_equal [error, note], SF::Doctor.bag(@klass)
-    assert_equal({@klass=>[error, note]}, SF::Doctor.bag)
+    assert_equal [error, warning], SF::Doctor.bag(@klass)
+    assert_equal({@klass=>[error, warning]}, SF::Doctor.bag)
   end
 
   def test_output
