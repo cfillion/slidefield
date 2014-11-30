@@ -22,9 +22,13 @@ private
   }
 
   def emit(diagnostic)
-    SF::Doctor.bag(self.class) << diagnostic
+    bag = SF::Doctor.bag self.class
 
-    diagnostic.send_to @@output if @@output
+    if @@output && bag.select {|other| diagnostic == other }.empty?
+      diagnostic.send_to @@output
+    end
+
+    bag << diagnostic
 
     diagnostic
   end

@@ -39,4 +39,17 @@ class TestDoctor < MiniTest::Test
   ensure
     SF::Doctor.output = nil
   end
+
+  def test_repeated_output
+    device = StringIO.new
+    SF::Doctor.output = device
+
+    @instance.send :error_at, @loc, 'message'
+    @instance.send :error_at, @loc, 'message'
+
+    device.rewind
+    assert_equal 1, device.read.scan('message').count
+  ensure
+    SF::Doctor.output = nil
+  end
 end

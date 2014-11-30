@@ -136,4 +136,20 @@ class TestDiagnostic < MiniTest::Test
     device.rewind
     assert_equal dia.format(colors: false) + "\n", device.read
   end
+
+  def test_compare
+    con1 = SF::Context.new 'label', 1
+    loc1 = SF::Location.new con1
+
+    con2 = SF::Context.new 'label', 2
+    loc2 = SF::Location.new con2
+
+    control = SF::Diagnostic.new :level, 'message', loc1
+
+    assert_equal control, control
+    assert_equal control, SF::Diagnostic.new(:level, 'message', loc2)
+    refute_equal control, SF::Diagnostic.new(:level, 'message')
+    refute_equal control, SF::Diagnostic.new(:error, 'message', loc1)
+    refute_equal control, SF::Diagnostic.new(:level, 'hello', loc1)
+  end
 end

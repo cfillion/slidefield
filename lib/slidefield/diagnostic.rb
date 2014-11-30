@@ -6,6 +6,10 @@ class SlideField::Diagnostic
     @level, @message, @location = level, message, location
   end 
 
+  def ==(other)
+    other.to_s == to_s
+  end
+
   def format(colors: true, excerpt: true)
     excerpt = false if @location.context.source.nil?
 
