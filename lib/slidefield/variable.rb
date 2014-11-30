@@ -62,16 +62,19 @@ class SlideField::Variable < SlideField::Token
   end
 
   def apply(operator, other)
+    operator = SF::Token[operator]
     method = operator.to_s[0]
-    new_value = @value.send method, other.value
 
-    self.class.new new_value, other.location
+    if @value.respond_to? method
+      new_value = @value.send method, other.value
+      self.class.new new_value, other.location
+    else
+      !error_at operator.location,
+        "invalid operator '%s=' for type '%s'" % [method, type]
+    end
   rescue => e
     !error_at(other.location,
       case e
-      when NoMethodError
-        "invalid operator '%s=' for type '%s'" %
-          [operator, type]
       when ArgumentError
         'invalid operation (%s)' % e.message
       when TypeError
@@ -87,5 +90,20 @@ class SlideField::Variable < SlideField::Token
         raise
       end
     )
+  end
+
+  def filter(filter)
+    filter = SF::Token[filter]
+    filter_method = "filter_#{filter}"
+
+    if @value.respond_to? filter_method
+      new_value = value.send filter_method
+
+      self.class.new new_value, @location
+    else
+      !error_at filter.location,
+        "unknown filter '%s' for type '%s'" %
+        [filter, type]
+    end
   end
 end

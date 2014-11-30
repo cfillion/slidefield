@@ -142,20 +142,18 @@ private
     operator = tokenize tokens[:operator]
 
     if value = tokens[:value]
-      right_location, right_value = eval_value value
+      right = eval_value value
     elsif stmts_t = tokens[:statements]
-      right_location = var_name.location
-      right_value = SF::Template.new @context, stmts_t
+      value = SF::Template.new @context, stmts_t
+      right = SF::Variable.new value, var_name.location
     end
-
-    right_var = SF::Variable.new right_value, right_location
 
     if operator != '='
-      left_var = @context.object.get_variable(var_name) or failure
-      right_var = left_var.apply(operator, right_var) or failure
+      left = @context.object.get_variable(var_name) or failure
+      right = left.apply(operator, right) or failure
     end
 
-    @context.object.set_variable var_name, right_var or failure
+    @context.object.set_variable var_name, right or failure
   end
 
   def eval_value(tokens)
@@ -165,26 +163,14 @@ private
     type, data = tokens.to_a[0]
     value = transform_value type, data
 
+    var = SF::Variable.new value,
+      type == :object ? value.location : tokenize(data).location
+
     filters.reverse_each {|t|
-      filter = tokenize t[:name]
-      filter_method = "filter_#{filter}"
-
-      if value.respond_to? filter_method
-        value = value.send filter_method
-      else
-        error_at filter.location,
-          "unknown filter '%s' for type '%s'" %
-          [filter, SF::Variable.type_of(value)]
-
-        failure
-      end
+      var = var.filter(tokenize t[:name]) or failure
     }
-    
-    if type == :object
-      [value.location, value]
-    else
-      [tokenize(data).location, value]
-    end
+
+    var
   end
 
   def transform_value(type, token)
@@ -229,8 +215,10 @@ private
       object.block_auto_adopt!
     end
 
-    if value_t = tokens[:value]
-      assign_value value_t, object
+    if value = tokens[:value]
+      variable = eval_value value
+      var_name = object.guess_variable(variable) or failure
+      object.set_variable var_name, variable
     end
 
     if subtree = tokens[:statements]
@@ -243,14 +231,6 @@ private
     failure unless object.valid?
 
     object
-  end
-
-  def assign_value(token, object)
-    value_location, new_value = eval_value token
-    variable = SF::Variable.new new_value, value_location # TODO: remove
-
-    var_name = object.guess_variable(variable) or failure
-    object.set_variable var_name, variable
   end
 
   def add_object(object)

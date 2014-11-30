@@ -111,8 +111,11 @@ class TestVariable < MiniTest::Test
     right = SF::Variable.new 64
 
     retval = left.apply :+, right
+    wtoken = left.apply SF::Token.new(:+), right
+
     assert_equal 96, retval.value
     assert_same right.location, retval.location
+    assert_equal retval, wtoken
   end
 
   def test_wrong_type
@@ -132,16 +135,19 @@ class TestVariable < MiniTest::Test
     left = SF::Variable.new "hello"
     right = SF::Variable.new "world"
 
-    retval = left.apply :/, right
-    assert_equal false, retval
+    token = SF::Token.new :/
+    assert_equal false, left.apply(token, right)
+    assert_equal false, left.apply(:/, right)
 
     error = diagnostics.shift
     assert_equal :error, error.level
     assert_equal "invalid operator '/=' for type 'string'", error.message
-    assert_same right.location, error.location
+    assert_same token.location, error.location
+
+    assert_equal error.message, diagnostics.shift.message
   end
 
-  def test_negative_string_multiplication
+  def test_op_negative_string_multiplication
     left = SF::Variable.new "hello world"
     right = SF::Variable.new -1
 
@@ -154,7 +160,7 @@ class TestVariable < MiniTest::Test
     assert_same right.location, error.location
   end
 
-  def test_color_out_of_bounds
+  def test_op_color_out_of_bounds
     left = SF::Variable.new SF::Color.new(255, 255, 255, 170)
     right = SF::Variable.new SF::Color.new(255, 255, 255, 187)
 
@@ -167,7 +173,7 @@ class TestVariable < MiniTest::Test
     assert_same right.location, error.location
   end
 
-  def test_division_by_zero
+  def test_op_division_by_zero
     left = SF::Variable.new 1
     right = SF::Variable.new 0
 
@@ -180,7 +186,7 @@ class TestVariable < MiniTest::Test
     assert_same right.location, error.location
   end
 
-  def test_runtime_error
+  def test_op_runtime_error
     hello = 'hello'
     def hello.+(other) raise RuntimeError end
 
@@ -190,5 +196,30 @@ class TestVariable < MiniTest::Test
     assert_raises RuntimeError do
       left.apply :+, right
     end
+  end
+
+  def test_filter
+    before = SF::Variable.new SF::Point.new(4, 2)
+    retval = before.filter :x
+    wtoken = before.filter SF::Token.new(:x)
+
+    assert_equal 'integer', retval.type
+    assert_equal 4, retval.value
+    assert_equal retval, wtoken
+  end
+
+  def test_invalid_filter
+    before = SF::Variable.new SF::Point.new(4, 2)
+
+    token = SF::Token.new :bad_filter
+    assert_equal false, before.filter(token)
+    assert_equal false, before.filter(:bad_filter)
+
+    error = diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal "unknown filter 'bad_filter' for type 'point'", error.message
+    assert_same token.location, error.location
+
+    assert_equal error.message, diagnostics.shift.message
   end
 end

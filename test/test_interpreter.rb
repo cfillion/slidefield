@@ -289,11 +289,6 @@ class TestInterpreter < MiniTest::Test
     should_fail
 
     @interpreter.run_string 'var = (bad_filter)4x2'
-
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "unknown filter 'bad_filter' for type 'point'", error.message
-    assert_equal [1, 8], error.location.line_and_column
   end
 
   def test_include
