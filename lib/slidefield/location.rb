@@ -1,7 +1,7 @@
 class SlideField::Location
   SF::Context = Struct.new :label, :include_path, :object, :source
 
-  attr_reader :line, :column, :context
+  attr_reader :context, :line, :column
 
   def initialize(context = nil, line = 0, column = 0)
     @is_native = context.nil?
@@ -16,6 +16,10 @@ class SlideField::Location
 
   def line_and_column
     [@line, @column]
+  end
+
+  def ==(other)
+    other.context == @context && other.line == @line && other.column == @column
   end
 
   def to_s

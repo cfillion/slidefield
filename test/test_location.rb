@@ -34,6 +34,15 @@ class TestLocation < MiniTest::Test
     assert_equal [4, 2], location.line_and_column
   end
 
+  def test_compare
+    control = SF::Location.new
+
+    assert control == SF::Location.new
+    refute control == SF::Location.new(:context, 0, 0)
+    refute control == SF::Location.new(nil, 1, 0)
+    refute control == SF::Location.new(nil, 0, 1)
+  end
+
   def test_to_s
     context = SF::Context.new
     context.label = 'label'

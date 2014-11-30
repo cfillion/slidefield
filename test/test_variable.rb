@@ -10,20 +10,6 @@ class TestVariable < MiniTest::Test
     SF::Doctor.bag SF::Variable
   end
 
-  def test_create
-    loc = SF::Location.new
-    var = SF::Variable.new 1, loc
-
-    assert_equal 1, var.value
-    assert_same loc, var.location
-  end
-
-  def test_default_location
-    var = SF::Variable.new 1
-
-    assert var.location.native?
-  end
-
   def test_nil
     var = SF::Variable.new String
     assert var.value.nil?
