@@ -128,7 +128,8 @@ private
     when :object
       add_object eval_object(slices)
     when :template
-      eval_template slices
+      name = tokenize slices[:name]
+      use_template name
     end
   end
 
@@ -223,9 +224,7 @@ private
     object.auto_adopt or failure
   end
 
-  def eval_template(slices)
-    name = tokenize slices[:name]
-
+  def use_template(name)
     variable = @context.object.get_variable(name) or failure
     template = variable.value
 
@@ -238,9 +237,7 @@ private
     when SF::Object
       add_object template.copy(name.location)
     else
-      error_at name.location,
-        'not a template or an object (see definition at %s)' %
-        variable.location
+      error_at name.location, "cannot use '%s' as a template" % variable.type
 
       failure
     end

@@ -401,7 +401,7 @@ class TestInterpreter < MiniTest::Test
 
     error = diagnostics.shift
     assert_equal :error, error.level
-    assert_equal 'not a template or an object (see definition at input:1:12)', error.message
+    assert_equal "cannot use 'integer' as a template", error.message
     assert_equal [2, 7], error.location.line_and_column
   end
 
