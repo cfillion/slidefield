@@ -4,6 +4,5 @@ module SlideField
   AlreadyAdoptedError    = Class.new Error
   ColorOutOfBoundsError  = Class.new Error
   ForeignValueError      = Class.new Error
-  UnauthorizedChildError = Class.new Error
   UndefinedObjectError   = Class.new Error
 end

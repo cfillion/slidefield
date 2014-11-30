@@ -71,13 +71,13 @@ class SlideField::Object
   end
 
   def get_variable(name)
-    token = SF::Token[name]
-    address = token.to_sym
+    name = SF::Token[name]
+    key = name.to_sym
 
-    if has_variable? address
-      @variables[address]
+    if has_variable? key
+      @variables[key]
     else
-      !error_at token.location, "undefined variable '%s'" % address
+      !error_at name.location, "undefined variable '%s'" % key
     end
   end
 
@@ -123,26 +123,29 @@ class SlideField::Object
 
   def adopt(object)
     unless knows? object
-      raise SF::UnauthorizedChildError, error_at(object.location,
+      error_at object.location,
         "object '%s' cannot have '%s'" % [@type, object.type]
-      )
+
+      return false
     end
     
     maximum = @children_rules[object.type].max
     if count(object.type) >= maximum
-      raise SF::UnauthorizedChildError, error_at(object.location,
+      error_at object.location,
         "object '%s' cannot have more than %d '%s'" %
         [@type, maximum, object.type]
-      )
+
+      return false
     end
 
     object.parent = self
-
     @children << object
+
+    true
   end
 
   def auto_adopt
-    return unless @auto_adopt
+    return true unless @auto_adopt
 
     if @context_parent && !@context_parent.root?
       @context_parent.auto_adopt 
@@ -157,14 +160,14 @@ class SlideField::Object
       end
     }
 
-    unless parent
-      raise SF::UnauthorizedChildError, error_at(@location,
+    if parent
+      parent.adopt self
+      block_auto_adopt!
+      true
+    else
+      !error_at @location,
         "object '%s' is not allowed in this context" % @type
-      )
     end
-
-    parent.adopt self
-    block_auto_adopt!
   end
 
   def children(type = nil)

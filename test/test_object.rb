@@ -200,7 +200,7 @@ class TestObject < MiniTest::Test
     assert first.knows? second
     assert_empty first.children
 
-    first.adopt second
+    assert_equal true, first.adopt(second)
 
     bag = first.children
     assert_same second, bag.shift
@@ -217,16 +217,12 @@ class TestObject < MiniTest::Test
     first.adopt SF::Object.new(:second)
 
     extra = SF::Object.new(:second)
-    error = assert_raises SF::UnauthorizedChildError do
-      first.adopt extra
-    end
+    assert_equal false, first.adopt(extra)
 
-    dia = diagnostics.shift
-    assert_equal :error, dia.level
-    assert_equal "object 'first' cannot have more than 2 'second'", dia.message
-    assert_same extra.location, dia.location
-
-    assert_equal dia.to_s, error.message
+    error = diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal "object 'first' cannot have more than 2 'second'", error.message
+    assert_same extra.location, error.location
   end
 
   def test_adopt_unwanted
@@ -235,16 +231,12 @@ class TestObject < MiniTest::Test
 
     refute first.knows? second
 
-    error = assert_raises SF::UnauthorizedChildError do
-      first.adopt second
-    end
+    assert_equal false, first.adopt(second)
 
-    dia = diagnostics.shift
-    assert_equal :error, dia.level
-    assert_equal "object 'first' cannot have 'second'", dia.message
-    assert_same second.location, dia.location
-
-    assert_equal dia.to_s, error.message
+    error = diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal "object 'first' cannot have 'second'", error.message
+    assert_same second.location, error.location
   end
 
   def test_readopt
@@ -269,7 +261,7 @@ class TestObject < MiniTest::Test
     second_context.object = first
     second = SF::Object.new :second, SF::Location.new(second_context)
 
-    second.auto_adopt
+    assert_equal true, second.auto_adopt
     assert_equal [second], first.children
   end
 
@@ -286,15 +278,10 @@ class TestObject < MiniTest::Test
     third_context.object = second
     third = SF::Object.new :third, SF::Location.new(third_context)
 
-    assert second.opaque?
-
-    assert_raises SF::UnauthorizedChildError do
-      third.auto_adopt
-    end
+    assert_equal false, third.auto_adopt
+    diagnostics.shift
 
     assert_equal [second], first.children
-
-    diagnostics.shift
   end
 
   def test_auto_adopt_through_transparent
@@ -313,24 +300,19 @@ class TestObject < MiniTest::Test
     second.transparentize!
     refute second.opaque?
 
-    third.auto_adopt
+    assert_equal true, third.auto_adopt
     assert_equal [second, third], first.children
   end
 
   def test_auto_adopt_unwanted
     first = SF::Object.new :first
 
-    error = assert_raises SF::UnauthorizedChildError do
-      first.auto_adopt
-    end
+    assert_equal false, first.auto_adopt
+    error = diagnostics.shift
 
-    dia = diagnostics.shift
-
-    assert_equal :error, dia.level
-    assert_equal "object 'first' is not allowed in this context", dia.message
-    assert_same first.location, dia.location
-
-    assert_equal dia.to_s, error.message
+    assert_equal :error, error.level
+    assert_equal "object 'first' is not allowed in this context", error.message
+    assert_same first.location, error.location
   end
 
   def test_block_auto_adopt
@@ -343,7 +325,7 @@ class TestObject < MiniTest::Test
     second.allow_children :third
 
     second.block_auto_adopt!
-    second.auto_adopt
+    assert_equal true, second.auto_adopt
 
     assert_equal [], first.children
   end

@@ -19,7 +19,6 @@ class SlideField::Interpreter
     @context_level = 0
 
     @failed = false
-    @last_location = SF::Location.new
   end
 
   def run_file(path)
@@ -167,7 +166,8 @@ private
       type == :object ? value.location : tokenize(data).location
 
     filters.reverse_each {|t|
-      var = var.filter(tokenize t[:name]) or failure
+      filter = tokenize t[:name]
+      var = var.filter(filter) or failure
     }
 
     var
@@ -240,11 +240,7 @@ private
       return
     end
 
-    begin
-      object.auto_adopt
-    rescue SF::UnauthorizedChildError
-      failure
-    end
+    object.auto_adopt or failure
   end
 
   def eval_template(tokens)

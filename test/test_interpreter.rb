@@ -229,6 +229,7 @@ class TestInterpreter < MiniTest::Test
   def test_incompatible_reassignation
     should_fail
 
+    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     var = 1
     var = 4x2
