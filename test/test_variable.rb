@@ -93,17 +93,17 @@ class TestVariable < MiniTest::Test
   end
 
   def test_type_of
-    assert_equal 'boolean', SF::Variable.type_of(SF::Boolean.false)
-    assert_equal 'color', SF::Variable.type_of(SF::Color.black)
-    assert_equal 'integer', SF::Variable.type_of(42)
-    assert_equal 'point', SF::Variable.type_of(SF::Point.zero)
-    assert_equal 'string', SF::Variable.type_of('hello world')
-    assert_equal 'template', SF::Variable.type_of(SF::Template.new(:a, :b))
+    assert_equal :boolean, SF::Variable.type_of(SF::Boolean.false)
+    assert_equal :color, SF::Variable.type_of(SF::Color.black)
+    assert_equal :integer, SF::Variable.type_of(42)
+    assert_equal :point, SF::Variable.type_of(SF::Point.zero)
+    assert_equal :string, SF::Variable.type_of('hello world')
+    assert_equal :template, SF::Variable.type_of(SF::Template.new(:a, :b))
     assert_equal "\\type1", SF::Variable.type_of(SF::Object.new(:type1))
   end
 
-  def test_type
-    assert_equal 'integer', SF::Variable.new(42).type
+  def test_instance_type
+    assert_equal :integer, SF::Variable.new(42).type
   end
 
   def test_apply_operator
@@ -203,7 +203,7 @@ class TestVariable < MiniTest::Test
     retval = before.filter :x
     wtoken = before.filter SF::Token.new(:x)
 
-    assert_equal 'integer', retval.type
+    assert_equal :integer, retval.type
     assert_equal 4, retval.value
     assert_equal retval, wtoken
   end

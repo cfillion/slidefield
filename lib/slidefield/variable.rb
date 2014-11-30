@@ -16,17 +16,17 @@ class SlideField::Variable < SlideField::Token
   def self.type_of(value)
     case value
     when Fixnum
-      'integer'
+      :integer
     when String
-      'string'
+      :string
     when SF::Boolean
-      'boolean'
+      :boolean
     when SF::Color
-      'color'
+      :color
     when SF::Point
-      'point'
+      :point
     when SF::Template
-      'template'
+      :template
     when SF::Object
       "\\#{value.type}"
     end
