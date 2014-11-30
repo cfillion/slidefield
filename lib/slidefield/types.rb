@@ -1,10 +1,49 @@
+module SlideField::ArrayType
+  def ==(other)
+    other.respond_to?(:to_a) && self.to_a == other.to_a
+  end
+
+  [:+, :-, :*, :/].each { |operator|
+    define_method operator do |other|
+      raise TypeError unless other.class == self.class
+
+      combined = [self.to_a, other.to_a].transpose
+      result = combined.map {|x| x.reduce operator }
+
+      self.class.new *result
+    end
+  }
+end
+
+SF::Template = Struct.new :context, :statements do
+  def to_s
+    '<Template>'
+  end
+
+  alias :inspect :to_s
+end
+
 class String
+  ESCAPE_SEQUENCES = {
+    'n'=>"\n"
+  }.freeze
+
+  def self.from_slice(slice)
+    slice.to_s[1..-2].gsub(/\\(.)/) {
+      ESCAPE_SEQUENCES[$1] || $1
+    }
+  end
+
   def filter_lines
     self.lines.count
   end
 end
 
 class Fixnum
+  def self.from_slice(slice)
+    slice.to_i
+  end
+
   def filter_x
     SF::Point.new self, 0
   end
@@ -31,6 +70,10 @@ class Fixnum
 end
 
 class SlideField::Boolean
+  def self.from_slice(slice)
+    new slice == ':true'
+  end
+
   def self.true
     new true
   end
@@ -58,25 +101,12 @@ class SlideField::Boolean
   alias :inspect :to_s
 end
 
-module SlideField::ArrayType
-  def ==(other)
-    other.respond_to?(:to_a) && self.to_a == other.to_a
-  end
-
-  [:+, :-, :*, :/].each { |operator|
-    define_method operator do |other|
-      raise TypeError unless other.class == self.class
-
-      combined = [self.to_a, other.to_a].transpose
-      result = combined.map {|x| x.reduce operator }
-
-      self.class.new *result
-    end
-  }
-end
-
 class SlideField::Point
   include SF::ArrayType
+
+  def self.from_slice(slice)
+    new *slice.to_s.split('x').map(&:to_i)
+  end
 
   attr_reader :x, :y
 
@@ -104,6 +134,17 @@ end
 
 class SlideField::Color
   include SF::ArrayType
+
+  def self.from_slice(slice)
+    int = slice.to_s[1..-1].hex
+
+    r = (int >> 24) & 255
+    g = (int >> 16) & 255
+    b = (int >>  8) & 255
+    a = (int      ) & 255
+
+    new r, g, b, a
+  end
 
   attr_reader :r, :g, :b, :a
 
@@ -136,14 +177,6 @@ class SlideField::Color
 
   def to_s
     "#%X%X%X%X" % to_a
-  end
-
-  alias :inspect :to_s
-end
-
-SF::Template = Struct.new :context, :statements do
-  def to_s
-    '<Template>'
   end
 
   alias :inspect :to_s

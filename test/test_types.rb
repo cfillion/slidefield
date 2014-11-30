@@ -1,11 +1,32 @@
 require File.expand_path '../helper', __FILE__
 
 class TestTypes < MiniTest::Test
-  def test_string
+  def test_template
+    tpl = SF::Template.new :context, :tokens
+
+    assert_equal :context, tpl.context
+    assert_equal :tokens, tpl.statements
+  end
+
+  def test_template_to_string
+    tpl = SF::Template.new :context, :tokens
+    assert_equal '<Template>', tpl.to_s
+  end
+
+  def test_slice_to_string
+    assert_equal 'hello', String.from_slice('"hello"')
+    assert_equal "hello\nworld", String.from_slice('"\\hello\\nworld"')
+  end
+
+  def test_string_filters
     assert_equal 2, "hello\nworld".filter_lines
   end
 
-  def test_fixnum
+  def test_slice_to_fixnum
+    assert_equal 42, Fixnum.from_slice('42')
+  end
+
+  def test_fixnum_filers
     assert_equal SF::Point.new(42, 0), 42.filter_x
     assert_equal SF::Point.new(0, 42), 42.filter_y
 
@@ -24,6 +45,14 @@ class TestTypes < MiniTest::Test
 
     assert_equal SF::Boolean.new(true), t
     refute_equal SF::Boolean.new(false), t
+  end
+
+  def test_slice_to_boolean
+    t = SF::Boolean.from_slice ':true'
+    f = SF::Boolean.from_slice ':false'
+
+    assert_same true, t.to_bool
+    assert_same false, f.to_bool
   end
 
   def test_predefined_booleans
@@ -58,6 +87,11 @@ class TestTypes < MiniTest::Test
     refute_equal SF::Point.new(2, 4), p
   end
 
+  def test_slice_to_point
+    p = SF::Point.from_slice '4x2'
+    assert_equal [4, 2], p.to_a
+  end
+
   def test_predefined_points
     assert_equal SF::Point.new(0, 0), SF::Point.zero
   end
@@ -72,7 +106,7 @@ class TestTypes < MiniTest::Test
     assert_equal SF::Point.new(1, 0), left / right
   end
 
-  def test_color_operand_mismatch
+  def test_point_operand_mismatch
     left = SF::Point.new 4, 2
     right = 42
 
@@ -106,6 +140,11 @@ class TestTypes < MiniTest::Test
 
     assert_equal SF::Color.new(0, 1, 2, 3), c
     refute_equal SF::Color.new(1, 2, 3, 4), c
+  end
+
+  def test_slice_to_color
+    c = SF::Color.from_slice '#C0FF33FF'
+    assert_equal [192, 255, 51, 255], c.to_a
   end
 
   def test_predefined_colors
@@ -146,17 +185,5 @@ class TestTypes < MiniTest::Test
 
   def test_color_to_string
     assert_equal '#C0FF33FF', SF::Color.new(192, 255, 51, 255).to_s
-  end
-
-  def test_template
-    tpl = SF::Template.new :context, :tokens
-
-    assert_equal :context, tpl.context
-    assert_equal :tokens, tpl.statements
-  end
-
-  def test_template_to_string
-    tpl = SF::Template.new :context, :tokens
-    assert_equal '<Template>', tpl.to_s
   end
 end

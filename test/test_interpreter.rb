@@ -224,6 +224,9 @@ class TestInterpreter < MiniTest::Test
 
     @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string '\answer { copy = the_answer; }'
+
+    error = SF::Doctor.bag(SF::Object).first
+    assert_equal [1, 18], error.location.line_and_column
   end
 
   def test_incompatible_reassignation
@@ -257,13 +260,6 @@ class TestInterpreter < MiniTest::Test
     @interpreter.run_string 'var += 1'
 
     assert_equal true, @interpreter.failed?
-  end
-
-  def test_escape_sequences
-    @interpreter.root = SF::Object.new :permissiveRoot
-    @interpreter.run_string 'var = "\\\\hello\nworl\d"'
-
-    assert_equal "\\hello\nworld", @interpreter.root.value_of(:var)
   end
 
   def test_filter

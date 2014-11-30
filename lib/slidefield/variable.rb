@@ -3,32 +3,23 @@ class SlideField::Variable < SlideField::Token
 
   attr_reader :value, :location
 
-  VALUE_CLASSES = [
-    Fixnum,
-    String,
-    SF::Boolean,
-    SF::Color,
-    SF::Point,
-    SF::Template,
+  KNOWN_TYPES = {
+    integer:  Fixnum,
+    string:   String,
+    boolean:  SF::Boolean,
+    color:    SF::Color,
+    point:    SF::Point,
+    template: SF::Template,
     # SF::Object is a special case
-  ].freeze
+  }.freeze
 
   def self.type_of(value)
-    case value
-    when Fixnum
-      :integer
-    when String
-      :string
-    when SF::Boolean
-      :boolean
-    when SF::Color
-      :color
-    when SF::Point
-      :point
-    when SF::Template
-      :template
-    when SF::Object
+    klass = value.class
+
+    if klass == SF::Object
       "\\#{value.type}"
+    else
+      KNOWN_TYPES.key klass
     end
   end
 
@@ -39,7 +30,7 @@ class SlideField::Variable < SlideField::Token
       @type = value.is_a?(SF::Object) ? value.type : value.class
     end
 
-    unless @type.is_a?(Symbol) || VALUE_CLASSES.include?(@type)
+    unless @type.is_a?(Symbol) || KNOWN_TYPES.has_value?(@type)
       raise SF::ForeignValueError,
         "cannot store '%s' in a variable" % @type
     end

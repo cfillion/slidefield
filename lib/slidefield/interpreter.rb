@@ -5,10 +5,6 @@ class SlideField::Interpreter
 
   EFAIL = Object.new.freeze
 
-  ESCAPE_SEQUENCES = {
-    'n'=>"\n"
-  }.freeze
-
   MAX_LEVEL = 50
 
   def initialize
@@ -125,24 +121,24 @@ private
     end
   end
 
-  def eval_statement(type, tokens)
+  def eval_statement(type, slices)
     case type
     when :assignment
-      eval_assignment tokens
+      eval_assignment slices
     when :object
-      add_object eval_object(tokens)
+      add_object eval_object(slices)
     when :template
-      eval_template tokens
+      eval_template slices
     end
   end
 
-  def eval_assignment(tokens)
-    var_name = tokenize tokens[:variable]
-    operator = tokenize tokens[:operator]
+  def eval_assignment(slices)
+    var_name = tokenize slices[:variable]
+    operator = tokenize slices[:operator]
 
-    if value = tokens[:value]
+    if value = slices[:value]
       right = eval_value value
-    elsif stmts_t = tokens[:statements]
+    elsif stmts_t = slices[:statements]
       value = SF::Template.new @context, stmts_t
       right = SF::Variable.new value, var_name.location
     end
@@ -155,15 +151,15 @@ private
     @context.object.set_variable var_name, right or failure
   end
 
-  def eval_value(tokens)
-    tokens = tokens.clone
-    filters = tokens.delete :filters
+  def eval_value(slices)
+    slices = slices.clone
+    filters = slices.delete :filters
 
-    type, data = tokens.to_a[0]
-    value = transform_value type, data
+    type, slice = slices.to_a[0]
+    value = transform_value type, slice
 
     var = SF::Variable.new value,
-      type == :object ? value.location : tokenize(data).location
+      type == :object ? value.location : tokenize(slice).location
 
     filters.reverse_each {|t|
       filter = tokenize t[:name]
@@ -173,36 +169,20 @@ private
     var
   end
 
-  def transform_value(type, token)
+  def transform_value(type, slice)
     case type
     when :identifier
-      @context.object.value_of token.to_sym or failure
-    when :integer
-      token.to_i
-    when :point
-      SF::Point.new *token.to_s.split('x').map(&:to_i)
-    when :string
-      token.to_s[1..-2].gsub(/\\(.)/) {
-        ESCAPE_SEQUENCES[$1] || $1
-      }
-    when :color
-      int = token.to_s[1..-1].hex
-
-      r = (int >> 24) & 255
-      g = (int >> 16) & 255
-      b = (int >> 8) & 255
-      a = (int) & 255
-
-      SF::Color.new r, g, b, a
-    when :boolean
-      SF::Boolean.new token == ':true'
+      @context.object.value_of tokenize(slice) or failure
     when :object
-      eval_object token, inline: true
+      eval_object slice, inline: true
+    else
+      klass = SF::Variable::KNOWN_TYPES[type]
+      klass.from_slice slice
     end
   end
 
-  def eval_object(tokens, inline: false)
-    type = tokenize tokens[:type]
+  def eval_object(slices, inline: false)
+    type = tokenize slices[:type]
 
     begin
       object = SF::Object.new type.to_sym, type.location
@@ -215,13 +195,13 @@ private
       object.block_auto_adopt!
     end
 
-    if value = tokens[:value]
+    if value = slices[:value]
       variable = eval_value value
       var_name = object.guess_variable(variable) or failure
       object.set_variable var_name, variable
     end
 
-    if subtree = tokens[:statements]
+    if subtree = slices[:statements]
       context = @context.dup
       context.object = object
 
@@ -243,8 +223,8 @@ private
     object.auto_adopt or failure
   end
 
-  def eval_template(tokens)
-    name = tokenize tokens[:name]
+  def eval_template(slices)
+    name = tokenize slices[:name]
 
     variable = @context.object.get_variable(name) or failure
     template = variable.value
