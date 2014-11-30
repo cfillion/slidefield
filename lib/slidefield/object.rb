@@ -33,7 +33,7 @@ class SlideField::Object
     instance_eval &@@initializers[type]
 
     not root? and @context_parent.variables.each {|name, var|
-      @variables[name] = var if compatible? name, var.value
+      @variables[name] = var if compatible? name, var
     }
   end
 
@@ -61,7 +61,7 @@ class SlideField::Object
     name = name.to_sym
     variable = SF::Variable[variable, location]
 
-    if compatible? name, variable.value
+    if compatible? name, variable
       @variables[name] = variable
     else
       !error_at variable.location,
@@ -74,20 +74,18 @@ class SlideField::Object
     name = SF::Token[name]
     key = name.to_sym
 
-    if has_variable? key
-      @variables[key]
-    else
+    if !has_variable?(key)
       !error_at name.location, "undefined variable '%s'" % key
+    elsif @variables[key].value.nil?
+      !error_at name.location, "use of uninitialized variable '%s'" % name
+    else
+      @variables[key]
     end
   end
 
   def value_of(name)
-    name = SF::Token[name]
-
-    if variable = get_variable(name)
-      variable.value or !error_at name.location,
-        "use of uninitialized variable '%s'" % name
-    end
+    variable = get_variable(name)
+    variable ? variable.value : variable
   end
 
   def guess_variable(var)

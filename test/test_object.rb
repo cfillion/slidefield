@@ -5,6 +5,9 @@ SF::Object.define :second do
   set_variable :predefined, 'predefined'
 end
 SF::Object.define :third do end
+SF::Object.define :nodefault do
+  set_variable :unset, String
+end
 
 class TestObject < MiniTest::Test
   include DoctorHelper
@@ -66,11 +69,12 @@ class TestObject < MiniTest::Test
     assert_equal 24, arstdhnei.value
   end
 
-  def test_set_variable_with_token
+  def test_variable_with_token
     first = SF::Object.new :first
     first.set_variable SF::Token.new(:qwfpgjluy), 42
 
     assert_equal 42, first.get_variable(:qwfpgjluy)
+    assert_equal 42, first.get_variable(SF::Token.new(:qwfpgjluy))
   end
 
   def test_reset_variable
@@ -99,14 +103,24 @@ class TestObject < MiniTest::Test
 
     token = SF::Token.new :qwfpgjluy
     assert_equal false, first.get_variable(token)
-    assert_equal false, first.get_variable(:qwfpgjluy)
 
     error = diagnostics.shift
     assert_equal :error, error.level
     assert_equal "undefined variable 'qwfpgjluy'", error.message
     assert_same token.location, error.location
+  end
 
-    assert_equal error.message, diagnostics.shift.message
+  def test_get_variable_uninitialized
+    first = SF::Object.new :first
+    first.set_variable :qwfpgjluy, Fixnum
+
+    token = SF::Token.new :qwfpgjluy
+    assert_equal false, first.get_variable(token)
+
+    error = diagnostics.shift
+    assert_equal :error, error.level
+    assert_equal "use of uninitialized variable 'qwfpgjluy'", error.message
+    assert_same token.location, error.location
   end
 
   def test_value_of
@@ -121,16 +135,9 @@ class TestObject < MiniTest::Test
     first = SF::Object.new :first
     first.set_variable :qwfpgjluy, Fixnum
 
-    token = SF::Token.new :qwfpgjluy
-    assert_equal false, first.value_of(token)
     assert_equal false, first.value_of(:qwfpgjluy)
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "use of uninitialized variable 'qwfpgjluy'", error.message
-    assert_same token.location, error.location
-
-    assert_equal error.message, diagnostics.shift.message
+    diagnostics.shift
   end
 
   def test_guess_variable
@@ -353,6 +360,15 @@ class TestObject < MiniTest::Test
     second = SF::Object.new :second, SF::Location.new(context)
 
     assert_equal 'predefined', second.value_of(:predefined)
+  end
+
+  def test_inherit_early_uninitialized
+    nodefault = SF::Object.new :nodefault
+
+    context = SF::Context.new
+    context.object = nodefault
+
+    SF::Object.new :nodefault, SF::Location.new(context)
   end
 
   def test_select_children
