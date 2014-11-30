@@ -2,6 +2,11 @@ SF::Object.define :include do
   set_variable :file, String
 end
 
+SF::Object.define :animation do # TODO: remove
+  transparentize!
+  set_variable :a, String
+end
+
 SF::Object.define :root do
   allow_children :layout, min: 1, max: 1
   allow_children :slide, min: 1
@@ -16,6 +21,9 @@ SF::Object.define :slide do
   allow_children :text
   allow_children :rect
   allow_children :image
+
+  allow_children :animation # TODO: remove
+  allow_children :song # TODO: remove
 
   set_variable :position, SF::Point.zero
   set_variable :z_order, 0
@@ -77,7 +85,7 @@ SF::Object.define :text do
     align = value_of(:align).to_sym
 
     if font.include? '/'
-      font = File.expand_path font, @obj.include_path
+      font = File.expand_path font, @location.context.include_path
     end
 
     if width < 1
@@ -187,5 +195,32 @@ SF::Object.define :image do
 
   def on_unload
     @image = nil
+  end
+end
+
+SF::Object.define :song do
+  set_variable :source, String
+  set_variable :volume, 100
+  set_variable :loop, SF::Boolean.true
+
+  def preload(window)
+    source = File.expand_path value_of(:source), @location.context.include_path
+    @loop = value_of(:loop).to_bool
+    @volume = value_of(:volume) / 100.0
+
+    @song = Gosu::Sample.new window, source
+  end
+
+  def activate
+    @instance = @song.play @volume, 1, @loop
+  end
+
+  def deactivate
+    @instance.stop
+    @instance = nil
+  end
+
+  def unload
+    @song = nil
   end
 end
