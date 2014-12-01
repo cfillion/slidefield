@@ -12,13 +12,13 @@ class TestLocation < MiniTest::Test
 
   def test_native
     loc = SF::Location.new
-    assert loc.native?
+    assert_equal true, loc.native?
 
     loc = SF::Location.new nil, 4, 2
-    assert loc.native?
+    assert_equal true, loc.native?
 
     loc = SF::Location.new SF::Context.new
-    refute loc.native?
+    assert_equal false, loc.native?
   end
 
   def test_default_context
@@ -56,5 +56,17 @@ class TestLocation < MiniTest::Test
     location = SF::Location.new
 
     assert_equal '<native code>', location.to_s
+  end
+
+  def test_context_shortcuts
+    context = SF::Context.new
+    context.source = 'hello'
+
+    location = SF::Location.new context
+    assert_equal 'hello', location.source
+
+    assert_raises NoMethodError do
+      location.qwfpgjluy
+    end
   end
 end

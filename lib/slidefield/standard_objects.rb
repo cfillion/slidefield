@@ -85,7 +85,7 @@ SF::Object.define :text do
     align = value_of(:align).to_sym
 
     if font.include? '/'
-      font = File.expand_path font, @location.context.include_path
+      font = File.expand_path font, @location.include_path
     end
 
     if width < 1
@@ -166,7 +166,7 @@ SF::Object.define :image do
     @z = value_of :z_order
     @color = Gosu::Color.rgba *value_of(:color).to_a
 
-    source = File.expand_path value_of(:source), @location.context.include_path
+    source = File.expand_path value_of(:source), @location.include_path
     width, height = value_of(:size).to_a
 
     @image = Gosu::Image.new window, source, true
@@ -204,7 +204,7 @@ SF::Object.define :song do
   set_variable :loop, SF::Boolean.true
 
   def preload(window)
-    source = File.expand_path value_of(:source), @location.context.include_path
+    source = File.expand_path value_of(:source), @location.include_path
     @loop = value_of(:loop).to_bool
     @volume = value_of(:volume) / 100.0
 

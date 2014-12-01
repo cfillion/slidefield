@@ -4,14 +4,16 @@ class SlideField::Location
   attr_reader :context, :line, :column
 
   def initialize(context = nil, line = 0, column = 0)
-    @is_native = context.nil?
+    if context.nil?
+      context = SF::Context.new
+      @is_native = true
+    end
 
-    context ||= SF::Context.new
     @context, @line, @column = context, line, column
   end
 
   def native?
-    @is_native
+    !!@is_native
   end
 
   def line_and_column
@@ -28,6 +30,13 @@ class SlideField::Location
     else
       '%s:%d:%d' % [@context.label, @line, @column]
     end
+  end
+
+  def method_missing(name, *args)
+    context_hash = @context.to_h
+    super unless context_hash.has_key? name
+
+    context_hash[name]
   end
 
   alias :inspect :to_s

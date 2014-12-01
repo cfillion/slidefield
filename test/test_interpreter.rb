@@ -69,8 +69,9 @@ class TestInterpreter < MiniTest::Test
     assert_instance_of SF::Object, @interpreter.root
 
     assert_equal :permissiveRoot, @interpreter.root.type
-    assert_equal 'input', @interpreter.root.location.context.label
-    assert_equal Dir.pwd, @interpreter.root.location.context.include_path
+    assert_equal 'input', @interpreter.root.location.label
+    assert_equal Dir.pwd, @interpreter.root.location.include_path
+    assert_equal true, @interpreter.root.location.context.frozen?
   end
 
   def test_object
@@ -85,10 +86,10 @@ class TestInterpreter < MiniTest::Test
     assert_equal [1, 2], first_child.location.line_and_column
 
     assert first_child.location.context.frozen?
-    assert_equal 'input', first_child.location.context.label
-    assert_equal Dir.pwd, first_child.location.context.include_path
-    assert_equal @interpreter.root, first_child.location.context.object
-    assert_equal '\level1', first_child.location.context.source
+    assert_equal 'input', first_child.location.label
+    assert_equal Dir.pwd, first_child.location.include_path
+    assert_equal @interpreter.root, first_child.location.object
+    assert_equal '\level1', first_child.location.source
   end
 
   def test_subobject_flatten
@@ -100,10 +101,10 @@ class TestInterpreter < MiniTest::Test
     assert_empty bag
 
     assert_equal :level1, first_child.type
-    assert_equal @interpreter.root, first_child.location.context.object
+    assert_equal @interpreter.root, first_child.location.object
 
     assert_equal :level1, second_child.type
-    assert_equal first_child, second_child.location.context.object
+    assert_equal first_child, second_child.location.object
   end
 
   def test_unknown_object
@@ -128,7 +129,7 @@ class TestInterpreter < MiniTest::Test
     the_answer = answer.get_variable :the_answer
     assert_equal 42, the_answer.value
     assert_equal [1, 9], the_answer.location.line_and_column
-    assert_equal @interpreter.root, the_answer.location.context.object
+    assert_equal @interpreter.root, the_answer.location.object
   end
 
   def test_object_value_mismatch
@@ -294,10 +295,10 @@ class TestInterpreter < MiniTest::Test
     assert_equal 42, var.value
     assert_equal [1, 7], var.location.line_and_column
 
-    assert_equal path.sub(Dir.pwd + '/', ''), var.location.context.label
-    assert_equal @resources_path, var.location.context.include_path
-    assert_equal @interpreter.root, var.location.context.object
-    assert_equal "var = 42\n", var.location.context.source
+    assert_equal path.sub(Dir.pwd + '/', ''), var.location.label
+    assert_equal @resources_path, var.location.include_path
+    assert_equal @interpreter.root, var.location.object
+    assert_equal "var = 42\n", var.location.source
   end
 
   def test_dynamic_template
@@ -363,12 +364,12 @@ class TestInterpreter < MiniTest::Test
     assert_equal 'hello world', str.value
 
     # local context values:
-    assert_equal level1, str.location.context.object
+    assert_equal level1, str.location.object
 
     # external context values:
-    assert_equal path.sub(Dir.pwd + '/', ''), str.location.context.label
-    assert_equal @resources_path, str.location.context.include_path
-    assert_equal File.read(path), str.location.context.source
+    assert_equal path.sub(Dir.pwd + '/', ''), str.location.label
+    assert_equal @resources_path, str.location.include_path
+    assert_equal File.read(path), str.location.source
     assert_equal [2, 10], str.location.line_and_column
   end
 
@@ -430,8 +431,8 @@ class TestInterpreter < MiniTest::Test
 
     @interpreter.run_file path
 
-    assert_equal 'define_variable.sfi', @interpreter.root.location.context.label
-    assert_equal @resources_path, @interpreter.root.location.context.include_path
+    assert_equal 'define_variable.sfi', @interpreter.root.location.label
+    assert_equal @resources_path, @interpreter.root.location.include_path
   end
 
   def test_file_not_found
