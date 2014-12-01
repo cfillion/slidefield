@@ -1,19 +1,19 @@
 class SlideField::Interpreter
   include SF::Doctor
 
-  attr_accessor :root
+  attr_reader :root
 
   EFAIL = Object.new.freeze
 
   MAX_LEVEL = 50
 
-  def initialize
+  def initialize(root_type = :root)
+    @root_type = root_type
+
     @parser = SF::Parser.new
     @reporter = Parslet::ErrorReporter::Deepest.new
 
-    @root = SF::Object.new :root
     @context_level = 0
-
     @failed = false
   end
 
@@ -58,7 +58,16 @@ private
 
   def run(input, label, include_path)
     object = @context ? @context.object : @root
-    context = SF::Context.new label, include_path, object, input
+    context = SF::Context.new label, include_path, nil, input
+
+    if @root.nil?
+      @root = SF::Object.new @root_type, SF::Location.new(context)
+      @rootpath = Pathname.new include_path
+
+      context.object = @root
+    else
+      context.object = @context.object
+    end
 
     with(context) {
       tree = parse input
@@ -82,8 +91,6 @@ private
 
       failure
     end
-
-    @rootpath = Pathname.new @context.include_path if @rootpath.nil?
 
     yield
   ensure

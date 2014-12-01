@@ -34,7 +34,7 @@ class TestInterpreter < MiniTest::Test
   end
 
   def setup
-    @interpreter = SF::Interpreter.new
+    @interpreter = SF::Interpreter.new :permissiveRoot
     @should_fail = false
 
     @resources_path = File.expand_path '../resources', __FILE__
@@ -60,12 +60,20 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_empty_tree
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string "% nothing\n"
   end
 
+  def test_root_context
+    assert_nil @interpreter.root
+    @interpreter.run_string ''
+    assert_instance_of SF::Object, @interpreter.root
+
+    assert_equal :permissiveRoot, @interpreter.root.type
+    assert_equal 'input', @interpreter.root.location.context.label
+    assert_equal Dir.pwd, @interpreter.root.location.context.include_path
+  end
+
   def test_object
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string '\level1'
 
     bag = @interpreter.root.children
@@ -84,7 +92,6 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_subobject_flatten
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string '\level1 { \level1; }'
 
     bag = @interpreter.root.children
@@ -112,7 +119,6 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_object_value
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string '\answer 42'
 
     bag = @interpreter.root.children
@@ -128,19 +134,16 @@ class TestInterpreter < MiniTest::Test
   def test_object_value_mismatch
     should_fail
 
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string '\answer "The Ultimate Question of Life, the Universe, and Everything"'
   end
 
   def test_object_value_ambiguous
     should_fail
 
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string '\\collection :true'
   end
 
   def test_variables
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     i = 42
     s = "hello"
@@ -182,7 +185,6 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_object_in_variable
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     inherited = "hello"
 
@@ -201,7 +203,6 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_copy_variable
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     original = "hello world"
     copy = original
@@ -222,7 +223,6 @@ class TestInterpreter < MiniTest::Test
   def test_copy_uninitialized
     should_fail
 
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string '\answer { copy = the_answer; }'
 
     error = SF::Doctor.bag(SF::Object).first
@@ -232,7 +232,6 @@ class TestInterpreter < MiniTest::Test
   def test_incompatible_reassignation
     should_fail
 
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     var = 1
     var = 4x2
@@ -240,7 +239,6 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_operators
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     var = 1
     var *= 80
@@ -256,14 +254,12 @@ class TestInterpreter < MiniTest::Test
   def test_change_undefined
     should_fail
 
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string 'var += 1'
 
     assert_equal true, @interpreter.failed?
   end
 
   def test_filter
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string 'var = (x)4x2'
 
     var = @interpreter.root.get_variable :var
@@ -273,7 +269,6 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_filter_order
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string 'var = (x)(x)(lines)"hello"'
 
     var = @interpreter.root.get_variable :var
@@ -291,7 +286,6 @@ class TestInterpreter < MiniTest::Test
   def test_include
     path = File.join @resources_path, 'define_variable.sfi'
 
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string '\include "' + path + '"'
 
     assert_empty @interpreter.root.children
@@ -307,7 +301,6 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_dynamic_template
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     template = {
       var += 1
@@ -328,7 +321,6 @@ class TestInterpreter < MiniTest::Test
   end
 
   def test_static_template
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     template = \\level1
 
@@ -356,7 +348,6 @@ class TestInterpreter < MiniTest::Test
   def test_included_template_context
     path = File.join @resources_path, 'template.sfi'
 
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     \\include "#{path}"
 
@@ -384,7 +375,6 @@ class TestInterpreter < MiniTest::Test
   def test_undefined_template
     should_fail
 
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     \\&test
     INPUT
@@ -393,7 +383,6 @@ class TestInterpreter < MiniTest::Test
   def test_not_a_template
     should_fail
 
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     test = 1
     \\&test
@@ -420,7 +409,6 @@ class TestInterpreter < MiniTest::Test
   def test_continue_on_error
     should_fail
 
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string <<-INPUT
     top_level = 4
     \\level1 {
@@ -435,6 +423,15 @@ class TestInterpreter < MiniTest::Test
 
     assert_equal 16, @interpreter.root.value_of(:top_level)
     assert_equal SF::Color.new(0,0,0,0), @interpreter.root.first_child(:level1).value_of(:sublevel)
+  end
+
+  def test_run_file
+    path = File.join @resources_path, 'define_variable.sfi'
+
+    @interpreter.run_file path
+
+    assert_equal 'define_variable.sfi', @interpreter.root.location.context.label
+    assert_equal @resources_path, @interpreter.root.location.context.include_path
   end
 
   def test_file_not_found
@@ -476,14 +473,13 @@ class TestInterpreter < MiniTest::Test
   def test_object_validation
     should_fail
 
-    @interpreter.root = SF::Object.new :permissiveRoot
     @interpreter.run_string '\\answer'
   end
 
   def test_root_validation
     should_fail
 
-    @interpreter.root = SF::Object.new :restrictiveRoot
+    @interpreter = SF::Interpreter.new :restrictiveRoot
     @interpreter.run_string '\\level1'
   end
 end
