@@ -216,7 +216,9 @@ private
       with(context) { enter_in subtree }
     end
 
-    object.validate or failure
+    if inline
+      object.validate or failure
+    end
 
     object
   end

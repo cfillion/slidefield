@@ -442,11 +442,9 @@ class TestObject < MiniTest::Test
 
   def test_validate_children
     first = SF::Object.new :first
-
     first.allow_children :second, min: 2
-    first.adopt SF::Object.new(:second)
-
     first.allow_children :third, min: 1
+    first.adopt SF::Object.new(:second)
 
     assert_equal false, first.validate
 
@@ -460,7 +458,6 @@ class TestObject < MiniTest::Test
 
   def test_validate_uninitialized
     var_loc = SF::Location.new
-
     first = SF::Object.new :first
     first.set_variable :qwfpgjluy, String, var_loc
 
@@ -472,6 +469,19 @@ class TestObject < MiniTest::Test
     dia = assert_diagnostic :error,
       "object 'first' has one or more uninitialized variables"
     assert_same first.location, dia.location
+  end
+
+  def test_validate_on_adopt
+    first = SF::Object.new :first
+    first.allow_children :second
+
+    second = SF::Object.new :second
+    second.allow_children :third, min: 3
+
+    assert_equal false, first.adopt(second)
+
+    assert_diagnostic :error,
+      "object 'second' must have at least 3 'third', got 0"
   end
 
   def test_inspect

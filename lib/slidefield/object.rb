@@ -136,6 +136,8 @@ class SlideField::Object
       return false
     end
 
+    object.validate or return false
+
     object.parent = self
     @children << object
 
@@ -151,7 +153,6 @@ class SlideField::Object
 
     if parent = find_a_parent
       parent.adopt self
-      true
     else
       !error_at @location,
         "object '%s' is not allowed in this context" % @type
