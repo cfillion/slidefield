@@ -16,6 +16,13 @@ class TestObject < MiniTest::Test
     SF::Doctor.bag SF::Object
   end
 
+  def link_to(object)
+    context = SF::Context.new
+    context.object = object
+
+    SF::Location.new context
+  end
+
   def test_infinity
     assert_equal Float::INFINITY, SF::Object::Infinity
   end
@@ -250,7 +257,8 @@ class TestObject < MiniTest::Test
     first_parent = SF::Object.new :first
     first_parent.allow_children :second
 
-    second_parent = first_parent.clone
+    second_parent = SF::Object.new :first
+    second_parent.allow_children :second
 
     second = SF::Object.new :second
     first_parent.adopt second
@@ -260,61 +268,20 @@ class TestObject < MiniTest::Test
     end
   end
 
-  def test_auto_adopt
+  def test_finalize
     first = SF::Object.new :first
     first.allow_children :second
 
-    second_context = SF::Context.new
-    second_context.object = first
-    second = SF::Object.new :second, SF::Location.new(second_context)
+    second = SF::Object.new :second, link_to(first)
 
-    assert_equal true, second.auto_adopt
+    assert_equal true, second.finalize
     assert_equal [second], first.children
   end
 
-  def test_auto_adopt_through_opaque
-    first = SF::Object.new :first
-    first.allow_children :second
-    first.allow_children :third
-
-    second_context = SF::Context.new
-    second_context.object = first
-    second = SF::Object.new :second, SF::Location.new(second_context)
-
-    third_context = SF::Context.new
-    third_context.object = second
-    third = SF::Object.new :third, SF::Location.new(third_context)
-
-    assert_equal false, third.auto_adopt
-    diagnostics.shift
-
-    assert_equal [second], first.children
-  end
-
-  def test_auto_adopt_through_transparent
-    first = SF::Object.new :first
-    first.allow_children :second
-    first.allow_children :third
-
-    second_context = SF::Context.new
-    second_context.object = first
-    second = SF::Object.new :second, SF::Location.new(second_context)
-
-    third_context = SF::Context.new
-    third_context.object = second
-    third = SF::Object.new :third, SF::Location.new(third_context)
-
-    second.transparentize!
-    refute second.opaque?
-
-    assert_equal true, third.auto_adopt
-    assert_equal [second, third], first.children
-  end
-
-  def test_auto_adopt_unwanted
+  def test_finalize_unwanted
     first = SF::Object.new :first
 
-    assert_equal false, first.auto_adopt
+    assert_equal false, first.finalize
     error = diagnostics.shift
 
     assert_equal :error, error.level
@@ -322,17 +289,64 @@ class TestObject < MiniTest::Test
     assert_same first.location, error.location
   end
 
-  def test_block_auto_adopt
+  def test_finalize_passthrough_disabled
+    first = SF::Object.new :first
+    first.allow_children :second
+    first.allow_children :third
+
+    second = SF::Object.new :second, link_to(first)
+    third = SF::Object.new :third, link_to(second)
+
+    second.set_passthrough false
+
+    assert_equal false, third.finalize
+    assert_equal [second], first.children
+
+    error = diagnostics.shift
+    assert_equal "object 'third' is not allowed in this context", error.message
+  end
+
+  def test_finalize_passthrough_enabled
+    first = SF::Object.new :first
+    first.allow_children :second
+    first.allow_children :third
+
+    second = SF::Object.new :second, link_to(first)
+    third = SF::Object.new :third, link_to(second)
+
+    second.set_passthrough true
+
+    assert_equal true, third.finalize
+    assert_equal [second, third], first.children
+    assert_empty second.children
+  end
+
+  def test_finalize_passthrough_parent_unwanted
+    first = SF::Object.new :first
+    first.allow_children :third
+
+    second = SF::Object.new :second, link_to(first)
+    third = SF::Object.new :third, link_to(second)
+
+    second.set_passthrough true
+
+    assert_equal false, third.finalize
+    assert_empty first.children
+    assert_empty second.children
+
+    error = diagnostics.shift
+    assert_equal "object 'second' is not allowed in this context", error.message
+  end
+
+  def test_block_finalize
     first = SF::Object.new :first
     first.allow_children :second
 
-    second_context = SF::Context.new
-    second_context.object = first
-    second = SF::Object.new :second, SF::Location.new(second_context)
+    second = SF::Object.new :second, link_to(first)
     second.allow_children :third
 
-    second.block_auto_adopt!
-    assert_equal true, second.auto_adopt
+    second.block_finalize!
+    assert_equal true, second.finalize
 
     assert_equal [], first.children
   end
@@ -341,10 +355,7 @@ class TestObject < MiniTest::Test
     first = SF::Object.new :first
     first.set_variable :var, 42
 
-    context = SF::Context.new
-    context.object = first
-
-    second = SF::Object.new :second, SF::Location.new(context)
+    second = SF::Object.new :second, link_to(first)
 
     assert second.has_variable? :var
     assert_equal first.get_variable(:var), second.get_variable(:var)
@@ -354,10 +365,7 @@ class TestObject < MiniTest::Test
     first = SF::Object.new :first
     first.set_variable :predefined, 42
 
-    context = SF::Context.new
-    context.object = first
-
-    second = SF::Object.new :second, SF::Location.new(context)
+    second = SF::Object.new :second, link_to(first)
 
     assert_equal 'predefined', second.value_of(:predefined)
   end
@@ -365,10 +373,8 @@ class TestObject < MiniTest::Test
   def test_inherit_early_uninitialized
     nodefault = SF::Object.new :nodefault
 
-    context = SF::Context.new
-    context.object = nodefault
-
-    SF::Object.new :nodefault, SF::Location.new(context)
+    # should not raise a ForeignValueError exception
+    SF::Object.new :nodefault, link_to(nodefault)
   end
 
   def test_select_children
@@ -423,7 +429,7 @@ class TestObject < MiniTest::Test
 
     original = SF::Object.new :first
     original.set_variable :hello, 'world'
-    original.transparentize!
+    original.set_passthrough true
     original.allow_children :second
     original.adopt SF::Object.new(:second)
 
@@ -434,7 +440,7 @@ class TestObject < MiniTest::Test
     refute_same copy.location, original.location
     assert_same loc, copy.location
 
-    assert_equal true, copy.opaque?
+    assert_equal false, copy.passthrough?
 
     assert_equal 'world', copy.value_of(:hello)
     assert_equal copy.children, original.children
@@ -444,10 +450,7 @@ class TestObject < MiniTest::Test
     root = SF::Object.new :first
     assert_equal true, root.root?
 
-    context = SF::Context.new
-    context.object = root
-
-    branch = SF::Object.new :second, SF::Location.new(context)
+    branch = SF::Object.new :second, link_to(root)
     assert_equal false, branch.root?
   end
 
@@ -459,7 +462,7 @@ class TestObject < MiniTest::Test
 
     first.allow_children :third, min: 1
 
-    assert_equal false, first.valid?
+    assert_equal false, first.validate
 
     dia = diagnostics.shift
     assert_equal :error, dia.level
@@ -476,7 +479,7 @@ class TestObject < MiniTest::Test
     first = SF::Object.new :first
     first.set_variable :qwfpgjluy, String, var_loc
 
-    assert_equal false, first.valid?
+    assert_equal false, first.validate
 
     dia = diagnostics.shift
     assert_equal :warning, dia.level
@@ -493,5 +496,19 @@ class TestObject < MiniTest::Test
     first = SF::Object.new :first
 
     assert_equal '\\first@<native code>', first.inspect
+  end
+
+  def test_passthrough
+    first = SF::Object.new :first
+    assert_equal false, first.passthrough?
+
+    first.set_passthrough
+    assert_equal true, first.passthrough?
+
+    first.set_passthrough false
+    assert_equal false, first.passthrough?
+
+    first.set_passthrough :trueish
+    assert_equal true, first.passthrough?
   end
 end

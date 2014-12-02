@@ -75,7 +75,7 @@ private
     }
 
     if !failed? && @context.nil?
-      failure unless @root.valid?
+      @root.validate or failure
     end
   end
 
@@ -200,7 +200,7 @@ private
 
     if inline
       # prevent this object from being adopted with the subobjects
-      object.block_auto_adopt!
+      object.block_finalize!
     end
 
     if value = slices[:value]
@@ -216,7 +216,8 @@ private
       with(context) { enter_in subtree }
     end
 
-    failure unless object.valid?
+
+    object.validate or failure
 
     object
   end
@@ -228,7 +229,7 @@ private
       return
     end
 
-    object.auto_adopt or failure
+    object.finalize or failure
   end
 
   def use_template(name)

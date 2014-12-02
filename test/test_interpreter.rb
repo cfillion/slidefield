@@ -11,7 +11,7 @@ SF::Object.define :restrictiveRoot do
 end
 
 SF::Object.define :level1 do
-  transparentize!
+  set_passthrough
   allow_children :level2
 end
 

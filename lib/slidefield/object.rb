@@ -18,11 +18,12 @@ class SlideField::Object
     @context_parent = @location.context.object
 
     @children = []
+    @children_rules = {}
+    @hooks = {}
     @variables = {}
 
-    @auto_adopt = true
-    @children_rules = {}
-    @opaque = true
+    @finalize = true
+    @passthrough = false
 
     unless @@initializers.has_key? type
       raise SF::UndefinedObjectError, error_at(@location,
@@ -30,11 +31,11 @@ class SlideField::Object
       )
     end
 
-    instance_eval &@@initializers[type]
+    prepare
+  end
 
-    not root? and @context_parent.variables.each {|name, var|
-      @variables[name] = var if compatible? name, var
-    }
+  def inspect
+    '\\%s@%s' % [@type, @location]
   end
 
   def copy(location = nil)
@@ -45,9 +46,8 @@ class SlideField::Object
     newone
   end
 
-  def opaque?; @opaque end
-  def transparentize!; @opaque = false end
-  def opacify!; @opaque = true end
+  def passthrough?; @passthrough end
+  def set_passthrough(val = true); @passthrough = !!val end
 
   def root?
     @context_parent.nil?
@@ -115,8 +115,8 @@ class SlideField::Object
     @children_rules.has_key? child.type
   end
 
-  def block_auto_adopt!
-    @auto_adopt = false
+  def block_finalize!
+    @finalize = false
   end
 
   def adopt(object)
@@ -142,25 +142,15 @@ class SlideField::Object
     true
   end
 
-  def auto_adopt
-    return true unless @auto_adopt
+  def finalize
+    return true if !@finalize || @parent
 
     if @context_parent && !@context_parent.root?
-      @context_parent.auto_adopt 
+      @context_parent.finalize or return false
     end
 
-    parent = catch(:found_parent) {
-      next_try = @context_parent
-
-      while next_try
-        throw :found_parent, next_try if next_try.knows? self
-        next_try = next_try.opaque? ? nil : next_try.context_parent
-      end
-    }
-
-    if parent
+    if parent = find_a_parent
       parent.adopt self
-      block_auto_adopt!
       true
     else
       !error_at @location,
@@ -184,15 +174,27 @@ class SlideField::Object
     children(type).count
   end
 
-  def valid?
+  def validate
     validate_children && validate_variables
   end
 
-  def inspect
-    '\\%s@%s' % [@type, @location]
+  def set_hook(event, &block)
+    @hooks[event] = block
+  end
+
+  def call_hook(event, *args)
+    @hooks[event].call *args if @hooks.has_key? event
   end
 
 private
+  def prepare
+    instance_eval &@@initializers[type]
+
+    not root? and @context_parent.variables.each {|name, var|
+      @variables[name] = var if compatible? name, var
+    }
+  end
+
   def compatible?(name, other_value)
     !has_variable?(name) || @variables[name].compatible_with?(other_value)
   end
@@ -222,6 +224,17 @@ private
 
     !error_at @location,
       "object '%s' has one or more uninitialized variables" % @type
+  end
+
+  def find_a_parent
+    next_try = @context_parent
+
+    catch(:found_parent) {
+      while next_try
+        throw :found_parent, next_try if next_try.knows? self
+        next_try = next_try.passthrough? && next_try.context_parent
+      end
+    }
   end
 
 protected
