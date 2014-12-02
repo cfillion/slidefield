@@ -475,4 +475,11 @@ class TestInterpreter < MiniTest::Test
     @interpreter = SF::Interpreter.new :restrictiveRoot
     @interpreter.run_string '\\level1'
   end
+
+  def test_validate_static_templates
+    should_fail
+
+    @interpreter = SF::Interpreter.new :permissiveRoot
+    @interpreter.run_string 'var = \\answer'
+  end
 end

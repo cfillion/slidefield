@@ -216,7 +216,6 @@ private
       with(context) { enter_in subtree }
     end
 
-
     object.validate or failure
 
     object
