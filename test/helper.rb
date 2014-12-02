@@ -28,4 +28,13 @@ module DoctorHelper
   ensure
     SF::Doctor.bag.clear
   end
+
+  def assert_diagnostic(level, message)
+    error = diagnostics.shift
+
+    assert_equal level, error.level
+    assert_equal message, error.message
+
+    error
+  end
 end

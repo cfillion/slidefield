@@ -12,13 +12,13 @@ class TestExamples < MiniTest::Test
     path = File.join @examples_path, 'minimal/main.sfp'
     @interpreter.run_file path
 
-    refute @interpreter.failed?
+    assert_equal false, @interpreter.failed?
   end
 
   def test_complete
     path = File.join @examples_path, 'complete/main.sfp'
     @interpreter.run_file path
 
-    refute @interpreter.failed?
+    assert_equal false, @interpreter.failed?
   end
 end
