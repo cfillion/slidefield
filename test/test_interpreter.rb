@@ -52,11 +52,9 @@ class TestInterpreter < MiniTest::Test
 
     @interpreter.run_string 'a = \\&b'
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal 'failed to match [a-zA-Z_]', error.message
-    refute error.location.native?
-    assert_equal [1, 6], error.location.line_and_column
+    dia = assert_diagnostic :error, 'failed to match [a-zA-Z_]'
+    refute dia.location.native?
+    assert_equal [1, 6], dia.location.line_and_column
   end
 
   def test_empty_tree
@@ -135,7 +133,8 @@ class TestInterpreter < MiniTest::Test
   def test_object_value_mismatch
     should_fail
 
-    @interpreter.run_string '\answer "The Ultimate Question of Life, the Universe, and Everything"'
+    @interpreter.run_string \
+      '\answer "The Ultimate Question of Life, the Universe, and Everything"'
   end
 
   def test_object_value_ambiguous
@@ -389,10 +388,8 @@ class TestInterpreter < MiniTest::Test
     \\&test
     INPUT
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "cannot use 'integer' as a template", error.message
-    assert_equal [2, 7], error.location.line_and_column
+    dia = assert_diagnostic :error, "cannot use 'integer' as a template"
+    assert_equal [2, 7], dia.location.line_and_column
   end
 
   def test_deep_context_limit
@@ -401,10 +398,9 @@ class TestInterpreter < MiniTest::Test
     path = File.join @resources_path, 'recursive_include.sfi'
     @interpreter.run_string '\include "' + path + '"'
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal 'context level exceeded maximum depth of 50', error.message
-    assert_equal [1, 10], error.location.line_and_column
+    dia = assert_diagnostic :error,
+      'context level exceeded maximum depth of 50'
+    assert_equal [1, 10], dia.location.line_and_column
   end
 
   def test_continue_on_error
@@ -423,7 +419,8 @@ class TestInterpreter < MiniTest::Test
     INPUT
 
     assert_equal 16, @interpreter.root.value_of(:top_level)
-    assert_equal SF::Color.new(0,0,0,0), @interpreter.root.first_child(:level1).value_of(:sublevel)
+    assert_equal SF::Color.new(0,0,0,0),
+      @interpreter.root.first_child(:level1).value_of(:sublevel)
   end
 
   def test_run_file
@@ -440,10 +437,8 @@ class TestInterpreter < MiniTest::Test
 
     @interpreter.run_file '404'
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal 'no such file or directory - 404', error.message
-    assert error.location.native?
+    dia = assert_diagnostic :error, 'no such file or directory - 404'
+    assert dia.location.native?
   end
 
   def test_include_read_error
@@ -454,10 +449,9 @@ class TestInterpreter < MiniTest::Test
     \\not_executed
     INPUT
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "no such file or directory - #{File.join Dir.pwd, '404'}", error.message
-    assert_equal [1, 14], error.location.line_and_column
+    dia = assert_diagnostic :error,
+      "no such file or directory - #{File.join Dir.pwd, '404'}"
+    assert_equal [1, 14], dia.location.line_and_column
   end
 
   def test_file_is_directory
@@ -465,10 +459,8 @@ class TestInterpreter < MiniTest::Test
 
     @interpreter.run_file '.'
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal 'unreadable file - .', error.message
-    assert error.location.native?
+    dia = assert_diagnostic :error, 'unreadable file - .'
+    assert dia.location.native?
   end
 
   def test_object_validation

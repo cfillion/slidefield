@@ -111,10 +111,9 @@ class TestVariable < MiniTest::Test
     retval = left.apply :+, right
     assert_equal false, retval
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "incompatible operands ('string' + 'boolean')", error.message
-    assert_equal right.location, error.location
+    dia = assert_diagnostic :error,
+      "incompatible operands ('string' + 'boolean')"
+    assert_equal right.location, dia.location
   end
 
   def test_invalid_operator
@@ -125,12 +124,10 @@ class TestVariable < MiniTest::Test
     assert_equal false, left.apply(token, right)
     assert_equal false, left.apply(:/, right)
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "invalid operator '/=' for type 'string'", error.message
-    assert_same token.location, error.location
+    dia = assert_diagnostic :error, "invalid operator '/=' for type 'string'"
+    assert_same token.location, dia.location
 
-    assert_equal error.message, diagnostics.shift.message
+    assert_equal dia.message, diagnostics.shift.message
   end
 
   def test_op_negative_string_multiplication
@@ -140,10 +137,8 @@ class TestVariable < MiniTest::Test
     retval = left.apply :*, right
     assert_equal false, retval
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal 'invalid operation (negative argument)', error.message
-    assert_same right.location, error.location
+    dia = assert_diagnostic :error, 'invalid operation (negative argument)'
+    assert_same right.location, dia.location
   end
 
   def test_op_color_out_of_bounds
@@ -153,10 +148,9 @@ class TestVariable < MiniTest::Test
     retval = left.apply :+, right
     assert_equal false, retval
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal 'color is out of bounds (evaluating #FFFFFFAA + #FFFFFFBB)', error.message
-    assert_same right.location, error.location
+    dia = assert_diagnostic :error,
+      'color is out of bounds (evaluating #FFFFFFAA + #FFFFFFBB)'
+    assert_same right.location, dia.location
   end
 
   def test_op_division_by_zero
@@ -166,10 +160,8 @@ class TestVariable < MiniTest::Test
     retval = left.apply :/, right
     assert_equal false, retval
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal 'divison by zero (evaluating 1 / 0)', error.message
-    assert_same right.location, error.location
+    dia = assert_diagnostic :error, 'divison by zero (evaluating 1 / 0)'
+    assert_same right.location, dia.location
   end
 
   def test_op_runtime_error
@@ -201,11 +193,10 @@ class TestVariable < MiniTest::Test
     assert_equal false, before.filter(token)
     assert_equal false, before.filter(:bad_filter)
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "unknown filter 'bad_filter' for type 'point'", error.message
-    assert_same token.location, error.location
+    dia = assert_diagnostic :error,
+      "unknown filter 'bad_filter' for type 'point'"
+    assert_same token.location, dia.location
 
-    assert_equal error.message, diagnostics.shift.message
+    assert_equal dia.message, diagnostics.shift.message
   end
 end

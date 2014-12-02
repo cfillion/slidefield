@@ -42,9 +42,7 @@ class TestObject < MiniTest::Test
       SF::Object.new :qwfpgjluy, loc
     end
 
-    dia = diagnostics.shift
-    assert_equal :error, dia.level
-    assert_equal "unknown object name 'qwfpgjluy'", dia.message
+    dia = assert_diagnostic :error, "unknown object name 'qwfpgjluy'"
     assert_same loc, dia.location
 
     assert_equal dia.to_s, error.message
@@ -99,10 +97,9 @@ class TestObject < MiniTest::Test
     retval = first.set_variable :qwfpgjluy, var
     assert_equal false, retval
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "incompatible assignation ('integer' to 'string')", error.message
-    assert_same var.location, error.location
+    dia = assert_diagnostic :error,
+      "incompatible assignation ('integer' to 'string')"
+    assert_same var.location, dia.location
   end
 
   def test_get_variable_undefined
@@ -111,10 +108,8 @@ class TestObject < MiniTest::Test
     token = SF::Token.new :qwfpgjluy
     assert_equal false, first.get_variable(token)
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "undefined variable 'qwfpgjluy'", error.message
-    assert_same token.location, error.location
+    dia = assert_diagnostic :error, "undefined variable 'qwfpgjluy'"
+    assert_same token.location, dia.location
   end
 
   def test_get_variable_uninitialized
@@ -124,10 +119,9 @@ class TestObject < MiniTest::Test
     token = SF::Token.new :qwfpgjluy
     assert_equal false, first.get_variable(token)
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "use of uninitialized variable 'qwfpgjluy'", error.message
-    assert_same token.location, error.location
+    dia = assert_diagnostic :error,
+      "use of uninitialized variable 'qwfpgjluy'"
+    assert_same token.location, dia.location
   end
 
   def test_value_of
@@ -144,7 +138,7 @@ class TestObject < MiniTest::Test
 
     assert_equal false, first.value_of(:qwfpgjluy)
 
-    diagnostics.shift
+    assert_diagnostic :error, "use of uninitialized variable 'qwfpgjluy'"
   end
 
   def test_guess_variable
@@ -152,8 +146,9 @@ class TestObject < MiniTest::Test
     first.set_variable :qwfpgjluy, Fixnum
     first.set_variable :arstdhnei, String
 
-    assert_equal :arstdhnei, first.guess_variable("hello world")
-    assert_equal :arstdhnei, first.guess_variable(SF::Variable.new("hello world"))
+    assert_equal :arstdhnei, first.guess_variable('hello world')
+    assert_equal :arstdhnei,
+      first.guess_variable(SF::Variable.new('hello world'))
   end
 
   def test_guess_variable_fail
@@ -163,12 +158,11 @@ class TestObject < MiniTest::Test
     assert_equal false, first.guess_variable(var)
     assert_equal false, first.guess_variable(42)
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "object 'first' has no uninitialized variable compatible with 'integer'", error.message
-    assert_same var.location, error.location
+    dia = assert_diagnostic :error,
+      "object 'first' has no uninitialized variable compatible with 'integer'"
+    assert_same var.location, dia.location
 
-    assert_equal error.message, diagnostics.shift.message
+    assert_equal dia.message, diagnostics.shift.message
   end
 
   def test_guess_initialized_variable
@@ -177,8 +171,8 @@ class TestObject < MiniTest::Test
 
     assert_equal false, first.guess_variable(42)
 
-    error = diagnostics.shift
-    assert_equal "object 'first' has no uninitialized variable compatible with 'integer'", error.message
+    assert_diagnostic :error,
+      "object 'first' has no uninitialized variable compatible with 'integer'"
   end
 
   def test_guess_variable_ambiguous
@@ -190,12 +184,10 @@ class TestObject < MiniTest::Test
     assert_equal false, first.guess_variable(var)
     assert_equal false, first.guess_variable(42)
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal 'value is ambiguous', error.message
-    assert_same var.location, error.location
+    dia = assert_diagnostic :error, 'value is ambiguous'
+    assert_same var.location, dia.location
 
-    assert_equal error.message, diagnostics.shift.message
+    assert_equal dia.message, diagnostics.shift.message
   end
 
   def test_guess_variable_ignore_non_native
@@ -233,10 +225,9 @@ class TestObject < MiniTest::Test
     extra = SF::Object.new(:second)
     assert_equal false, first.adopt(extra)
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "object 'first' cannot have more than 2 'second'", error.message
-    assert_same extra.location, error.location
+    dia = assert_diagnostic :error,
+      "object 'first' cannot have more than 2 'second'"
+    assert_same extra.location, dia.location
   end
 
   def test_adopt_unwanted
@@ -247,10 +238,8 @@ class TestObject < MiniTest::Test
 
     assert_equal false, first.adopt(second)
 
-    error = diagnostics.shift
-    assert_equal :error, error.level
-    assert_equal "object 'first' cannot have 'second'", error.message
-    assert_same second.location, error.location
+    dia = assert_diagnostic :error, "object 'first' cannot have 'second'"
+    assert_same second.location, dia.location
   end
 
   def test_readopt
@@ -282,11 +271,10 @@ class TestObject < MiniTest::Test
     first = SF::Object.new :first
 
     assert_equal false, first.finalize
-    error = diagnostics.shift
 
-    assert_equal :error, error.level
-    assert_equal "object 'first' is not allowed in this context", error.message
-    assert_same first.location, error.location
+    dia = assert_diagnostic :error,
+      "object 'first' is not allowed in this context"
+    assert_same first.location, dia.location
   end
 
   def test_finalize_passthrough_disabled
@@ -302,8 +290,7 @@ class TestObject < MiniTest::Test
     assert_equal false, third.finalize
     assert_equal [second], first.children
 
-    error = diagnostics.shift
-    assert_equal "object 'third' is not allowed in this context", error.message
+    assert_diagnostic :error, "object 'third' is not allowed in this context"
   end
 
   def test_finalize_passthrough_enabled
@@ -334,8 +321,7 @@ class TestObject < MiniTest::Test
     assert_empty first.children
     assert_empty second.children
 
-    error = diagnostics.shift
-    assert_equal "object 'second' is not allowed in this context", error.message
+    assert_diagnostic :error, "object 'second' is not allowed in this context"
   end
 
   def test_block_finalize
@@ -464,13 +450,12 @@ class TestObject < MiniTest::Test
 
     assert_equal false, first.validate
 
-    dia = diagnostics.shift
-    assert_equal :error, dia.level
-    assert_equal "object 'first' must have at least 2 'second', got 1", dia.message
+    dia = assert_diagnostic :error,
+      "object 'first' must have at least 2 'second', got 1"
     assert_same first.location, dia.location
 
-    dia = diagnostics.shift
-    assert_equal "object 'first' must have at least 1 'third', got 0", dia.message
+    assert_diagnostic :error,
+      "object 'first' must have at least 1 'third', got 0"
   end
 
   def test_validate_uninitialized
@@ -481,14 +466,11 @@ class TestObject < MiniTest::Test
 
     assert_equal false, first.validate
 
-    dia = diagnostics.shift
-    assert_equal :warning, dia.level
-    assert_equal "'qwfpgjluy' is uninitialized", dia.message
+    dia = assert_diagnostic :warning, "'qwfpgjluy' is uninitialized"
     assert_same var_loc, dia.location
 
-    dia = diagnostics.shift
-    assert_equal :error, dia.level
-    assert_equal "object 'first' has one or more uninitialized variables", dia.message
+    dia = assert_diagnostic :error,
+      "object 'first' has one or more uninitialized variables"
     assert_same first.location, dia.location
   end
 
