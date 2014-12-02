@@ -99,10 +99,19 @@ class TestDiagnostic < MiniTest::Test
   end
 
   def test_invalid_source
-    location = SF::Location.new SF::Context.new
+    location = SF::Location.new SF::Context.new('label')
     dia = SF::Diagnostic.new :level, 'message', location
 
-    assert_equal ':0:0: level: message', dia.format
+    assert_equal 'label:0:0: level: message', dia.format(colors: false)
+  end
+
+  def test_incomplete_source
+    context = SF::Context.new
+    context.label = 'label'
+    context.source = "hello\nworld"
+
+    SF::Diagnostic.new(:level, 'test', SF::Location.new(context, 0)).format
+    SF::Diagnostic.new(:level, 'test', SF::Location.new(context, 111)).format
   end
 
   def test_black_and_white

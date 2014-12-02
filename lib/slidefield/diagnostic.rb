@@ -11,15 +11,11 @@ class SlideField::Diagnostic
   end
 
   def format(colors: true, excerpt: true)
-    excerpt = false if @location.source.nil?
+    output = '%s: %s: %s' % [@location.to_s, @level, @message]
 
-    output = "%s: %s: %s" % [@location.to_s, @level, @message]
-
-    if excerpt
-      excerpt_parts = make_excerpt
-      excerpt_parts.map! {|s| '  ' + s } # add padding
-
-      output += "\n%s\n%s" % excerpt_parts
+    if excerpt && (excerpt_parts = make_excerpt)
+      excerpt_parts.map! {|s| "\n  " + s }
+      output += excerpt_parts.join
     end
 
     highlight output if colors
@@ -42,7 +38,10 @@ private
     line_index = @location.line - 1
     column_index = @location.column - 1
 
-    source_line = @location.source.lines[line_index]
+    source_line = @location.source.to_s.lines[line_index]
+
+    return if line_index < 0 || source_line.nil?
+
     code_excerpt = source_line.strip
     column_index -= source_line.index code_excerpt
     caret = '%s^' % ["\x20" * column_index]
