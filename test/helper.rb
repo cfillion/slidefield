@@ -30,11 +30,12 @@ module DoctorHelper
   end
 
   def assert_diagnostic(level, message)
-    error = diagnostics.shift
+    dia = diagnostics.shift
 
-    assert_equal level, error.level
-    assert_equal message, error.message
+    refute_nil dia, 'Diagnostic not found'
+    assert_equal level, dia.level
+    assert_equal message, dia.message
 
-    error
+    dia
   end
 end
