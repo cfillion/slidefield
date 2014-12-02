@@ -440,34 +440,26 @@ class TestObject < MiniTest::Test
     assert_equal false, branch.root?
   end
 
-  def test_validate_children
+  def test_validate
     first = SF::Object.new :first
-    first.allow_children :second, min: 2
-    first.allow_children :third, min: 1
-    first.adopt SF::Object.new(:second)
+    first.allow_children :second, min: 1
 
-    assert_equal false, first.validate
-
-    dia = assert_diagnostic :error,
-      "object 'first' must have at least 2 'second', got 1"
-    assert_same first.location, dia.location
-
-    assert_diagnostic :error,
-      "object 'first' must have at least 1 'third', got 0"
-  end
-
-  def test_validate_uninitialized
     var_loc = SF::Location.new
-    first = SF::Object.new :first
     first.set_variable :qwfpgjluy, String, var_loc
 
     assert_equal false, first.validate
 
+    # uninitialized variables
     dia = assert_diagnostic :warning, "'qwfpgjluy' is uninitialized"
     assert_same var_loc, dia.location
 
     dia = assert_diagnostic :error,
       "object 'first' has one or more uninitialized variables"
+    assert_same first.location, dia.location
+
+    # unmet requirements
+    dia = assert_diagnostic :error,
+      "object 'first' must have at least 1 'second', got 0"
     assert_same first.location, dia.location
   end
 

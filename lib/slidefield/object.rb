@@ -176,7 +176,7 @@ class SlideField::Object
   end
 
   def validate
-    validate_children && validate_variables
+    [validate_variables, validate_children].all?
   end
 
   def set_hook(event, &block)
