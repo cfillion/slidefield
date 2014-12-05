@@ -48,8 +48,8 @@ class TestTypes < MiniTest::Test
   end
 
   def test_slice_to_boolean
-    t = SF::Boolean.from_slice ':true'
-    f = SF::Boolean.from_slice ':false'
+    t = SF::Boolean.from_slice 'true'
+    f = SF::Boolean.from_slice 'false'
 
     assert_same true, t.to_bool
     assert_same false, f.to_bool

@@ -157,19 +157,19 @@ class TestParser < MiniTest::Test
   end
 
   def test_var_boolean
-    expect 'var=:true', [
+    expect 'var=true', [
       :assignment=>{
         :variable=>'var',
         :operator=>'=',
-        :value=>{:filters=>[], :boolean=>':true'}
+        :value=>{:filters=>[], :boolean=>'true'}
       }
     ]
 
-    expect 'var=:false', [
+    expect 'var=false', [
       :assignment=>{
         :variable=>'var',
         :operator=>'=',
-        :value=>{:filters=>[], :boolean=>':false'}
+        :value=>{:filters=>[], :boolean=>'false'}
       }
     ]
   end
@@ -335,10 +335,10 @@ class TestParser < MiniTest::Test
       }}
     ]
 
-    expect '\\test :true', [
+    expect '\\test true', [
       {:object=>{
         :type=>'test',
-        :value=>{:filters=>[], :boolean=>':true'}
+        :value=>{:filters=>[], :boolean=>'true'}
       }}
     ]
 

@@ -71,7 +71,7 @@ end
 
 class SlideField::Boolean
   def self.from_slice(slice)
-    new slice == ':true'
+    new slice == 'true'
   end
 
   def self.true

@@ -30,11 +30,11 @@ class SlideField::Parser < Parslet::Parser
     inline_spaces?
   }
 
+  rule(:boolean) { (str('true') | str('false')) }
   rule(:identifier) { match['a-zA-Z_'] >> match['a-zA-Z0-9_'].repeat }
   rule(:integer) { str('-').maybe >> match('\\d').repeat(1) }
   rule(:point) { integer >> str('x') >> integer }
   rule(:color) { str('#') >> match['a-fA-F0-9'].repeat(8, 8) }
-  rule(:boolean) { str(':') >> (str('true') | str('false')) }
   rule(:string) {
     str('"') >> (
       (str('\\') >> any) |
@@ -59,12 +59,12 @@ class SlideField::Parser < Parslet::Parser
   rule(:value) {
     filter.repeat.as(:filters) >>
     (
+      boolean.as(:boolean) |
       identifier.as(:identifier) |
       string.as(:string) |
       point.as(:point) |
       integer.as(:integer) |
       color.as(:color) |
-      boolean.as(:boolean) |
       object.as(:object)
     )
   }

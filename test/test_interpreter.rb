@@ -140,7 +140,7 @@ class TestInterpreter < MiniTest::Test
   def test_object_value_ambiguous
     should_fail
 
-    @interpreter.run_string '\\collection :true'
+    @interpreter.run_string '\\collection true'
   end
 
   def test_variables
@@ -149,8 +149,8 @@ class TestInterpreter < MiniTest::Test
     s = "hello"
     p = 4x2
     c = #C0FF33FF
-    bt = :true
-    bf = :false
+    bt = true
+    bf = false
     INPUT
 
     i = @interpreter.root.get_variable :i
