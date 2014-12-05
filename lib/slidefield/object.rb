@@ -192,7 +192,7 @@ private
     instance_eval &@@initializers[type]
 
     not root? and @context_parent.variables.each {|name, var|
-      @variables[name] = var if compatible? name, var
+      @variables[name] = var if compatible?(name, var) && !var.value.nil?
     }
   end
 

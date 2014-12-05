@@ -359,8 +359,8 @@ class TestObject < MiniTest::Test
   def test_inherit_early_uninitialized
     nodefault = SF::Object.new :nodefault
 
-    # should not raise a ForeignValueError exception
-    SF::Object.new :nodefault, link_to(nodefault)
+    obj = SF::Object.new :level1, link_to(nodefault)
+    assert_equal false, obj.has_variable?(:unset)
   end
 
   def test_select_children
