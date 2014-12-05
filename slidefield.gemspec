@@ -25,9 +25,10 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake', '~> 10.0'
   spec.add_development_dependency 'simplecov', '~> 0.9'
 
-  spec.add_runtime_dependency 'gosu', '~> 0.8'
-  spec.add_runtime_dependency 'parslet', '~> 1.6'
   spec.add_runtime_dependency 'colorize', '~> 0.7'
+  spec.add_runtime_dependency 'parslet', '~> 1.6'
+  spec.add_runtime_dependency 'qtbindings', '~> 4.8'
+  spec.add_runtime_dependency 'ruby-sdl-ffi', '~> 0.4'
 
   spec.required_ruby_version = '>= 2.0'
 end

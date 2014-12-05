@@ -69,8 +69,12 @@ files.each {|file|
 
   next if interpreter.failed? || options.include?(:check)
 
-  project_root = interpreter.root
+  renderer = SF::Renderer.new interpreter.root
 
-  viewer = SlideField::Viewer.new project_root
-  viewer.show
+  SDL.Init SDL::INIT_AUDIO
+  SDL::Mixer.OpenAudio 44_100, SDL::Mixer::DEFAULT_FORMAT, 2, 1024
+
+  app = Qt::Application.new []
+  SF::QtWindow.new renderer
+  app.exec
 }

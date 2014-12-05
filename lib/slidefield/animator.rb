@@ -20,28 +20,42 @@ class SlideField::Animator
     @frame = nil
   end
 
-  def transform(obj)
+  def transform(painter, obj)
+    tr = calculate obj
+
+    if tr.skip_draw?
+      painter.setOpacity 0
+      return
+    end
+
+    painter.translate tr.x_offset, tr.y_offset
+    painter.setOpacity tr.opacity
+    painter.scale tr.scale, tr.scale
+  end
+
+  def calculate(obj)
     raise "Can not animate outside a frame" unless @frame
 
     tr_struct = Struct.new :skip_draw?, :x_offset, :y_offset, :scale, :opacity
     tr = tr_struct.new false, 0, 0, 1.0, 1.0
 
-    tr[:skip_draw?] = !@frame.current? # TODO: remove this line
-    return tr # TODO: remote this line and fix the animator
-
-    anim = animation_for obj.ancestor(:animation)
+    if @frame.forward?
+      anim = animation_for @frame.current? ? obj.value_of(:enter) : obj.value_of(:leave)
+    else
+      anim = animation_for @frame.current? ? obj.value_of(:leave) : obj.value_of(:enter)
+    end
 
     # no animation
     return tr if anim.nil?
 
     # direction disabled
     cur_direction = @frame.forward? ? @frame.current? : !@frame.current?
-    dir_enabled = cur_direction ? anim.enter : anim.leave
-    anim.enabled = false unless dir_enabled
 
     elapsed = @frame.time - anim.start_time
     position = elapsed / anim.duration
     anim.enabled = false if position > 1.0
+
+    anim.enabled = false if anim.name == 'cut'
 
     # animation finished
     unless anim.enabled
@@ -49,7 +63,7 @@ class SlideField::Animator
       return tr
     end
 
-    width, height = @layout_size
+    width, height = *@layout_size
 
     case anim.name
     when "fade"
@@ -75,8 +89,7 @@ class SlideField::Animator
     else
       # the validator has missed ?!
       # TODO: validate at interpret time
-      raise SlideField::RuntimeError,
-        "Unsupported animation '#{anim.name}'"
+      raise "Unsupported animation '#{anim.name}'"
     end
 
     tr
@@ -92,10 +105,8 @@ private
     if data
       anim.enabled = true
       anim.start_time = @frame.time.to_f
-      anim.name = data.get :name
-      anim.duration = data.get :duration
-      anim.enter = data.get :enter
-      anim.leave = data.get :leave
+      anim.name = data.value_of :name
+      anim.duration = data.value_of :duration
     end
 
     @animations[data] = anim

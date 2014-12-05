@@ -1,33 +1,31 @@
 require File.expand_path '../helper', __FILE__
 
 class TestAnimator < MiniTest::Test
+  include DoctorHelper
+
   def setup
     @animator = SlideField::Animator.new [1000,500]
     @assert_number = 0
-
-    skip
   end
 
-  def get_object(anim_name, duration, enter = true, leave = true)
+  def get_object(anim_name, duration, enter: true, leave: true)
+    a = SF::Object.new :animation
+    a.set_variable :name, anim_name
+    a.set_variable :duration, duration
 
-    a = SlideField::ObjectData.new :animation, 'animation loc'
-    a.set :name, anim_name, 'name loc', :string
-    a.set :duration, duration, 'duration loc', :integer
-    a.set :enter, enter, 'enter loc', :boolean
-    a.set :leave, leave, 'leave loc', :boolean
-
-    obj = SlideField::ObjectData.new :object, 'object loc'
-    a << obj
+    obj = SlideField::Object.new :slide
+    obj.set_variable :enter, a if enter
+    obj.set_variable :leave, a if leave
     obj
   end
 
-  def assert_animation(anim_name, duration, tests, enter = true, leave = true, need_redraw = true)
-    obj = get_object anim_name, duration, enter, leave
+  def assert_animation(anim_name, duration, tests, enter: true, leave: true, need_redraw: true)
+    obj = get_object anim_name, duration, enter: enter, leave: leave
     tests.each_with_index {|test, index|
       time, current, forward, assertions = test
 
       @animator.frame time, current, forward do
-        tr = @animator.transform obj
+        tr = @animator.calculate obj
 
         assertions.each {|k,v|
           assert_same v, tr[k], "tr.#{k} in test #{index + 1}"
@@ -47,19 +45,19 @@ class TestAnimator < MiniTest::Test
 
     # start animation
     @animator.frame 0, true, false do
-      @animator.transform obj
+      @animator.calculate obj
     end
     assert @animator.need_redraw?
 
     # end animation
     @animator.frame 50, true, false do
-      @animator.transform obj
+      @animator.calculate obj
     end
     assert @animator.need_redraw?
 
     # finish the job
     @animator.frame 100, true, false do
-      @animator.transform obj
+      @animator.calculate obj
     end
     refute @animator.need_redraw?
 
@@ -72,14 +70,14 @@ class TestAnimator < MiniTest::Test
     @animator.frame(nil, nil, nil) {}
 
     error = assert_raises RuntimeError do
-      @animator.transform nil
+      @animator.calculate nil
     end
 
     assert_equal "Can not animate outside a frame", error.message
   end
 
   def test_unsupported
-    error = assert_raises SlideField::RuntimeError do
+    error = assert_raises RuntimeError do
       assert_animation 'aaaa', 0, [0, true, false, {}]
     end
 
@@ -251,7 +249,7 @@ class TestAnimator < MiniTest::Test
       [0, true, true, {:opacity=>1.0}],
       [50, true, true, {:opacity=>1.0}],
       [100, true, true, {:opacity=>1.0}],
-    ], false, true, false
+    ], enter: false, need_redraw: false
   end
 
   def test_enter_disabled_backward
@@ -259,7 +257,7 @@ class TestAnimator < MiniTest::Test
       [0, false, false, {:opacity=>1.0}],
       [50, false, false, {:opacity=>1.0}],
       [100, false, false, {:opacity=>1.0}],
-    ], false, true, false
+    ], enter: false, need_redraw: false
   end
 
   def test_leave_disabled_forward
@@ -267,7 +265,7 @@ class TestAnimator < MiniTest::Test
       [0, false, true, {:opacity=>1.0}],
       [50, false, true, {:opacity=>1.0}],
       [100, false, true, {:opacity=>1.0}],
-    ], true, false, false
+    ], leave: false, need_redraw: false
   end
 
   def test_leave_disabled_backward
@@ -275,6 +273,6 @@ class TestAnimator < MiniTest::Test
       [0, true, false, {:opacity=>1.0}],
       [50, true, false, {:opacity=>1.0}],
       [100, true, false, {:opacity=>1.0}],
-    ], true, false, false
+    ], leave: false, need_redraw: false
   end
 end

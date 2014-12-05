@@ -1,10 +1,9 @@
-SF::Object.define :include do
-  set_variable :file, String
+SF::Object.define :group do
+  set_passthrough
 end
 
-SF::Object.define :animation do # TODO: remove
-  transparentize!
-  set_variable :a, String
+SF::Object.define :include do
+  set_variable :file, String
 end
 
 SF::Object.define :root do
@@ -18,51 +17,44 @@ SF::Object.define :layout do
 end
 
 SF::Object.define :slide do
-  allow_children :text
+  allow_children :group
   allow_children :rect
+  allow_children :text
   allow_children :image
+  allow_children :audio
 
-  allow_children :animation # TODO: remove
-  allow_children :song # TODO: remove
+  default_anim = SF::Object.new :animation
+  default_anim.set_variable :name, 'cut'
 
   set_variable :position, SF::Point.zero
-  set_variable :z_order, 0
+  set_variable :enter, default_anim
+  set_variable :leave, default_anim
+end
 
-  def loaded?
-    @is_loaded
-  end
+SF::Object.define :rect do
+  set_passthrough
 
-  def preload(window)
-    forward :preload, window
-    @is_loaded = true
-  end
+  set_variable :size, SF::Point
+  set_variable :fill, SF::Color.white
 
-  def activate
-    forward :activate
-  end
+  set_hook :paint do |painter, global_cache|
+    unless cache = global_cache[self]
+      brush = Qt::Brush.new Qt::Color.new *value_of(:fill)
+      rect = Qt::Rect.new *value_of(:position), *value_of(:size)
 
-  def draw(animator)
-    forward :draw, animator
-  end
+      cache = global_cache[self] = OpenStruct.new
+      cache.brush = brush
+      cache.rect = rect
+    end
 
-  def deactivate
-    forward :deactivate
-  end
-
-  def unload
-    forward :load
-    @is_loaded = false
-  end
-
-  def forward(method, *args)
-    @children.each {|c|
-      c.send method, *args if c.respond_to? method
-    }
+    painter.setPen Qt::NoPen
+    painter.setBrush cache.brush
+    painter.drawRect cache.rect
   end
 end
 
 SF::Object.define :text do
-  transparentize!
+  set_passthrough
 
   set_variable :content, String
   set_variable :color, SF::Color.white
@@ -72,155 +64,149 @@ SF::Object.define :text do
   set_variable :spacing, 0
   set_variable :align, 'left'
 
-  def preload(window)
-    @x, @y = value_of(:position).to_a
-    @z = value_of :z_order
-    @color = Gosu::Color.rgba *value_of(:color).to_a
+  set_hook :paint do |painter, global_cache|
+    unless cache = global_cache[self]
+      content = value_of(:content).gsub /\n/, '<br>'
+      fontfamily = value_of(:font)
 
-    content = value_of :content
-    font = value_of :font
-    height = value_of :height
-    spacing = value_of :spacing
-    width = value_of :width
-    align = value_of(:align).to_sym
+      if fontfamily.include? '/'
+        path = File.expand_path fontfamily, @location.include_path
 
-    if font.include? '/'
-      font = File.expand_path font, @location.include_path
+        if global_cache[path]
+          fontfamily = global_cache[path]
+        else
+          id = Qt::FontDatabase.addApplicationFont path
+
+          if id > -1
+            fontfamily = Qt::FontDatabase.applicationFontFamilies(id).first
+            global_cache[path] = fontfamily
+          else
+            warning_at get_variable(:font).location,
+              'unable to load %s' % path
+          end
+        end
+      end
+
+      option = Qt::TextOption.new
+      # option.setWrapMode Qt::TextOption::NoWrap
+
+      case value_of(:align).to_sym
+      when :center
+        option.setAlignment Qt::AlignHCenter
+      when :right
+        option.setAlignment Qt::AlignRight
+      when :justify
+        option.setAlignment Qt::AlignJustify
+      end
+
+      static = Qt::StaticText.new content
+      static.setTextFormat Qt::RichText
+      static.setTextOption option
+
+      font = Qt::Font.new fontfamily
+      font.setPixelSize value_of(:height)
+
+      fm = Qt::FontMetrics.new font
+      font.setPixelSize value_of(:height) - (fm.height - value_of(:height))
+
+      if value_of(:width) > 0
+        width = value_of(:width)
+      else
+        width = fm.width content
+      end
+
+      static.setTextWidth width
+
+      color = Qt::Color.new *value_of(:color)
+
+      pixmap = Qt::Pixmap.new width, width # TODO: height
+      pixmap.fill Qt::Color.new Qt::transparent
+      pixpainter = Qt::Painter.new pixmap
+      pixpainter.setFont font
+      pixpainter.setPen color
+      pixpainter.drawStaticText 0, 0, static
+      pixpainter.end
+
+      cache = global_cache[self] = OpenStruct.new
+      cache.pixmap = pixmap
     end
 
-    if width < 1
-      # automatic width
-      temp = Gosu::Image.from_text window, content, font, height
-      width = temp.width
-    end
-
-    @image = Gosu::Image.from_text window, content, font, height, spacing, width, align
-  end
-
-  def draw(animator)
-    tr = animator.transform self
-    return if tr.skip_draw?
-
-    x = @x + tr.x_offset
-    y = @y + tr.y_offset
-
-    color = @color.dup
-    color.alpha = tr.opacity * @color.alpha
-
-    @image.draw x, y, @z, tr.scale, tr.scale, color
-  end
-
-  def unload
-    @image = nil
-  end
-end
-
-SF::Object.define :rect do
-  transparentize!
-
-  set_variable :size, SF::Point
-  set_variable :fill, SF::Color.white
-
-  def preload(window)
-    @window = window
-
-    @x, @y = value_of(:position).to_a
-    @z = value_of :z_order
-
-    @width, @height = value_of(:size).to_a
-    @fill = Gosu::Color.rgba *value_of(:fill).to_a
-  end
-
-  def draw(animator)
-    tr = animator.transform self
-    return if tr.skip_draw?
-
-    x = @x + tr.x_offset
-    y = @y + tr.y_offset
-
-    width = @width * tr.scale
-    height = @height * tr.scale
-
-    color = @fill.dup
-    color.alpha = tr.opacity * @fill.alpha
-
-    @window.draw_quad(
-      x, y, color,
-      width + x, y, color,
-      x, height + y, color,
-      width + x, height + y, color,
-      @z
-    )
+    painter.drawPixmap *value_of(:position),
+      cache.pixmap.size.width, cache.pixmap.size.height, cache.pixmap
   end
 end
 
 SF::Object.define :image do
-  transparentize!
+  set_passthrough
 
   set_variable :source, String
   set_variable :size, SF::Point.zero
   set_variable :color, SF::Color.white
 
-  def preload(window)
-    @x, @y = value_of(:position).to_a
-    @z = value_of :z_order
-    @color = Gosu::Color.rgba *value_of(:color).to_a
+  set_hook :paint do |painter, cache|
+    position = value_of :position
+    file = File.expand_path value_of(:source), @location.include_path
 
-    source = File.expand_path value_of(:source), @location.include_path
-    width, height = value_of(:size).to_a
+    pixmap = (cache[file] ||= Qt::Pixmap.new file)
 
-    @image = Gosu::Image.new window, source, true
-    width = @image.width if 0 == width
-    height = @image.height if 0 == height
+    if value_of(:size) == SF::Point.zero
+      size = [pixmap.width, pixmap.height]
+    else
+      size = value_of :size
+    end
 
-    @x_scale = width / @image.width.to_f
-    @y_scale = height / @image.height.to_f
-  end
-
-  def draw(animator)
-    tr = animator.transform self
-    return if tr.skip_draw?
-
-    x = @x + tr.x_offset
-    y = @y + tr.y_offset
-
-    x_scale = tr.scale * @x_scale
-    y_scale = tr.scale * @y_scale
-
-    color = @color.dup
-    color.alpha = tr.opacity * @color.alpha
-
-    @image.draw x, y, @z, x_scale, y_scale, color
-  end
-
-  def on_unload
-    @image = nil
+    painter.drawPixmap *value_of(:position), *size, pixmap
   end
 end
 
-SF::Object.define :song do
+SF::Object.define :audio do
   set_variable :source, String
   set_variable :volume, 100
-  set_variable :loop, SF::Boolean.true
+  set_variable :loop, SF::Boolean.false
+  set_variable :auto_play, SF::Boolean.true
 
-  def preload(window)
-    source = File.expand_path value_of(:source), @location.include_path
-    @loop = value_of(:loop).to_bool
-    @volume = value_of(:volume) / 100.0
+  set_hook :activate do |global|
+    unless cache = global[self]
+      file = File.expand_path value_of(:source), @location.include_path
 
-    @song = Gosu::Sample.new window, source
+      channel = -1
+      while channel == -1
+        SDL::Mixer.AllocateChannels SDL::Mixer.AllocateChannels(-1) + 1
+        channel = SDL::Mixer.GroupAvailable -1
+      end
+
+      cache = global[self] = OpenStruct.new
+      cache.channel = channel
+      cache.sound = SDL::Mixer.LoadWAV file
+      cache.repeats = value_of(:loop).to_bool ? -1 : 0
+      cache.started = false
+    end
+
+    call_hook :play, global if value_of(:auto_play).to_bool
   end
 
-  def activate
-    @instance = @song.play @volume, 1, @loop
+  set_hook :play do |global|
+    cache = global[self]
+
+    next false if cache.started
+
+    SDL::Mixer.Volume cache.channel, (SDL::Mixer::MAX_VOLUME * (value_of(:volume).fdiv 100)).to_i
+    SDL::Mixer.PlayChannelTimed(cache.channel, cache.sound, cache.repeats, -1)
+
+    cache.started = true
   end
 
-  def deactivate
-    @instance.stop
-    @instance = nil
-  end
-
-  def unload
-    @song = nil
+  set_hook :deactivate do |global|
+    cache = global[self]
+    SDL::Mixer.HaltChannel cache.channel
+    cache.started = false
   end
 end
+
+SF::Object.define :animation do
+  set_passthrough
+
+  set_variable :name, String
+  set_variable :duration, 400
+end
+

@@ -1,10 +1,12 @@
 require 'slidefield/version'
 
+require 'ostruct'
 require 'pathname'
 
 require 'colorize'
-require 'gosu'
 require 'parslet'
+require 'Qt'
+require 'ruby-sdl-ffi/mixer'
 
 SF = SlideField
 
@@ -16,8 +18,9 @@ require 'slidefield/interpreter'
 require 'slidefield/location'
 require 'slidefield/object'
 require 'slidefield/parser'
+require 'slidefield/renderer'
 require 'slidefield/standard_objects'
 require 'slidefield/token'
 require 'slidefield/types'
 require 'slidefield/variable'
-require 'slidefield/viewer'
+require 'slidefield/qtwindow'
