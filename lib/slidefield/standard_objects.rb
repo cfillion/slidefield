@@ -62,7 +62,7 @@ SF::Object.define :text do
   set_variable :height, 20
   set_variable :width, 0
   set_variable :spacing, 0
-  set_variable :align, 'left'
+  set_variable :alignment, 'left'
 
   set_hook :paint do |painter, global_cache|
     unless cache = global_cache[self]
@@ -90,7 +90,7 @@ SF::Object.define :text do
       option = Qt::TextOption.new
       # option.setWrapMode Qt::TextOption::NoWrap
 
-      case value_of(:align).to_sym
+      case value_of(:alignment).to_sym
       when :center
         option.setAlignment Qt::AlignHCenter
       when :right
@@ -153,6 +153,15 @@ SF::Object.define :image do
       size = [pixmap.width, pixmap.height]
     else
       size = value_of :size
+      if size.x == 0
+        scale = size.y == 0 ? 1 : size.y.fdiv(pixmap.height)
+        size = SF::Point.new pixmap.width * scale, size.y
+      end
+
+      if size.y == 0
+        scale = size.x.fdiv pixmap.width
+        size = SF::Point.new size.x, pixmap.height * scale
+      end
     end
 
     painter.drawPixmap *value_of(:position), *size, pixmap
