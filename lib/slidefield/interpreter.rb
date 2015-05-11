@@ -224,13 +224,17 @@ private
   end
 
   def add_object(object)
-    if object.type == :include
+    case object.type
+    when :include
       path = File.expand_path object.value_of(:file), @context.include_path
       internal_run_file path
-      return
+    when :load
+      path = File.expand_path object.value_of(:file), @context.include_path
+      load path
+    else
+      object.call_hook :finalize
+      object.finalize or failure
     end
-
-    object.finalize or failure
   end
 
   def use_template(name)

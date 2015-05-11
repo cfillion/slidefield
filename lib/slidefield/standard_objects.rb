@@ -6,6 +6,10 @@ SF::Object.define :include do
   set_variable :file, String
 end
 
+SF::Object.define :load do
+  set_variable :file, String
+end
+
 SF::Object.define :root do
   allow_children :layout, min: 1, max: 1
   allow_children :slide, min: 1
