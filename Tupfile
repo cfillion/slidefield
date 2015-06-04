@@ -1,0 +1,24 @@
+MAIN_TARGET = sfrun
+TEST_TARGET = tests
+
+CXX = clang++
+
+CXXFLAGS = -Wall -Wextra -pipe
+CXXFLAGS += -fcolor-diagnostics
+CXXFLAGS += -g -O2 -std=c++11
+
+LDFLAGS = -lboost_program_options
+
+ifeq (@(TUP_PLATFORM),macosx)
+  LDFLAGS += -stdlib=libc++
+endif
+
+!build = |> $(CXX) $(CXXFLAGS) -c %f -o %o |>
+!link  = |> $(CXX) $(CXXFLAGS) %f $(LDFLAGS) -o %o |>
+
+: foreach src/*.cpp |> !build |> build/%B.o
+: src/main.cxx |> !build |> build/main.obj
+: build/*.o build/main.obj |> !link |> $(MAIN_TARGET)
+
+# : foreach test/*.cpp |> !build |> build/test/%B.o
+# : build/*.o build/test/*.o |> !link |> $(TEST_TARGET)
