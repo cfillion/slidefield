@@ -2,6 +2,8 @@
 #include <iostream>
 #include <sys/ioctl.h>
 
+#include "window.hpp"
+
 using namespace boost;
 using namespace std;
 
@@ -40,6 +42,9 @@ int main(int argc, char *argv[])
     cout << caption << endl;
     return EXIT_SUCCESS;
   }
+
+  Window win;
+  win.start();
 
   return EXIT_SUCCESS;
 }
