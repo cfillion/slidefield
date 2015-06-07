@@ -43,8 +43,14 @@ int main(int argc, char *argv[])
     return EXIT_SUCCESS;
   }
 
-  Window win(caption);
-  win.show();
+  try {
+    Window win(caption);
+    win.show();
+  }
+  catch(const WindowError &e) {
+    cerr << e.what() << endl;
+    return EXIT_FAILURE;
+  }
 
   return EXIT_SUCCESS;
 }

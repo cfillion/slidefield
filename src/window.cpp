@@ -1,29 +1,40 @@
 #include "window.hpp"
 
 #include <boost/format.hpp>
+#include <cairo/cairo.h>
 #include <SDL2/SDL.h>
 
 const int FRAME_RATE = 60;
 
-static Uint32 fps_tick(Uint32, void *)
+static WindowError make_error(const std::string &what)
 {
-  SDL_Event event;
-  event.type = SDL_USEREVENT;
+  throw WindowError(what, SDL_GetError());
+}
 
-  SDL_PushEvent(&event);
+static int event_filter(void *ptr, SDL_Event *e)
+{
+  // This prevent having a black window when the user is resizing the window.
+  // The event filter is always called, even when SDL stops the event loop.
+  if(e->window.event == SDL_WINDOWEVENT_RESIZED) {
+    Window *win = static_cast<Window *>(ptr);
+    win->redraw();
+  }
 
-  return 1000 / FRAME_RATE;
+  return 1;
 }
 
 Window::Window(const std::string &caption)
   : m_caption(caption), m_win(0), m_exit(false)
 {
-  if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
-    throw SDL_GetError();
+  if(SDL_Init(SDL_INIT_VIDEO) != 0)
+    throw make_error("SDL_Init");
 }
 
 Window::~Window()
 {
+  if(m_ren)
+    SDL_DestroyRenderer(m_ren);
+
   if(m_win)
     SDL_DestroyWindow(m_win);
 
@@ -37,16 +48,23 @@ void Window::show()
     SDL_WINDOW_RESIZABLE);
 
   if(!m_win)
-    throw SDL_GetError();
+    throw make_error("CreateWindow");
+
+  m_ren = SDL_CreateRenderer(m_win, -1,
+    SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+
+  if(!m_ren)
+    throw make_error("CreateRenderer");
 
   update_title();
-  SDL_TimerID timer = SDL_AddTimer(0, &fps_tick, this);
+
+  SDL_SetEventFilter(&event_filter, this);
 
   while(!m_exit) {
-    process_event();
+    process_events();
+    redraw();
+    SDL_Delay(1000 / FRAME_RATE);
   }
-
-  SDL_RemoveTimer(timer);
 }
 
 void Window::close()
@@ -54,20 +72,17 @@ void Window::close()
   m_exit = true;
 }
 
-void Window::process_event()
+void Window::process_events()
 {
   SDL_Event e;
 
-  if(SDL_WaitEvent(&e)) {
+  while(SDL_PollEvent(&e)) {
     switch(e.type) {
     case SDL_KEYDOWN:
       keyboard_event(e.key);
       break;
     case SDL_WINDOWEVENT:
       window_event(e.window);
-      break;
-    case SDL_USEREVENT:
-      user_event(e.user);
       break;
     case SDL_QUIT:
       close();
@@ -98,12 +113,6 @@ void Window::window_event(SDL_WindowEvent &e)
   }
 }
 
-void Window::user_event(SDL_UserEvent &)
-{
-  // for the moment there are only FPS_TICK events
-  redraw();
-}
-
 bool Window::is_fullscreen()
 {
   return SDL_GetWindowFlags(m_win) & SDL_WINDOW_FULLSCREEN_DESKTOP;
@@ -117,10 +126,48 @@ void Window::toggle_fullscreen()
     SDL_SetWindowFullscreen(m_win, SDL_WINDOW_FULLSCREEN_DESKTOP);
 }
 
-#include <iostream>
 void Window::redraw()
 {
-  std::cout << SDL_GetTicks() << std::endl;
+  int out_w, out_h;
+
+  SDL_GetRendererOutputSize(m_ren, &out_w, &out_h);
+
+  SDL_Texture *tex = SDL_CreateTexture(m_ren,
+    SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
+    out_w, out_h);
+
+  if(!tex)
+    throw make_error("CreateTexture");
+
+  void *pixels;
+  int pitch;
+
+  if(SDL_LockTexture(tex, NULL, &pixels, &pitch) != 0)
+    throw make_error("LockTexture");
+
+  cairo_surface_t *cr_surface = cairo_image_surface_create_for_data(
+    (unsigned char *)pixels, CAIRO_FORMAT_RGB24,
+    out_w, out_h, pitch);
+
+  cairo_t *cr = cairo_create(cr_surface);
+
+  cairo_translate(cr, 0, 0);
+  cairo_scale(cr, 1, 1);
+
+  cairo_set_source_rgb(cr, 1, 1, 0);
+  cairo_rectangle(cr, 0, 0, 1080, 720);
+  cairo_fill(cr);
+
+  SDL_UnlockTexture(tex);
+
+  cairo_destroy(cr);
+  cairo_surface_destroy(cr_surface);
+
+  SDL_RenderClear(m_ren);
+  SDL_RenderCopy(m_ren, tex, NULL, NULL);
+  SDL_RenderPresent(m_ren);
+
+  SDL_DestroyTexture(tex);
 }
 
 void Window::update_title()

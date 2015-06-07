@@ -4,7 +4,7 @@
 #include <string>
 
 struct SDL_KeyboardEvent;
-struct SDL_UserEvent;
+struct SDL_Renderer;
 struct SDL_Window;
 struct SDL_WindowEvent;
 
@@ -19,10 +19,9 @@ public:
   void close();
 
 private:
-  void process_event();
+  void process_events();
   void keyboard_event(SDL_KeyboardEvent &);
   void window_event(SDL_WindowEvent &);
-  void user_event(SDL_UserEvent &);
 
   bool is_fullscreen();
   void toggle_fullscreen();
@@ -30,7 +29,21 @@ private:
 
   std::string m_caption;
   SDL_Window *m_win;
+  SDL_Renderer *m_ren;
   bool m_exit;
+};
+
+class WindowError
+{
+public:
+  WindowError(const std::string &what, const std::string &why)
+    : m_what(what), m_why(why)
+  {}
+
+  std::string what() const { return m_what + " failed: " + m_why; }
+
+  std::string m_what;
+  std::string m_why;
 };
 
 #endif
