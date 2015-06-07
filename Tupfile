@@ -20,5 +20,5 @@ endif
 : src/main.cxx |> !build |> build/main.obj
 : build/*.o build/main.obj |> !link |> $(MAIN_TARGET)
 
-# : foreach test/*.cpp |> !build |> build/test/%B.o
-# : build/*.o build/test/*.o |> !link |> $(TEST_TARGET)
+: foreach test/*.cpp |> !build |> build/test/%B.o
+: build/*.o build/test/*.o |> !link |> $(TEST_TARGET)
