@@ -4,6 +4,7 @@
 #include <string>
 
 struct SDL_KeyboardEvent;
+struct SDL_UserEvent;
 struct SDL_Window;
 struct SDL_WindowEvent;
 
@@ -18,9 +19,10 @@ public:
   void close();
 
 private:
-  void process_events();
+  void process_event();
   void keyboard_event(SDL_KeyboardEvent &);
   void window_event(SDL_WindowEvent &);
+  void user_event(SDL_UserEvent &);
 
   bool is_fullscreen();
   void toggle_fullscreen();

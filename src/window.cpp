@@ -5,10 +5,13 @@
 
 const int FRAME_RATE = 60;
 
-static Uint32 timer_tick(Uint32, void *pointer)
+static Uint32 fps_tick(Uint32, void *)
 {
-  Window *win = static_cast<Window *>(pointer);
-  win->redraw();
+  SDL_Event event;
+  event.type = SDL_USEREVENT;
+
+  SDL_PushEvent(&event);
+
   return 1000 / FRAME_RATE;
 }
 
@@ -37,11 +40,10 @@ void Window::show()
     throw SDL_GetError();
 
   update_title();
-  SDL_TimerID timer = SDL_AddTimer(0, &timer_tick, this);
+  SDL_TimerID timer = SDL_AddTimer(0, &fps_tick, this);
 
   while(!m_exit) {
-    process_events();
-    SDL_Delay(42);
+    process_event();
   }
 
   SDL_RemoveTimer(timer);
@@ -52,17 +54,20 @@ void Window::close()
   m_exit = true;
 }
 
-void Window::process_events()
+void Window::process_event()
 {
   SDL_Event e;
 
-  while(SDL_PollEvent(&e)) {
+  if(SDL_WaitEvent(&e)) {
     switch(e.type) {
     case SDL_KEYDOWN:
       keyboard_event(e.key);
       break;
     case SDL_WINDOWEVENT:
       window_event(e.window);
+      break;
+    case SDL_USEREVENT:
+      user_event(e.user);
       break;
     case SDL_QUIT:
       close();
@@ -91,6 +96,12 @@ void Window::window_event(SDL_WindowEvent &e)
     SDL_ShowCursor(!is_fullscreen());
     break;
   }
+}
+
+void Window::user_event(SDL_UserEvent &)
+{
+  // for the moment there are only FPS_TICK events
+  redraw();
 }
 
 bool Window::is_fullscreen()
