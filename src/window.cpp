@@ -1,5 +1,6 @@
 #include "window.hpp"
 
+#include <algorithm>
 #include <boost/format.hpp>
 #include <cairo/cairo.h>
 #include <SDL2/SDL.h>
@@ -129,12 +130,10 @@ void Window::toggle_fullscreen()
 void Window::redraw()
 {
   int out_w, out_h;
-
   SDL_GetRendererOutputSize(m_ren, &out_w, &out_h);
 
   SDL_Texture *tex = SDL_CreateTexture(m_ren,
-    SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
-    out_w, out_h);
+    SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, out_w, out_h);
 
   if(!tex)
     throw make_error("CreateTexture");
@@ -146,22 +145,32 @@ void Window::redraw()
     throw make_error("LockTexture");
 
   cairo_surface_t *cr_surface = cairo_image_surface_create_for_data(
-    (unsigned char *)pixels, CAIRO_FORMAT_RGB24,
+    static_cast<unsigned char *>(pixels), CAIRO_FORMAT_RGB24,
     out_w, out_h, pitch);
 
   cairo_t *cr = cairo_create(cr_surface);
 
-  cairo_translate(cr, 0, 0);
-  cairo_scale(cr, 1, 1);
+  const double zoom = std::min((double)out_w / 1080, (double)out_h / 720);
+  const int real_w = 1080 * zoom;
+  const int real_h = 720 * zoom;
+  const int offset_x = (out_w - real_w) / 2;
+  const int offset_y = (out_h - real_h) / 2;
 
+  cairo_translate(cr, offset_x, offset_y);
+  cairo_scale(cr, zoom, zoom);
+
+  cairo_rectangle(cr, 0, 0, 1080, 720);
+  cairo_clip(cr);
+
+  // TODO: draw frames here
   cairo_set_source_rgb(cr, 1, 1, 0);
   cairo_rectangle(cr, 0, 0, 1080, 720);
   cairo_fill(cr);
 
-  SDL_UnlockTexture(tex);
-
   cairo_destroy(cr);
   cairo_surface_destroy(cr_surface);
+
+  SDL_UnlockTexture(tex);
 
   SDL_RenderClear(m_ren);
   SDL_RenderCopy(m_ren, tex, NULL, NULL);
