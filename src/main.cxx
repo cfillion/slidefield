@@ -43,8 +43,8 @@ int main(int argc, char *argv[])
     return EXIT_SUCCESS;
   }
 
-  Window win;
-  win.start();
+  Window win(caption);
+  win.show();
 
   return EXIT_SUCCESS;
 }
