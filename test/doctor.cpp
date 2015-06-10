@@ -3,6 +3,7 @@
 #include <boost/format.hpp>
 
 #include "../src/doctor.hpp"
+#include "../src/errors.hpp"
 
 using namespace sfl;
 
@@ -33,8 +34,6 @@ TEST_CASE("make a diagnosis", M) {
 }
 
 TEST_CASE("diagnosis shortcuts", M) {
-  SFL_DIAGNOSE(diagnosis::note, "should not crash when there are no doctors");
-
   doctor doc;
 
   SECTION("error", M) {
@@ -46,4 +45,12 @@ TEST_CASE("diagnosis shortcuts", M) {
   }
 
   REQUIRE(doc.bag().size() == 1);
+}
+
+TEST_CASE("missing doctor", M) {
+  REQUIRE(doctor::instance() == 0);
+
+  REQUIRE_THROWS_AS({
+    doctor::diagnose(diagnosis::error, "crash");
+  }, missing_doctor);
 }
