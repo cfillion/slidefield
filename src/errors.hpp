@@ -1,23 +1,10 @@
 #ifndef SFL_ERRORS_HPP
 #define SFL_ERRORS_HPP
 
-#include "diagnosis.hpp"
-
-#define ERROR_TYPE(type) class type : public error { \
-  public: type(const diagnosis &ds) : error(ds) {} }
+#define ERROR_TYPE(type) class type : public error {};
 
 namespace sfl {
-  class error : public std::runtime_error
-  {
-  public:
-    error(const diagnosis &ds)
-      : std::runtime_error(ds.message().c_str()), m_diagnosis(ds) {}
-
-    const diagnosis &cause() const { return m_diagnosis; }
-
-  private:
-    diagnosis m_diagnosis;
-  };
+  class error : public std::exception {};
 
   ERROR_TYPE(unknown_object_error);
 };

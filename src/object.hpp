@@ -1,10 +1,10 @@
 #ifndef SFL_OBJECT_HPP
 #define SFL_OBJECT_HPP
 
-#include "doctor.hpp"
+#include <string>
 
 namespace sfl {
-  class object : private doctor
+  class object
   {
   public:
     object(const std::string &name);

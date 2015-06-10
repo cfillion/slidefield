@@ -2,30 +2,48 @@
 
 #include <boost/format.hpp>
 
-#include "../src/diagnosis.hpp"
 #include "../src/doctor.hpp"
 
 using namespace sfl;
 
 static const char *M = "[doctor]";
 
-TEST_CASE("emit diagnosis", M) {
-  CHECK(doctor::bag().empty());
+TEST_CASE("make a diagnosis", M) {
+  doctor doc;
+
+  CHECK(doc.bag().empty());
+
+  SECTION("from string") {
+    doc.diagnose(diagnosis::note, "hello world");
+
+    const diagnosis dia = doc.bag().back();
+    REQUIRE(dia.level() == diagnosis::note);
+    REQUIRE(dia.message() == "hello world");
+  }
+
+  SECTION("from format") {
+    doc.diagnose(diagnosis::note, "hello world");
+
+    const diagnosis dia = doc.bag().back();
+    REQUIRE(dia.level() == diagnosis::note);
+    REQUIRE(dia.message() == "hello world");
+  }
+
+  REQUIRE(doc.bag().size() == 1);
+}
+
+TEST_CASE("diagnosis shortcuts", M) {
+  SFL_DIAGNOSE(diagnosis::note, "should not crash when there are no doctors");
 
   doctor doc;
 
-  SECTION("error from string") {
-    const diagnosis dia = doc.error_at("hello world");
+  SECTION("error", M) {
+    SFL_ERROR_AT("hello world");
+
+    const diagnosis dia = doc.bag().back();
     REQUIRE(dia.level() == diagnosis::error);
     REQUIRE(dia.message() == "hello world");
   }
 
-  SECTION("error from format") {
-    const diagnosis dia = doc.error_at(boost::format("hello world"));
-    REQUIRE(dia.level() == diagnosis::error);
-    REQUIRE(dia.message() == "hello world");
-  }
-
-  CHECK(doctor::bag().size() == 1);
-  doctor::reset_bag();
+  REQUIRE(doc.bag().size() == 1);
 }

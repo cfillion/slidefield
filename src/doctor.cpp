@@ -2,26 +2,34 @@
 
 #include <boost/format.hpp>
 
-#include "diagnosis.hpp"
-
 using namespace boost;
 using namespace sfl;
 
-std::vector<diagnosis> doctor::s_bag;
+std::stack<doctor *> doctor::s_instances;
 
-diagnosis doctor::error_at(const std::string &message) const
+doctor *doctor::instance()
 {
-  diagnosis dia(diagnosis::error, message);
-  emit(dia);
-  return dia;
+  return s_instances.empty() ? 0 : s_instances.top();
 }
 
-diagnosis doctor::error_at(const format &message) const
+doctor::doctor()
 {
-  return error_at(message.str());
+  s_instances.push(this);
 }
 
-void doctor::emit(const diagnosis &dia) const
+doctor::~doctor()
 {
-  s_bag.push_back(dia);
+  assert(s_instances.top() == this);
+  s_instances.pop();
+}
+
+void doctor::diagnose(const enum diagnosis::level lvl, const std::string &msg)
+{
+  diagnosis dia(lvl, msg);
+  m_bag.push_back(dia);
+}
+
+void doctor::diagnose(const enum diagnosis::level level, const format &format)
+{
+  diagnose(level, format.str());
 }

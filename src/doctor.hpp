@@ -2,23 +2,34 @@
 #define SFL_DOCTOR_HPP
 
 #include <boost/format/format_fwd.hpp>
+#include <stack>
 #include <vector>
 
+#include "diagnosis.hpp"
+
+#define SFL_ERROR_AT(msg) SFL_DIAGNOSE(sfl::diagnosis::error, msg)
+#define SFL_DIAGNOSE(lvl, msg) if(sfl::doctor::instance()) \
+  sfl::doctor::instance()->diagnose(lvl, msg)
+
 namespace sfl {
-  class diagnosis;
+  typedef std::vector<diagnosis> diagnosis_bag;
 
   class doctor {
   public:
-    static const std::vector<diagnosis> &bag() { return s_bag; }
-    static void reset_bag() { s_bag.clear(); }
+    static doctor *instance();
 
-    diagnosis error_at(const std::string &message) const;
-    diagnosis error_at(const boost::format &message) const;
+    doctor();
+    ~doctor();
+
+    const std::vector<diagnosis> &bag() { return m_bag; }
+
+    void diagnose(const enum diagnosis::level lvl, const std::string &message);
+    void diagnose(const enum diagnosis::level lvl, const boost::format &format);
 
   private:
-    static std::vector<diagnosis> s_bag;
+    static std::stack<doctor *> s_instances;
 
-    void emit(const diagnosis &dia) const;
+    diagnosis_bag m_bag;
   };
 };
 

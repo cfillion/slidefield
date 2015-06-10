@@ -2,18 +2,23 @@
 
 #include "../src/errors.hpp"
 #include "../src/object.hpp"
+#include "../src/doctor.hpp"
 
 using namespace sfl;
 
 static const char *M = "[object]";
 
 TEST_CASE("unregistered object", M) {
-  try {
+  doctor doc;
+
+  REQUIRE_THROWS_AS({
     object obj("qwfpgjluy");
-    FAIL("exception not thrown");
-  }
-  catch(const unknown_object_error &e) {
-    REQUIRE(e.cause() == diagnosis(diagnosis::error,
-      "unknown object name 'qwfpgjluy'"));
-  }
+  }, unknown_object_error);
+
+  diagnosis_bag bag = doc.bag();
+
+  REQUIRE(bag.size() == 1);
+  REQUIRE(bag.at(0) ==
+    diagnosis(diagnosis::error, "unknown object name 'qwfpgjluy'")
+  );
 }
