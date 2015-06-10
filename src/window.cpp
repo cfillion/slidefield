@@ -18,7 +18,7 @@ static int event_filter(void *ptr, SDL_Event *e)
   // The event filter is always called, even when SDL stops the event loop.
   if(e->window.event == SDL_WINDOWEVENT_RESIZED) {
     Window *win = static_cast<Window *>(ptr);
-    win->redraw();
+    // win->redraw();
   }
 
   return 1;
@@ -63,7 +63,14 @@ void Window::show()
 
   while(!m_exit) {
     process_events();
+
+    if(m_set_cursor) {
+      SDL_ShowCursor(!is_fullscreen());
+      m_set_cursor = false;
+    }
+
     redraw();
+
     SDL_Delay(1000 / FRAME_RATE);
   }
 }
@@ -109,7 +116,7 @@ void Window::window_event(SDL_WindowEvent &e)
 {
   switch(e.event) {
   case SDL_WINDOWEVENT_RESIZED:
-    SDL_ShowCursor(!is_fullscreen());
+    m_set_cursor = true;
     break;
   }
 }

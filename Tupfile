@@ -7,7 +7,7 @@ CXXFLAGS = -Wall -Wextra -pipe
 CXXFLAGS += -fcolor-diagnostics
 CXXFLAGS += -g -O2 -std=c++11
 
-LDFLAGS = -lboost_program_options -lsdl2 -lcairo
+LDFLAGS = -lboost_program_options -lSDL2 -lcairo
 
 ifeq (@(TUP_PLATFORM),macosx)
   LDFLAGS += -stdlib=libc++

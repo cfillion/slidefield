@@ -30,7 +30,9 @@ private:
   std::string m_caption;
   SDL_Window *m_win;
   SDL_Renderer *m_ren;
+
   bool m_exit;
+  bool m_set_cursor;
 };
 
 class WindowError
