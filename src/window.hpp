@@ -8,11 +8,11 @@ struct SDL_Renderer;
 struct SDL_Window;
 struct SDL_WindowEvent;
 
-class Window
+class window
 {
 public:
-  Window(const std::string &caption);
-  ~Window();
+  window(const std::string &caption);
+  ~window();
 
   void show();
   void redraw();
@@ -35,10 +35,10 @@ private:
   bool m_set_cursor;
 };
 
-class WindowError
+class window_error
 {
 public:
-  WindowError(const std::string &what, const std::string &why)
+  window_error(const std::string &what, const std::string &why)
     : m_what(what), m_why(why)
   {}
 

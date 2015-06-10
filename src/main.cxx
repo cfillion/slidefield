@@ -44,10 +44,10 @@ int main(int argc, char *argv[])
   }
 
   try {
-    Window win(caption);
+    window win(caption);
     win.show();
   }
-  catch(const WindowError &e) {
+  catch(const window_error &e) {
     cerr << e.what() << endl;
     return EXIT_FAILURE;
   }

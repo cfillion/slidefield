@@ -7,9 +7,9 @@
 
 const int FRAME_RATE = 60;
 
-static WindowError make_error(const std::string &what)
+static window_error make_error(const std::string &what)
 {
-  throw WindowError(what, SDL_GetError());
+  throw window_error(what, SDL_GetError());
 }
 
 static int event_filter(void *ptr, SDL_Event *e)
@@ -17,21 +17,21 @@ static int event_filter(void *ptr, SDL_Event *e)
   // This prevent having a black window when the user is resizing the window.
   // The event filter is always called, even when SDL stops the event loop.
   if(e->window.event == SDL_WINDOWEVENT_RESIZED) {
-    Window *win = static_cast<Window *>(ptr);
+    window *win = static_cast<window *>(ptr);
     // win->redraw();
   }
 
   return 1;
 }
 
-Window::Window(const std::string &caption)
+window::window(const std::string &caption)
   : m_caption(caption), m_win(0), m_exit(false)
 {
   if(SDL_Init(SDL_INIT_VIDEO) != 0)
     throw make_error("SDL_Init");
 }
 
-Window::~Window()
+window::~window()
 {
   if(m_ren)
     SDL_DestroyRenderer(m_ren);
@@ -42,7 +42,7 @@ Window::~Window()
   SDL_Quit();
 }
 
-void Window::show()
+void window::show()
 {
   m_win = SDL_CreateWindow("",
     SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480,
@@ -50,6 +50,7 @@ void Window::show()
 
   if(!m_win)
     throw make_error("CreateWindow");
+
 
   m_ren = SDL_CreateRenderer(m_win, -1,
     SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
@@ -75,12 +76,12 @@ void Window::show()
   }
 }
 
-void Window::close()
+void window::close()
 {
   m_exit = true;
 }
 
-void Window::process_events()
+void window::process_events()
 {
   SDL_Event e;
 
@@ -99,7 +100,7 @@ void Window::process_events()
   }
 }
 
-void Window::keyboard_event(SDL_KeyboardEvent &e)
+void window::keyboard_event(SDL_KeyboardEvent &e)
 {
   switch(e.keysym.sym) {
   case SDLK_q:
@@ -112,7 +113,7 @@ void Window::keyboard_event(SDL_KeyboardEvent &e)
   }
 }
 
-void Window::window_event(SDL_WindowEvent &e)
+void window::window_event(SDL_WindowEvent &e)
 {
   switch(e.event) {
   case SDL_WINDOWEVENT_RESIZED:
@@ -121,12 +122,12 @@ void Window::window_event(SDL_WindowEvent &e)
   }
 }
 
-bool Window::is_fullscreen()
+bool window::is_fullscreen()
 {
   return SDL_GetWindowFlags(m_win) & SDL_WINDOW_FULLSCREEN_DESKTOP;
 }
 
-void Window::toggle_fullscreen()
+void window::toggle_fullscreen()
 {
   if(is_fullscreen())
     SDL_SetWindowFullscreen(m_win, 0);
@@ -134,7 +135,7 @@ void Window::toggle_fullscreen()
     SDL_SetWindowFullscreen(m_win, SDL_WINDOW_FULLSCREEN_DESKTOP);
 }
 
-void Window::redraw()
+void window::redraw()
 {
   int out_w, out_h;
   SDL_GetRendererOutputSize(m_ren, &out_w, &out_h);
@@ -186,7 +187,7 @@ void Window::redraw()
   SDL_DestroyTexture(tex);
 }
 
-void Window::update_title()
+void window::update_title()
 {
   boost::format fmt = boost::format("%s (%d/%d) — %s")
     % "hello world" % 1 % 2 % m_caption;
