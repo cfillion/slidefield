@@ -121,22 +121,16 @@ SF::Object.define :text do
 
       static.setTextWidth width
 
-      color = Qt::Color.new *value_of(:color)
-
-      pixmap = Qt::Pixmap.new width, width # TODO: height
-      pixmap.fill Qt::Color.new Qt::transparent
-      pixpainter = Qt::Painter.new pixmap
-      pixpainter.setFont font
-      pixpainter.setPen color
-      pixpainter.drawStaticText 0, 0, static
-      pixpainter.end
-
       cache = global_cache[self] = OpenStruct.new
-      cache.pixmap = pixmap
+      cache.font = font
+      cache.color = Qt::Color.new *value_of(:color)
+      cache.static = static
     end
 
-    painter.drawPixmap *value_of(:position),
-      cache.pixmap.size.width, cache.pixmap.size.height, cache.pixmap
+    painter.setFont cache.font
+    painter.setPen cache.color
+
+    painter.drawStaticText *value_of(:position), cache.static
   end
 end
 
@@ -222,4 +216,3 @@ SF::Object.define :animation do
   set_variable :name, String
   set_variable :duration, 400
 end
-
