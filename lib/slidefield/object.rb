@@ -208,7 +208,7 @@ private
 
       if size < range.min
         error_at @location,
-          "object '%s' must have at least %d '%s', got %d" %
+          "object '%s' must have at least %d '%s', found %d" %
           [@type, range.min, type, size]
       end
     }.empty?

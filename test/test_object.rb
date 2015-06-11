@@ -459,7 +459,7 @@ class TestObject < MiniTest::Test
 
     # unmet requirements
     dia = assert_diagnostic :error,
-      "object 'first' must have at least 1 'second', got 0"
+      "object 'first' must have at least 1 'second', found 0"
     assert_same first.location, dia.location
   end
 
@@ -473,7 +473,7 @@ class TestObject < MiniTest::Test
     assert_equal false, first.adopt(second)
 
     assert_diagnostic :error,
-      "object 'second' must have at least 3 'third', got 0"
+      "object 'second' must have at least 3 'third', found 0"
   end
 
   def test_inspect
