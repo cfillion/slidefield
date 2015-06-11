@@ -6,10 +6,18 @@ class SlideField::QtWindow < Qt::Widget
 
     super nil, Qt::DialogType
 
-    setWindowTitle '%s - SlideField v%s' % [renderer.label, SF::VERSION]
+    update_title
 
     Qt::Timer.singleShot 1, self, SLOT("start()")
     show
+  end
+
+  def update_title
+    setWindowTitle '%s (%d/%d) — SlideField v%s' % [
+      @renderer.label,
+      @renderer.current_index + 1, @renderer.slide_count,
+      SF::VERSION
+    ]
   end
 
   def start
@@ -75,12 +83,16 @@ class SlideField::QtWindow < Qt::Widget
       Qt::Key_Plus
 
       @renderer.jump_to SF::Renderer::NEXT_SLIDE
+      update_title
     when Qt::Key_Backspace, Qt::Key_Left, Qt::Key_Up, Qt::Key_Minus
       @renderer.jump_to SF::Renderer::PREV_SLIDE
+      update_title
     when Qt::Key_Home
       @renderer.jump_to SF::Renderer::FIRST_SLIDE
+      update_title
     when Qt::Key_End
       @renderer.jump_to SF::Renderer::LAST_SLIDE
+      update_title
     end
   end
 

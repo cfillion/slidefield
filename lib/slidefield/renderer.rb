@@ -103,4 +103,7 @@ class SlideField::Renderer
     obj.call_hook :paint, painter, @cache
     painter.restore
   end
+
+  def current_index; @slide_index || 0; end
+  def slide_count; @elements.size; end
 end
