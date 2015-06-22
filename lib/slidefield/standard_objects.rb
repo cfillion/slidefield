@@ -26,6 +26,7 @@ SF::Object.define :slide do
   allow_children :text
   allow_children :image
   allow_children :audio
+  allow_children :exec
 
   default_anim = SF::Object.new :animation
   default_anim.set_variable :name, 'cut'
@@ -207,6 +208,21 @@ SF::Object.define :audio do
     cache = global[self]
     SDL::Mixer.HaltChannel cache.channel
     cache.started = false
+  end
+end
+
+SF::Object.define :exec do
+  set_variable :command, String
+
+  set_hook :play do |global|
+    unless global[self]
+      global[self] = true
+      Process.spawn value_of(:command)
+    end
+  end
+
+  set_hook :deactivate do |global|
+    global[self] = false
   end
 end
 
