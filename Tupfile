@@ -6,8 +6,10 @@ CXX = clang++
 CXXFLAGS = -Wall -Wextra -pipe
 CXXFLAGS += -fcolor-diagnostics
 CXXFLAGS += -g -O2 -std=c++11
+CXXFLAGS += `pkg-config --cflags gtk+-3.0`
 
-LDFLAGS = -lboost_program_options -lSDL2 -lcairo
+LDFLAGS = -lboost_program_options
+LDFLAGS += `pkg-config --libs gtk+-3.0`
 
 ifeq (@(TUP_PLATFORM),macosx)
   LDFLAGS += -stdlib=libc++

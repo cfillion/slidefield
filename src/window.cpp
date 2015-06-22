@@ -2,189 +2,117 @@
 
 #include <algorithm>
 #include <boost/format.hpp>
-#include <cairo/cairo.h>
-#include <SDL2/SDL.h>
 
 const int FRAME_RATE = 60;
 
-static window_error make_error(const std::string &what)
+void window::draw_event(GtkWidget *, cairo_t *cr, gpointer ptr)
 {
-  throw window_error(what, SDL_GetError());
+  window *win = static_cast<window *>(ptr);
+  win->draw(cr);
 }
 
-static int event_filter(void *ptr, SDL_Event *e)
+void window::key_event(GtkWidget *, GdkEventKey *e, gpointer ptr)
 {
-  // This prevent having a black window when the user is resizing the window.
-  // The event filter is always called, even when SDL stops the event loop.
-  if(e->window.event == SDL_WINDOWEVENT_RESIZED) {
-    window *win = static_cast<window *>(ptr);
-    // win->redraw();
-  }
+  window *win = static_cast<window *>(ptr);
+  win->handle_key(e->keyval);
+}
 
-  return 1;
+void window::state_event(GtkWidget *, GdkEventWindowState *e, gpointer ptr)
+{
+  window *win = static_cast<window *>(ptr);
+  win->handle_state(e->new_window_state, e->changed_mask);
+}
+
+gboolean window::timer_tick(gpointer ptr)
+{
+  window *win = static_cast<window *>(ptr);
+  win->update();
+  return gtk_true();
 }
 
 window::window(const std::string &caption)
-  : m_caption(caption), m_win(0), m_exit(false)
+  : m_caption(caption)
 {
-  if(SDL_Init(SDL_INIT_VIDEO) != 0)
-    throw make_error("SDL_Init");
+  gtk_init(0, NULL);
+
+  setup_window();
+  setup_canvas();
 }
 
-window::~window()
+void window::setup_window()
 {
-  if(m_ren)
-    SDL_DestroyRenderer(m_ren);
+  m_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
-  if(m_win)
-    SDL_DestroyWindow(m_win);
+  // TODO: derive the default size from the size of the layout object
+  gtk_window_set_default_size(GTK_WINDOW(m_win), 640, 480);
+  gtk_window_set_type_hint(GTK_WINDOW(m_win), GDK_WINDOW_TYPE_HINT_DIALOG);
+  update_title();
 
-  SDL_Quit();
+  g_signal_connect(m_win, "key-press-event", G_CALLBACK(key_event), this);
+  g_signal_connect(m_win, "window-state-event", G_CALLBACK(state_event), this);
+  g_signal_connect(m_win, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+
+  g_timeout_add(1000 /  FRAME_RATE, timer_tick, this);
+}
+
+void window::setup_canvas()
+{
+  m_darea = gtk_drawing_area_new();
+  gtk_container_add(GTK_CONTAINER(m_win), m_darea);
+
+  g_signal_connect(G_OBJECT(m_darea), "draw", G_CALLBACK(draw_event), this);
 }
 
 void window::show()
 {
-  m_win = SDL_CreateWindow("",
-    SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480,
-    SDL_WINDOW_RESIZABLE);
+  gtk_widget_show_all(m_win);
+  gtk_main();
+}
 
-  if(!m_win)
-    throw make_error("CreateWindow");
-
-
-  m_ren = SDL_CreateRenderer(m_win, -1,
-    SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-
-  if(!m_ren)
-    throw make_error("CreateRenderer");
-
-  update_title();
-
-  SDL_SetEventFilter(&event_filter, this);
-
-  while(!m_exit) {
-    process_events();
-
-    if(m_set_cursor) {
-      SDL_ShowCursor(!is_fullscreen());
-      m_set_cursor = false;
-    }
-
-    redraw();
-
-    SDL_Delay(1000 / FRAME_RATE);
-  }
+void window::update()
+{
+  if(true) // TODO: redraw only if necessary
+    gtk_widget_queue_draw(m_darea);
 }
 
 void window::close()
 {
-  m_exit = true;
+  gtk_main_quit();
 }
 
-void window::process_events()
+void window::handle_key(const int key)
 {
-  SDL_Event e;
-
-  while(SDL_PollEvent(&e)) {
-    switch(e.type) {
-    case SDL_KEYDOWN:
-      keyboard_event(e.key);
-      break;
-    case SDL_WINDOWEVENT:
-      window_event(e.window);
-      break;
-    case SDL_QUIT:
-      close();
-      break;
-    }
-  }
-}
-
-void window::keyboard_event(SDL_KeyboardEvent &e)
-{
-  switch(e.keysym.sym) {
-  case SDLK_q:
-  case SDLK_ESCAPE:
+  switch(key) {
+  case GDK_KEY_q:
+  case GDK_KEY_Escape:
     close();
     break;
-  case SDLK_f:
+  case GDK_KEY_f:
     toggle_fullscreen();
     break;
   }
 }
 
-void window::window_event(SDL_WindowEvent &e)
+void window::handle_state(GdkWindowState &new_state, GdkWindowState &changes)
 {
-  switch(e.event) {
-  case SDL_WINDOWEVENT_RESIZED:
-    m_set_cursor = true;
-    break;
-  }
+  m_state = new_state;
+
+  if(changes & GDK_WINDOW_STATE_FULLSCREEN)
+    update_cursor();
 }
 
 bool window::is_fullscreen()
 {
-  return SDL_GetWindowFlags(m_win) & SDL_WINDOW_FULLSCREEN_DESKTOP;
+  return m_state & GDK_WINDOW_STATE_FULLSCREEN;
+  return false;
 }
 
 void window::toggle_fullscreen()
 {
   if(is_fullscreen())
-    SDL_SetWindowFullscreen(m_win, 0);
+    gtk_window_unfullscreen(GTK_WINDOW(m_win));
   else
-    SDL_SetWindowFullscreen(m_win, SDL_WINDOW_FULLSCREEN_DESKTOP);
-}
-
-void window::redraw()
-{
-  int out_w, out_h;
-  SDL_GetRendererOutputSize(m_ren, &out_w, &out_h);
-
-  SDL_Texture *tex = SDL_CreateTexture(m_ren,
-    SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, out_w, out_h);
-
-  if(!tex)
-    throw make_error("CreateTexture");
-
-  void *pixels;
-  int pitch;
-
-  if(SDL_LockTexture(tex, NULL, &pixels, &pitch) != 0)
-    throw make_error("LockTexture");
-
-  cairo_surface_t *cr_surface = cairo_image_surface_create_for_data(
-    static_cast<unsigned char *>(pixels), CAIRO_FORMAT_RGB24,
-    out_w, out_h, pitch);
-
-  cairo_t *cr = cairo_create(cr_surface);
-
-  const double zoom = std::min((double)out_w / 1080, (double)out_h / 720);
-  const int real_w = 1080 * zoom;
-  const int real_h = 720 * zoom;
-  const int offset_x = (out_w - real_w) / 2;
-  const int offset_y = (out_h - real_h) / 2;
-
-  cairo_translate(cr, offset_x, offset_y);
-  cairo_scale(cr, zoom, zoom);
-
-  cairo_rectangle(cr, 0, 0, 1080, 720);
-  cairo_clip(cr);
-
-  // TODO: draw frames here
-  cairo_set_source_rgb(cr, 1, 1, 0);
-  cairo_rectangle(cr, 0, 0, 1080, 720);
-  cairo_fill(cr);
-
-  cairo_destroy(cr);
-  cairo_surface_destroy(cr_surface);
-
-  SDL_UnlockTexture(tex);
-
-  SDL_RenderClear(m_ren);
-  SDL_RenderCopy(m_ren, tex, NULL, NULL);
-  SDL_RenderPresent(m_ren);
-
-  SDL_DestroyTexture(tex);
+    gtk_window_fullscreen(GTK_WINDOW(m_win));
 }
 
 void window::update_title()
@@ -192,5 +120,46 @@ void window::update_title()
   boost::format fmt = boost::format("%s (%d/%d) — %s")
     % "hello world" % 1 % 2 % m_caption;
 
-  SDL_SetWindowTitle(m_win, fmt.str().c_str());
+  gtk_window_set_title(GTK_WINDOW(m_win), fmt.str().c_str());
+}
+
+void window::update_cursor()
+{
+  GdkWindow *win = gtk_widget_get_window(m_win);
+  GdkCursor *cursor = gdk_cursor_new_for_display(gdk_display_get_default(),
+    is_fullscreen() ? GDK_BLANK_CURSOR : GDK_ARROW);
+
+  gdk_window_set_cursor(win, cursor);
+}
+
+void window::draw(cairo_t *cr)
+{
+  const int win_w = gtk_widget_get_allocated_width(m_darea);
+  const int win_h = gtk_widget_get_allocated_height(m_darea);
+
+  cairo_rectangle(cr, 0, 0, win_w, win_h);
+  cairo_set_source_rgb(cr, 0, 0, 0);
+  cairo_fill(cr);
+
+  transform(cr, win_w, win_h);
+
+  // TODO: draw frames here
+  cairo_set_source_rgb(cr, 1,11, 0);
+  cairo_rectangle(cr, 0, 0, 1080, 720);
+  cairo_fill(cr);
+}
+
+void window::transform(cairo_t *cr, const double win_w, const double win_h)
+{
+  const double zoom = std::min(win_w / 1080, win_h / 720);
+  const int real_w = 1080 * zoom;
+  const int real_h = 720 * zoom;
+  const int offset_x = (win_w - real_w) / 2;
+  const int offset_y = (win_h - real_h) / 2;
+
+  cairo_translate(cr, offset_x, offset_y);
+  cairo_scale(cr, zoom, zoom);
+
+  cairo_rectangle(cr, 0, 0, 1080, 720);
+  cairo_clip(cr);
 }
