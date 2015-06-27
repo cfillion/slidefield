@@ -1,46 +1,31 @@
 #ifndef WINDOW_HPP
 #define WINDOW_HPP
 
-#include <cairo/cairo.h>
-#include <gtk/gtk.h>
+#include <QWidget>
 #include <string>
 
-class window
+class window : public QWidget
 {
 public:
   window(const std::string &caption);
 
-  void show();
+  QSize sizeHint() const override;
+
+public Q_SLOTS:
   void update();
-  void close();
+
+protected:
+  void keyPressEvent(QKeyEvent *) override;
+  void paintEvent(QPaintEvent *) override;
+  void changeEvent(QEvent *) override;
 
 private:
-  void setup_window();
-  void setup_canvas();
-
-  static void draw_event(GtkWidget *, cairo_t *, gpointer);
-  void draw(cairo_t *cr);
-  void transform(cairo_t *cr, const double w, const double h);
-
-  static void key_event(GtkWidget *, GdkEventKey *, gpointer);
-  void handle_key(const int key);
-
-  static void state_event(GtkWidget *, GdkEventWindowState *, gpointer);
-  void handle_state(GdkWindowState &new_state, GdkWindowState &changes);
-
-  static gboolean timer_tick(gpointer);
-
-  bool is_fullscreen();
-  void toggle_fullscreen();
+  void transform(QPainter &, const double win_w, const double win_h);
 
   void update_title();
-  void update_cursor();
 
-  std::string m_caption;
-  GdkWindowState m_state;
-
-  GtkWidget *m_win;
-  GtkWidget *m_darea;
+  QString m_caption;
+  QTimer *m_timer;
 };
 
 #endif

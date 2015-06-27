@@ -1,5 +1,6 @@
 #include <boost/program_options.hpp>
 #include <iostream>
+#include <QApplication>
 #include <sys/ioctl.h>
 
 #include "window.hpp"
@@ -9,6 +10,8 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
+  QApplication app(argc, argv);
+
   namespace po = program_options;
 
   const string caption = "SlideField v0.3";
@@ -46,5 +49,5 @@ int main(int argc, char *argv[])
   window win(caption);
   win.show();
 
-  return EXIT_SUCCESS;
+  return app.exec();
 }
