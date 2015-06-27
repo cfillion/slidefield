@@ -1,6 +1,7 @@
 #include "window.hpp"
 
 #include <algorithm>
+#include <QAction>
 #include <QKeyEvent>
 #include <QPainter>
 #include <QTimer>
@@ -11,19 +12,36 @@ window::window(const std::string &caption)
   : QWidget(nullptr),
   m_caption(QString::fromStdString(caption))
 {
+  setup_actions();
+
 #ifdef Q_OS_LINUX
   setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint |
     Qt::WindowCloseButtonHint | Qt::WindowMinMaxButtonsHint);
 #endif
 
   setAttribute(Qt::WA_OpaquePaintEvent, true);
-  update_title();
+  setContextMenuPolicy(Qt::ActionsContextMenu);
 
   m_timer = new QTimer(this);
   m_timer->setInterval(1000 / FRAME_RATE);
   m_timer->start();
 
   connect(m_timer, &QTimer::timeout, this, &window::update);
+
+  update_title();
+}
+
+void window::setup_actions()
+{
+  m_fullscreen = new QAction("Toggle &Fullscreen", this);
+  m_fullscreen->setShortcut(QKeySequence::FullScreen);
+  connect(m_fullscreen, &QAction::triggered, this, &window::toggle_fullscreen);
+  addAction(m_fullscreen);
+
+  m_quit = new QAction("&Quit", this);
+  m_quit->setShortcut(QKeySequence::Quit);
+  connect(m_quit, &QAction::triggered, this, &window::close);
+  addAction(m_quit);
 }
 
 QSize window::sizeHint() const
@@ -37,15 +55,20 @@ void window::update()
     QWidget::update();
 }
 
+void window::toggle_fullscreen()
+{
+  setWindowState(windowState() ^ Qt::WindowFullScreen);
+}
+
 void window::keyPressEvent(QKeyEvent *e)
 {
   switch(e->key()) {
   case Qt::Key_Q:
   case Qt::Key_Escape:
-    close();
+    m_quit->trigger();
     break;
   case Qt::Key_F:
-    setWindowState(windowState() ^ Qt::WindowFullScreen);
+    m_fullscreen->trigger();
     break;
   }
 }

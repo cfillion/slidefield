@@ -13,6 +13,7 @@ public:
 
 public Q_SLOTS:
   void update();
+  void toggle_fullscreen();
 
 protected:
   void keyPressEvent(QKeyEvent *) override;
@@ -20,12 +21,16 @@ protected:
   void changeEvent(QEvent *) override;
 
 private:
-  void transform(QPainter &, const double win_w, const double win_h);
-
+  void setup_actions();
   void update_title();
+
+  void transform(QPainter &, const double win_w, const double win_h);
 
   QString m_caption;
   QTimer *m_timer;
+
+  QAction *m_fullscreen;
+  QAction *m_quit;
 };
 
 #endif
