@@ -11,6 +11,11 @@ window::window(const std::string &caption)
   : QWidget(nullptr),
   m_caption(QString::fromStdString(caption))
 {
+#ifdef Q_OS_LINUX
+  setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint |
+    Qt::WindowCloseButtonHint | Qt::WindowMinMaxButtonsHint);
+#endif
+
   setAttribute(Qt::WA_OpaquePaintEvent, true);
   update_title();
 
