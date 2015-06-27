@@ -4,41 +4,33 @@
 
 #include "errors.hpp"
 
-using namespace boost;
 using namespace sfl;
 
-std::stack<doctor *> doctor::s_instances;
-
-doctor *doctor::instance()
+void sfl::error_at(const location &location, const boost::format &format)
 {
-  return s_instances.empty() ? 0 : s_instances.top();
+  error_at(location, format.str());
 }
 
-void doctor::diagnose(const enum diagnosis::level lvl, const std::string &msg)
+void sfl::error_at(const location &location, const std::string &message)
 {
-  const diagnosis dia(lvl, msg);
+  diagnose_at(location, message, diagnosis::error);
+}
 
-  doctor *doc = doctor::instance();
+void sfl::diagnose_at(const location &location,
+  const std::string &message, const enum diagnosis::level level)
+{
+  doctor *doc = location.doctor();
+
   if(!doc)
     throw missing_doctor();
 
-  doc->add_diagnosis(dia);
+  doc->add_diagnosis(message, level, location);
 }
 
-void doctor::diagnose(const enum diagnosis::level level, const format &format)
+void doctor::add_diagnosis(const std::string &message,
+  const enum diagnosis::level level, const sfl::location &location)
 {
-  diagnose(level, format.str());
-}
-
-doctor::doctor()
-{
-  s_instances.push(this);
-}
-
-doctor::~doctor()
-{
-  assert(s_instances.top() == this);
-  s_instances.pop();
+  add_diagnosis(diagnosis(level, message, location));
 }
 
 void doctor::add_diagnosis(const diagnosis &dia)

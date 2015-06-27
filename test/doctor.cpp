@@ -13,44 +13,41 @@ TEST_CASE("make a diagnosis", M) {
   doctor doc;
 
   CHECK(doc.bag().empty());
-
-  SECTION("from string") {
-    doc.diagnose(diagnosis::note, "hello world");
-
-    const diagnosis dia = doc.bag().back();
-    REQUIRE(dia.level() == diagnosis::note);
-    REQUIRE(dia.message() == "hello world");
-  }
-
-  SECTION("from format") {
-    doc.diagnose(diagnosis::note, "hello world");
-
-    const diagnosis dia = doc.bag().back();
-    REQUIRE(dia.level() == diagnosis::note);
-    REQUIRE(dia.message() == "hello world");
-  }
-
+  doc.add_diagnosis("hello world", diagnosis::note);
   REQUIRE(doc.bag().size() == 1);
+
+  const diagnosis dia = doc.bag().back();
+  REQUIRE(dia.level() == diagnosis::note);
+  REQUIRE(dia.message() == "hello world");
 }
 
 TEST_CASE("diagnosis shortcuts", M) {
   doctor doc;
+  const location loc({&doc});
+  enum diagnosis::level match_level;
 
-  SECTION("error", M) {
-    SFL_ERROR_AT("hello world");
+  SECTION("error from string", M) {
+    error_at(loc, "hello world");
+    match_level = diagnosis::error;
+  }
 
-    const diagnosis dia = doc.bag().back();
-    REQUIRE(dia.level() == diagnosis::error);
-    REQUIRE(dia.message() == "hello world");
+  SECTION("error from format", M) {
+    error_at(loc, boost::format("hello %s") % "world");
+    match_level = diagnosis::error;
   }
 
   REQUIRE(doc.bag().size() == 1);
+
+  const diagnosis dia = doc.bag().back();
+  REQUIRE(dia.message() == "hello world");
+  REQUIRE(dia.level() == match_level);
+  REQUIRE(dia.location() == loc);
 }
 
 TEST_CASE("missing doctor", M) {
-  REQUIRE(doctor::instance() == 0);
+  location loc;
 
   REQUIRE_THROWS_AS({
-    doctor::diagnose(diagnosis::error, "crash");
+    diagnose_at(loc, "crash", diagnosis::error);
   }, missing_doctor);
 }

@@ -8,9 +8,9 @@
 using namespace sfl;
 using namespace boost;
 
-object::object(const std::string &name)
-  : m_type_id(-1), m_name(name)
+object::object(const std::string &name, const sfl::location &loc)
+  : m_type_id(-1), m_name(name), m_location(loc)
 {
-  SFL_ERROR_AT(format("unknown object name '%s'") % name);
+  error_at(location(), format("unknown object name '%s'") % name);
   throw unknown_object_error();
 }
