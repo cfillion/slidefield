@@ -3,7 +3,7 @@ TEST_TARGET = tests
 
 CXX = clang++
 
-CXXFLAGS = -Wall -Wextra -pipe
+CXXFLAGS = -Wall -Wextra -pipe -fPIC
 CXXFLAGS += -fcolor-diagnostics
 CXXFLAGS += -g -O2 -std=c++11
 CXXFLAGS += `pkg-config --cflags Qt5Widgets`
