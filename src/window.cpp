@@ -68,6 +68,7 @@ void window::keyPressEvent(QKeyEvent *e)
     m_quit->trigger();
     break;
   case Qt::Key_F:
+  case Qt::Key_F11:
     m_fullscreen->trigger();
     break;
   }
