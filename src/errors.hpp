@@ -6,8 +6,11 @@
 namespace sfl {
   class error {};
 
+  ERROR_TYPE(duplicate_definition);
   ERROR_TYPE(missing_doctor);
-  ERROR_TYPE(unknown_object_error);
+  ERROR_TYPE(unknown_object);
+
+  // new paragraph to sort the error types easily
 };
 
 #undef ERROR_TYPE

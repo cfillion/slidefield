@@ -12,5 +12,5 @@ object::object(const std::string &name, const sfl::location &loc)
   : m_type_id(-1), m_name(name), m_location(loc)
 {
   error_at(location(), format("unknown object name '%s'") % name);
-  throw unknown_object_error();
+  throw unknown_object();
 }

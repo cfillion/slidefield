@@ -3,10 +3,18 @@
 #include <QApplication>
 #include <sys/ioctl.h>
 
+#include "registry.hpp"
 #include "window.hpp"
 
 using namespace boost;
+using namespace sfl;
 using namespace std;
+
+static registry definitions()
+{
+  registry reg;
+  return reg;
+}
 
 int main(int argc, char *argv[])
 {

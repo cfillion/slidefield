@@ -14,7 +14,7 @@ TEST_CASE("unregistered object", M) {
 
   REQUIRE_THROWS_AS({
     object obj("qwfpgjluy", loc);
-  }, unknown_object_error);
+  }, unknown_object);
 
   diagnosis_bag bag = doc.bag();
 
