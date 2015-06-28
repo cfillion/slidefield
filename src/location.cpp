@@ -1,15 +1,17 @@
 #include "location.hpp"
 
+#include "errors.hpp"
+
 using namespace sfl;
 
 location::location(const sfl::context &c)
   : m_context(c)
-{
-}
+{}
 
 bool sfl::operator==(const context &left, const context &right)
 {
-  return left.doctor == right.doctor;
+  return left.doctor == right.doctor &&
+    left.registry == right.registry;
 }
 
 bool sfl::operator!=(const context &left, const context &right)

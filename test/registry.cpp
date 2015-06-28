@@ -10,11 +10,11 @@ static const char *M = "[registry]";
 TEST_CASE("definition name and user data", M) {
   const definition a{"foo"};
   REQUIRE(a.name() == "foo");
-  REQUIRE(a.user() == -1);
+  REQUIRE(a.user_data() == -1);
 
   const definition b{"bar", 42};
   REQUIRE(b.name() == "bar");
-  REQUIRE(b.user() == 42);
+  REQUIRE(b.user_data() == 42);
 }
 
 TEST_CASE("add to registry", M) {
@@ -40,6 +40,7 @@ TEST_CASE("add duplicate", M) {
 
 TEST_CASE("unknown definition", M) {
   const registry reg;
+  REQUIRE(reg.count("foo") == 0);
 
   REQUIRE_THROWS_AS({
     reg.at("foo");

@@ -10,7 +10,8 @@ static const char *M = "[object]";
 
 TEST_CASE("unregistered object", M) {
   doctor doc;
-  location loc({&doc});
+  registry reg;
+  location loc({&doc, &reg});
 
   REQUIRE_THROWS_AS({
     object obj("qwfpgjluy", loc);

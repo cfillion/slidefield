@@ -23,7 +23,7 @@ TEST_CASE("make a diagnosis", M) {
 
 TEST_CASE("diagnosis shortcuts", M) {
   doctor doc;
-  const location loc({&doc});
+  const location loc({&doc, 0});
   enum diagnosis::level match_level;
 
   SECTION("error from string", M) {

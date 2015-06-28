@@ -8,6 +8,7 @@ namespace sfl {
 
   ERROR_TYPE(duplicate_definition);
   ERROR_TYPE(missing_doctor);
+  ERROR_TYPE(missing_registry);
   ERROR_TYPE(unknown_object);
 
   // new paragraph to sort the error types easily
