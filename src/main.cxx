@@ -1,9 +1,9 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <QApplication>
+#include <sfl/registry.hpp>
 #include <sys/ioctl.h>
 
-#include "registry.hpp"
 #include "window.hpp"
 
 using namespace boost;
