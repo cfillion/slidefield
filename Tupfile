@@ -1,15 +1,15 @@
-MAIN_TARGET = sfrun
+MAIN_TARGET = bin/sfrun
 TEST_TARGET = tests
 
-CXX = clang++
+CXX = c++
 
-CXXFLAGS = -Wall -Wextra -pipe -fPIC
-CXXFLAGS += -fcolor-diagnostics
+CXXFLAGS := -Wall -Wextra -pipe -fPIC
+CXXFLAGS += -fdiagnostics-color
 CXXFLAGS += -g -O2 -std=c++11
 CXXFLAGS += `pkg-config --cflags Qt5Widgets`
 CXXFLAGS += -I../sfl/include
 
-LDFLAGS = -lboost_program_options
+LDFLAGS := -lboost_program_options
 LDFLAGS += `pkg-config --libs Qt5Widgets`
 LDFLAGS += -L../sfl/lib -lsfl
 
