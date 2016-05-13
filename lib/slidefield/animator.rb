@@ -65,6 +65,9 @@ class SlideField::Animator
 
     width, height = *@layout_size
 
+    width = anim.width if anim.width > 0
+    height = anim.height if anim.height > 0
+
     case anim.name
     when "fade"
       if @frame.current?
@@ -86,6 +89,7 @@ class SlideField::Animator
       else
         tr.scale = 1.0 - position
       end
+    when "fixed"
     else
       # the validator has missed ?!
       # TODO: validate at interpret time
@@ -99,14 +103,17 @@ private
   def animation_for(data)
     return @animations[data] if @animations.has_key? data
 
-    anim_struct = Struct.new :enabled, :start_time, :name, :duration, :enter, :leave
+    anim_struct = Struct.new :enabled, :start_time, :name, :duration, :enter, :leave, :width, :height
     anim = anim_struct.new false, 0.0, '', 0, true, true
 
     if data
       anim.enabled = true
       anim.start_time = @frame.time.to_f
+      anim.start_time += data.value_of(:delay) if @frame.forward?
       anim.name = data.value_of :name
       anim.duration = data.value_of :duration
+      anim.width = data.value_of :width
+      anim.height = data.value_of :height
     end
 
     @animations[data] = anim
@@ -115,7 +122,7 @@ private
   def slide_offset(position, size, inverse)
     inverse = !inverse unless @frame.forward?
 
-    offset = size * position
+    offset = size * [0, position].max
     offset -= size if @frame.current?
     offset = 0 - offset if inverse
     offset

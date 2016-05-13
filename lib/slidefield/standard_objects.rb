@@ -107,6 +107,8 @@ SF::Object.define :text do
       static = Qt::StaticText.new content
       static.setTextFormat Qt::RichText
       static.setTextOption option
+      static.setPerformanceHint Qt::StaticText::AggressiveCaching
+      static.prepare
 
       font = Qt::Font.new fontfamily
       font.setPixelSize value_of(:height)
@@ -231,4 +233,7 @@ SF::Object.define :animation do
 
   set_variable :name, String
   set_variable :duration, 400
+  set_variable :delay, 0
+  set_variable :width, 0
+  set_variable :height, 0
 end
