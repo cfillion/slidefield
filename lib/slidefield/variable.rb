@@ -4,7 +4,7 @@ class SlideField::Variable < SlideField::Token
   attr_reader :value, :location
 
   KNOWN_TYPES = {
-    integer:  Fixnum,
+    integer:  Integer,
     string:   String,
     boolean:  SF::Boolean,
     color:    SF::Color,

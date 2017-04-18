@@ -39,7 +39,7 @@ class String
   end
 end
 
-class Fixnum
+class Integer
   def self.from_slice(slice)
     slice.to_i
   end
