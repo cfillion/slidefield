@@ -101,7 +101,7 @@ private
   def parse(input)
     @parser.parse input, reporter: @reporter
   rescue Parslet::ParseFailed => error
-    cause = error.cause
+    cause = error.cause || error.parse_failure_cause
 
     while next_cause = cause.children.last
       cause = next_cause
