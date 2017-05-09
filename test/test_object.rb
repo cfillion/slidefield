@@ -414,7 +414,7 @@ class TestObject < MiniTest::Test
     loc = SF::Location.new
 
     original = SF::Object.new :first
-    original.set_variable :hello, 'world'
+    original.set_variable :hello, 'hello'
     original.set_passthrough true
     original.allow_children :second
     original.adopt SF::Object.new(:second)
@@ -428,8 +428,11 @@ class TestObject < MiniTest::Test
 
     assert_equal false, copy.passthrough?
 
-    assert_equal 'world', copy.value_of(:hello)
-    assert_equal copy.children, original.children
+    original.set_variable :hello, 'world'
+    assert_equal 'hello', copy.value_of(:hello)
+
+    original.adopt SF::Object.new(:second)
+    assert_equal 1, copy.children.size
   end
 
   def test_is_root

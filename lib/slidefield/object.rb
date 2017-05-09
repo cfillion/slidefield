@@ -40,8 +40,8 @@ class SlideField::Object
 
   def copy(location = nil)
     newone = self.class.new @type, location
-    newone.variables = @variables
-    newone.children = @children
+    newone.variables = @variables.dup
+    newone.children = @children.dup
 
     newone
   end
