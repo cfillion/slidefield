@@ -37,6 +37,10 @@ class String
   def filter_lines
     self.lines.count
   end
+
+  def filter_size
+    self.size
+  end
 end
 
 class Integer

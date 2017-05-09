@@ -20,6 +20,7 @@ class TestTypes < MiniTest::Test
 
   def test_string_filters
     assert_equal 2, "hello\nworld".filter_lines
+    assert_equal 11, "hello\nworld".filter_size
   end
 
   def test_slice_to_fixnum
