@@ -51,7 +51,7 @@ class TestVariable < MiniTest::Test
 
   def test_valid_values
     SF::Variable.new 42
-    SF::Variable.new Fixnum
+    SF::Variable.new Integer
 
     SF::Variable.new 'hello world'
     SF::Variable.new String

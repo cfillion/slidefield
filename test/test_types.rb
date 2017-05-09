@@ -23,7 +23,7 @@ class TestTypes < MiniTest::Test
   end
 
   def test_slice_to_fixnum
-    assert_equal 42, Fixnum.from_slice('42')
+    assert_equal 42, Integer.from_slice('42')
   end
 
   def test_fixnum_filers

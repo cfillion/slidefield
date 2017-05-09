@@ -18,7 +18,7 @@ end
 SF::Object.define :level2 do end
 
 SF::Object.define :answer do
-  set_variable :the_answer, Fixnum
+  set_variable :the_answer, Integer
 end
 
 SF::Object.define :collection do
@@ -154,7 +154,7 @@ class TestInterpreter < MiniTest::Test
     INPUT
 
     i = @interpreter.root.get_variable :i
-    assert_instance_of Fixnum, i.value
+    assert_instance_of Integer, i.value
     assert_equal 42, i.value
     assert_equal [1, 9], i.location.line_and_column
 
@@ -263,7 +263,7 @@ class TestInterpreter < MiniTest::Test
     @interpreter.run_string 'var = (x)4x2'
 
     var = @interpreter.root.get_variable :var
-    assert_instance_of Fixnum, var.value
+    assert_instance_of Integer, var.value
     assert_equal 4, var.value
     assert_equal [1, 10], var.location.line_and_column
   end
@@ -272,7 +272,7 @@ class TestInterpreter < MiniTest::Test
     @interpreter.run_string 'var = (x)(x)(lines)"hello"'
 
     var = @interpreter.root.get_variable :var
-    assert_instance_of Fixnum, var.value
+    assert_instance_of Integer, var.value
     assert_equal 1, var.value
     assert_equal [1, 20], var.location.line_and_column
   end

@@ -114,7 +114,7 @@ class TestObject < MiniTest::Test
 
   def test_get_variable_uninitialized
     first = SF::Object.new :first
-    first.set_variable :qwfpgjluy, Fixnum
+    first.set_variable :qwfpgjluy, Integer
 
     token = SF::Token.new :qwfpgjluy
     assert_equal false, first.get_variable(token)
@@ -134,7 +134,7 @@ class TestObject < MiniTest::Test
 
   def test_value_of_uninitialized
     first = SF::Object.new :first
-    first.set_variable :qwfpgjluy, Fixnum
+    first.set_variable :qwfpgjluy, Integer
 
     assert_equal false, first.value_of(:qwfpgjluy)
 
@@ -143,7 +143,7 @@ class TestObject < MiniTest::Test
 
   def test_guess_variable
     first = SF::Object.new :first
-    first.set_variable :qwfpgjluy, Fixnum
+    first.set_variable :qwfpgjluy, Integer
     first.set_variable :arstdhnei, String
 
     assert_equal :arstdhnei, first.guess_variable('hello world')
@@ -177,8 +177,8 @@ class TestObject < MiniTest::Test
 
   def test_guess_variable_ambiguous
     first = SF::Object.new :first
-    first.set_variable :qwfpgjluy, Fixnum
-    first.set_variable :arstdhnei, Fixnum
+    first.set_variable :qwfpgjluy, Integer
+    first.set_variable :arstdhnei, Integer
 
     var = SF::Variable.new 42
     assert_equal false, first.guess_variable(var)
@@ -192,8 +192,8 @@ class TestObject < MiniTest::Test
 
   def test_guess_variable_ignore_non_native
     first = SF::Object.new :first
-    first.set_variable :qwfpgjluy, Fixnum, SF::Location.new(SF::Context.new)
-    first.set_variable :arstdhnei, Fixnum
+    first.set_variable :qwfpgjluy, Integer, SF::Location.new(SF::Context.new)
+    first.set_variable :arstdhnei, Integer
 
     assert_equal :arstdhnei, first.guess_variable(42)
   end
