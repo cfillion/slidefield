@@ -28,7 +28,7 @@ class TestAnimator < MiniTest::Test
         tr = @animator.calculate obj
 
         assertions.each {|k,v|
-          assert_same v, tr[k], "tr.#{k} in test #{index + 1}"
+          assert_equal v, tr[k], "tr.#{k} in test #{index + 1}"
         }
       end
 
