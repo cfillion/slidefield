@@ -51,7 +51,7 @@ class SlideField::Renderer
       @in_extra = false
     end
 
-    return if index < 0 || index >= @elements.count
+    return if index < 0 || index >= @elements.count || @slide_index == index
 
     @previous_index, @slide_index = @slide_index, index
 
