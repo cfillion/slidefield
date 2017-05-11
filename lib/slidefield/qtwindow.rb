@@ -20,8 +20,8 @@ class SlideField::QtWindow < Qt::Widget
     ]
   end
 
-  def start
-    @renderer.jump_to SF::Renderer::FIRST_SLIDE
+  def start(index = SF::Renderer::FIRST_SLIDE)
+    @renderer.jump_to index
 
     @timer = Qt::Timer.new
     @timer.setInterval 1000 / FRAMERATE
