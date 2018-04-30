@@ -59,23 +59,8 @@ files << '-' if files.empty?
 
 app = Qt::Application.new []
 
-files.each {|file|
-  interpreter = SlideField::Interpreter.new
+SDL.Init SDL::INIT_AUDIO
+SDL::Mixer.OpenAudio 44_100, SDL::Mixer::DEFAULT_FORMAT, 2, 1024
 
-  if '-' == file
-    interpreter.run_string STDIN.read
-  else
-    path = File.absolute_path file
-    interpreter.run_file path
-  end
-
-  next if interpreter.failed? || options.include?(:check)
-
-  renderer = SF::Renderer.new interpreter.root
-
-  SDL.Init SDL::INIT_AUDIO
-  SDL::Mixer.OpenAudio 44_100, SDL::Mixer::DEFAULT_FORMAT, 2, 1024
-
-  SF::QtWindow.new renderer
-  app.exec
-}
+SF::QtWindow.new files, options
+app.exec

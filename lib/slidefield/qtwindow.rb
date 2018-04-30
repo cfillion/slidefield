@@ -1,15 +1,35 @@
 class SlideField::QtWindow < Qt::Widget
   FRAMERATE = 60
 
-  def initialize(renderer)
-    @renderer = renderer
+  def initialize(files, options)
+    @files, @options = files, options
 
     super nil, Qt::DialogType
 
-    update_title
+    next_file
 
     Qt::Timer.singleShot 1, self, SLOT("start()")
     show
+  end
+
+  def next_file(slide = SF::Renderer::FIRST_SLIDE)
+    until @files.empty?
+      file = @files.shift
+      interpreter = SlideField::Interpreter.new
+
+      if '-' == file
+        interpreter.run_string STDIN.read
+      else
+        path = File.absolute_path file
+        interpreter.run_file path
+      end
+
+      next if interpreter.failed? || @options.include?(:check)
+
+      @renderer = SF::Renderer.new interpreter.root
+      jump_to slide
+      break true
+    end
   end
 
   def update_title
@@ -20,9 +40,12 @@ class SlideField::QtWindow < Qt::Widget
     ]
   end
 
-  def start(index = SF::Renderer::FIRST_SLIDE)
-    @renderer.jump_to index
+  def jump_to(slide)
+    @renderer.jump_to slide
+    update_title
+  end
 
+  def start
     @timer = Qt::Timer.new
     @timer.setInterval 1000 / FRAMERATE
     connect @timer, SIGNAL('timeout()'), self, SLOT("update_if_required()")
@@ -82,18 +105,18 @@ class SlideField::QtWindow < Qt::Widget
       Qt::Key_Down,
       Qt::Key_Plus
 
-      @renderer.jump_to SF::Renderer::NEXT_SLIDE
-      update_title
+      jump_to SF::Renderer::NEXT_SLIDE
     when Qt::Key_Backspace, Qt::Key_Left, Qt::Key_Up, Qt::Key_Minus
-      @renderer.jump_to SF::Renderer::PREV_SLIDE
-      update_title
+      jump_to SF::Renderer::PREV_SLIDE
     when Qt::Key_Home
-      @renderer.jump_to SF::Renderer::FIRST_SLIDE
-      update_title
+      jump_to SF::Renderer::FIRST_SLIDE
     when Qt::Key_End
-      @renderer.jump_to SF::Renderer::LAST_SLIDE
-      update_title
+      jump_to SF::Renderer::LAST_SLIDE
     end
+  end
+
+  def closeEvent(event)
+    event.ignore if next_file
   end
 
 private
