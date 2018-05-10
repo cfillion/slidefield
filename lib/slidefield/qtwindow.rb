@@ -6,10 +6,12 @@ class SlideField::QtWindow < Qt::Widget
 
     super nil, Qt::DialogType
 
-    next_file
-
-    Qt::Timer.singleShot 1, self, SLOT("start()")
-    show
+    if next_file
+      Qt::Timer.singleShot 1, self, SLOT("start()")
+      show
+    else
+      Qt::Timer.singleShot 1, self, SLOT("close()")
+    end
   end
 
   def next_file(slide = SF::Renderer::FIRST_SLIDE)
